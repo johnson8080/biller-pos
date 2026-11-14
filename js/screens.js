@@ -1818,6 +1818,14 @@
           <textarea class="textarea" id="store-footer" name="footer" rows="2">${esc(store.footer)}</textarea>
         </div>
 
+        <div class="section-head"><h2>M-Pesa</h2></div>
+        <p class="field-help">Connect your Paybill or Till to take M-Pesa payments.</p>
+        <button class="data-row" data-nav="#/mpesa" style="width:100%; text-align:left;">
+          <span class="data-icon">${icon("i-card")}</span>
+          <span class="data-copy"><strong>M-Pesa settings</strong><small>Shortcode, Daraja app and connection test</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </button>
+
         <div class="settings-actions">
           <button class="btn btn-primary btn-block" type="submit">Save store settings</button>
         </div>
