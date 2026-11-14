@@ -444,11 +444,7 @@ async function deleteShopAccount(id) {
   render();
 }
 
-function toggleOnlineOnly() {
-  const T = window.Till;
-  T.ui.onlineOnly = !T.ui.onlineOnly;
-  render();
-}
+
 
 /** The developer marks a request as not paid. */
 async function declineShopPayment(id) {
@@ -843,7 +839,7 @@ function runAction(btn) {
   else if (act === "confirm-payment" && id) { confirmShopPayment(id); }
   else if (act === "decline-payment" && id) { declineShopPayment(id); }
   else if (act === "delete-account" && id) { deleteShopAccount(id); }
-  else if (act === "toggle-online-only") { toggleOnlineOnly(); }
+
   else if (act === "copy-shop-code") { copyShopCode(btn); }
   else if (act === "copy-value" && value) { copyPlainValue(value); }
 

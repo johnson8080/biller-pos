@@ -1308,7 +1308,6 @@
 
     const requests = T.cloud.paymentRequests?.() || [];
     const accounts = T.cloud.accounts?.() || [];
-    const onlineOnly = T.ui.onlineOnly;
 
     const seen = (stamp) => {
       if (!stamp) return "not seen yet";
@@ -1367,7 +1366,7 @@
       });
     });
 
-    const filteredEntries = onlineOnly ? entries.filter(e => isOnline(e.at)) : entries;
+    const filteredEntries = entries;
     filteredEntries.sort((a, b) => (b.pending ? 1 : 0) - (a.pending ? 1 : 0) || (b.at || 0) - (a.at || 0));
     
     // An M-Pesa code belongs to exactly one real transaction. If two shops
@@ -1395,7 +1394,6 @@
         <p class="eyebrow">Developer</p>
         <h1 id="plans-title">Subscriptions</h1>
         <p class="sub">Every shop, its code, and what has been paid.</p>
-        <button class="btn btn-ghost" data-act="toggle-online-only">${icon("i-eye")} Online only</button>
       </div>
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
