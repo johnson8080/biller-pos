@@ -58,7 +58,7 @@
         <div class="appbar-context"><div class="appbar-title">Subscriptions</div></div>
         <div class="appbar-right"></div>`;
     }
-    if (["cart", "payment", "receipt", "account", "store", "supplier"].includes(route.name)) {
+    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa"].includes(route.name)) {
       const supplier = route.name === "supplier" ? T.findSupplier(route.param) : null;
       const config = {
         cart: { title: "Checkout", back: "#/sell", action: `<button class="text-btn danger" data-act="clear-cart">Clear</button>` },
@@ -66,6 +66,7 @@
         receipt: { title: "Receipt", back: T.ui.justPaidId ? "#/sell" : "#/orders", action: `<button class="text-btn" data-act="new-sale">New sale</button>` },
         account: { title: "Account", back: "#/more", action: "" },
         store: { title: "Store & receipts", back: "#/more", action: "" },
+        mpesa: { title: "M-Pesa", back: "#/store", action: "" },
         supplier: { title: supplier?.name || "Supplier", back: "#/suppliers", action: supplier ? `<button class="text-btn" data-act="edit-supplier" data-id="${esc(supplier.id)}">Edit</button>` : "" }
       }[route.name];
       return `
@@ -1663,54 +1664,15 @@
   }
 
 
-  function storeSettings() {
+  function mpesaSettings() {
     const store = T.state.store;
-    return `<section class="screen" aria-labelledby="store-title">
+    return `<section class="screen" aria-labelledby="mpesa-title">
       <div class="screen-head">
         <p class="eyebrow">Shop details</p>
-        <h1 id="store-title">Store &amp; receipts</h1>
-        <p class="sub">These details appear on every digital receipt.</p>
+        <h1 id="mpesa-title">M-Pesa</h1>
+        <p class="sub">Take Lipa na M-Pesa payments straight into your Paybill or Till.</p>
       </div>
-      <form class="settings-card" id="settings-form" novalidate style="margin-top:0">
-        <h2>Store profile</h2>
-        <p class="card-sub">The name and contact details printed on receipts.</p>
-        <div class="field">
-          <label for="store-name">Store name</label>
-          <input class="input" id="store-name" name="name" value="${esc(store.name)}" required autocomplete="organization">
-        </div>
-        <div class="field">
-          <label for="store-address">Address</label>
-          <input class="input" id="store-address" name="address" value="${esc(store.address)}" autocomplete="street-address">
-        </div>
-        <div class="field">
-          <label for="store-phone">Phone</label>
-          <input class="input" id="store-phone" name="phone" value="${esc(store.phone)}" autocomplete="tel" inputmode="tel">
-        </div>
-        <div class="field">
-          <label for="store-staff">Staff name</label>
-          <input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name">
-        </div>
-
-        <div class="section-head"><h2>Sales &amp; receipts</h2></div>
-        <div class="field-row">
-          <div class="field">
-            <label for="store-tax">Sales tax</label>
-            <div class="input-affix"><input class="input" id="store-tax" name="taxRate" type="number" min="0" max="30" step="0.01" inputmode="decimal" value="${esc(store.taxRate)}"><span class="affix">%</span></div>
-          </div>
-          <div class="field">
-            <label for="store-currency">Currency</label>
-            <select class="select" id="store-currency" name="currency">
-              ${["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].map((code) => `<option value="${esc(code)}" ${String(store.currency || "KES") === code ? "selected" : ""}>${esc(code)} — ${code === "KES" ? "Kenyan shillings (KSh)" : code}</option>`).join("")}
-            </select>
-          </div>
-        </div>
-        <p class="field-help">All totals, receipts, and change calculations use this currency.</p>
-        <div class="field">
-          <label for="store-footer">Receipt footer</label>
-          <textarea class="textarea" id="store-footer" name="footer" rows="2">${esc(store.footer)}</textarea>
-        </div>
-
-        <div class="section-head"><h2>M-Pesa</h2></div>
+      <form class="settings-card" id="settings-form" novalidate>
         <div class="mpesa-settings">
           <p class="card-sub">Take Lipa na M-Pesa payments straight into your Paybill or Till. The customer gets a PIN prompt on their phone.</p>
           <ol class="mpesa-steps">
@@ -1800,6 +1762,60 @@
           <span class="mpesa-test-note" id="mpesa-push-note" role="status"></span>
           <p class="field-small">The KES 1 prompt proves the shortcode and passkey belong together — the most common setup mistake. Approve it on your own phone to finish the check.</p>
           <p class="field-small">Payments are recorded in Orders and on the receipt with the customer's number and the M-Pesa reference.</p>
+        </div>
+
+        <div class="settings-actions">
+          <button class="btn btn-primary btn-block" type="submit">Save M-Pesa settings</button>
+        </div>
+      </form>
+    </section>`;
+  }
+
+  function storeSettings() {
+    const store = T.state.store;
+    return `<section class="screen" aria-labelledby="store-title">
+      <div class="screen-head">
+        <p class="eyebrow">Shop details</p>
+        <h1 id="store-title">Store &amp; receipts</h1>
+        <p class="sub">These details appear on every digital receipt.</p>
+      </div>
+      <form class="settings-card" id="store-settings-form" novalidate style="margin-top:0">
+        <h2>Store profile</h2>
+        <p class="card-sub">The name and contact details printed on receipts.</p>
+        <div class="field">
+          <label for="store-name">Store name</label>
+          <input class="input" id="store-name" name="name" value="${esc(store.name)}" required autocomplete="organization">
+        </div>
+        <div class="field">
+          <label for="store-address">Address</label>
+          <input class="input" id="store-address" name="address" value="${esc(store.address)}" autocomplete="street-address">
+        </div>
+        <div class="field">
+          <label for="store-phone">Phone</label>
+          <input class="input" id="store-phone" name="phone" value="${esc(store.phone)}" autocomplete="tel" inputmode="tel">
+        </div>
+        <div class="field">
+          <label for="store-staff">Staff name</label>
+          <input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name">
+        </div>
+
+        <div class="section-head"><h2>Sales &amp; receipts</h2></div>
+        <div class="field-row">
+          <div class="field">
+            <label for="store-tax">Sales tax</label>
+            <div class="input-affix"><input class="input" id="store-tax" name="taxRate" type="number" min="0" max="30" step="0.01" inputmode="decimal" value="${esc(store.taxRate)}"><span class="affix">%</span></div>
+          </div>
+          <div class="field">
+            <label for="store-currency">Currency</label>
+            <select class="select" id="store-currency" name="currency">
+              ${["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].map((code) => `<option value="${esc(code)}" ${String(store.currency || "KES") === code ? "selected" : ""}>${esc(code)} — ${code === "KES" ? "Kenyan shillings (KSh)" : code}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <p class="field-help">All totals, receipts, and change calculations use this currency.</p>
+        <div class="field">
+          <label for="store-footer">Receipt footer</label>
+          <textarea class="textarea" id="store-footer" name="footer" rows="2">${esc(store.footer)}</textarea>
         </div>
 
         <div class="settings-actions">
@@ -2462,5 +2478,5 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, icon };
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, icon };
 })();

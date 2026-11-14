@@ -1402,7 +1402,7 @@
 
     document.getElementById("customer-mpesa-settings")?.addEventListener("click", () => {
       close(true);
-      window.Till.go?.("#/store");
+      window.Till.go?.("#/mpesa");
     });
 
     document.getElementById("customer-mpesa-cancel")?.addEventListener("click", () => {

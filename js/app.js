@@ -1277,7 +1277,7 @@ async function startMpesaPayment() {
   else T.toast(T.ui.mpesa.error, "i-alert");
 }
 
-/** "Test connection" in Store settings — checks the fields as typed. */
+/** "Test connection" in M-Pesa settings — checks the fields as typed. */
 async function testMpesaConnection() {
   const T = window.Till;
   const form = document.getElementById("settings-form");
@@ -1495,6 +1495,7 @@ function render() {
   else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
+  else if (screenName === "mpesa") html = T.screens.mpesaSettings();
   else if (screenName === "account") html = T.screens.accountSettings();
   else if (screenName === "cart") html = T.screens.cart();
   else if (screenName === "payment") html = T.screens.payment();
@@ -1597,11 +1598,11 @@ function render() {
 
   // Wire up the store settings form on the More tab
   const settingsForm = document.getElementById("settings-form");
-  if (settingsForm) {
-    updateReminderRow();
-    settingsForm.addEventListener("submit", (event) => {
+  const storeSettingsForm = document.getElementById("store-settings-form");
+  if (storeSettingsForm) {
+    storeSettingsForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const data = new FormData(settingsForm);
+      const data = new FormData(storeSettingsForm);
       const store = T.state.store;
       store.name = String(data.get("name") || "").trim() || "My Store";
       store.address = String(data.get("address") || "").trim();
@@ -1613,6 +1614,17 @@ function render() {
       if (["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].includes(currency)) {
         store.currency = currency;
       }
+      T.save();
+      T.toast("Store settings saved", "i-check");
+      render();
+    });
+  }
+  if (settingsForm) {
+    updateReminderRow();
+    settingsForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const data = new FormData(settingsForm);
+      const store = T.state.store;
       // M-Pesa settings: keep the numbers clean and the credentials trimmed.
       const mpesa = readMpesaForm(settingsForm);
       if (mpesa.backend && !/^https:\/\//i.test(mpesa.backend) && !/^http:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(mpesa.backend)) {
@@ -1632,7 +1644,7 @@ function render() {
         backendKey: mpesa.backendKey
       };
       T.save();
-      T.toast("Store settings saved", "i-check");
+      T.toast("M-Pesa settings saved", "i-check");
       render();
     });
     // Paybill and Till are alternatives: the one that is not in use is greyed
