@@ -2,23 +2,6 @@
    Biller POS — visual system
    Mobile-first point of sale: warm paper, forest ink, lime accents.
    ============================================================ */
-@font-face {
-  font-family: "Instrument Sans";
-  src: url("assets/fonts/instrument-sans-latin.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 400 700;
-  font-stretch: 100%;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Instrument Sans";
-  src: url("assets/fonts/instrument-sans-italic-latin.woff2") format("woff2");
-  font-style: italic;
-  font-weight: 400 700;
-  font-stretch: 100%;
-  font-display: swap;
-}
-
 :root {
   --paper: #f8f9ff;
   --paper-deep: #eff4ff;
