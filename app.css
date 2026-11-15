@@ -711,7 +711,7 @@ h1, h2, h3, h4, p { margin: 0; }
 /* App bar --------------------------------------------------------- */
 .appbar {
   flex: none;
-  padding: calc(6px + var(--safe-top)) 10px 6px;
+  padding: calc(6px + var(--safe-top)) 10px 4px;
   z-index: 8;
 }
 .appbar.is-hidden { display: none; }
@@ -1012,14 +1012,14 @@ h1, h2, h3, h4, p { margin: 0; }
    serving shopkeeper, version — stays on one single line, wrapped in one
    border that spans across all four items. */
 .sell-head {
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 .sell-meta {
   display: flex;
   align-items: center;
   gap: 0;
   margin: 0;
-  padding: 6px 0;
+  padding: 8px 0;
   border: 1px solid var(--ui-line);
   border-radius: 8px;
   background: var(--surface-2);
@@ -1040,7 +1040,7 @@ h1, h2, h3, h4, p { margin: 0; }
   min-width: 0;
   text-align: center;
   padding: 0 6px;
-  font-size: calc(10px * var(--fs));
+  font-size: calc(11px * var(--fs));
   font-weight: 650;
   color: var(--ink-2);
   overflow: hidden;
@@ -1071,13 +1071,13 @@ h1, h2, h3, h4, p { margin: 0; }
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 2px 6px;
-  font-size: calc(10px * var(--fs));
+  font-size: calc(11px * var(--fs));
   font-weight: 700;
   letter-spacing: .05em;
   color: var(--ink-2);
   white-space: nowrap;
 }
-.sell-title-row { display: flex; gap: 6px; padding: 6px 0 4px; }
+.sell-title-row { display: flex; gap: 6px; padding: 4px 0 4px; }
 .sell-title-col {
   flex: 1;
   min-width: 0;
