@@ -172,9 +172,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       staffList: [],
       taxRate: 0,
       currency: "KES",
-      theme: "forest",
+      theme: "ocean",
       colorScheme: "light",
-      textSize: "small",
+      textSize: "medium",
       sellView: "list",
       sellSort: "new",
       mpesa: {
@@ -246,6 +246,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       version: 1,
       store: defaultStore(),
       categories: [...CATEGORIES],
+      defaultsMigrated: true,
       categoriesMigrated: true,
       products: [],
       suppliers: [],
@@ -273,6 +274,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // Light and dark are forced by the shop, never taken from the phone.
     store.colorScheme = store.colorScheme === "dark" ? "dark" : "light";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
+    // One-time migration to the new default look (Ocean + medium text).
+    if (data.defaultsMigrated !== true) {
+      if (store.theme === "forest") store.theme = "ocean";
+      if (store.textSize === "small") store.textSize = "medium";
+    }
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // Shopkeepers: a synced list of names. Older saves only carry the single
@@ -559,7 +565,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       pro: data.pro === true,
       wastage,
       stockDays,
-      createdAt: data.createdAt || new Date().toISOString()
+      createdAt: data.createdAt || new Date().toISOString(),
+      defaultsMigrated: true
     };
   }
 
