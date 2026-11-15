@@ -246,6 +246,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       version: 1,
       store: defaultStore(),
       categories: [...CATEGORIES],
+      categoriesMigrated: true,
       products: [],
       suppliers: [],
       customers: [],
@@ -340,6 +341,17 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       backendKey: String(savedMpesa.backendKey || "").trim().slice(0, 300)
     };
     const categories = normalizeCategories(data.categories);
+    // One-time OTA migration: bring the new Kenyan duka default categories
+    // to existing shops once, then mark as migrated so user deletions stick.
+    const migrateCats = data.categoriesMigrated !== true;
+    if (migrateCats) {
+      const seen = new Set(categories.map((c) => String(c).toLowerCase()));
+      for (const def of CATEGORIES) {
+        if (seen.has(String(def).toLowerCase())) continue;
+        seen.add(String(def).toLowerCase());
+        categories.push(def);
+      }
+    }
     const products = (Array.isArray(data.products) ? data.products : []).filter((p) => p && typeof p === "object").map((p, index) => {
       const wanted = String(p.category || "").trim().toLowerCase();
       const match = categories.find((category) => category.toLowerCase() === wanted);
@@ -537,6 +549,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       version: 1,
       store,
       categories,
+      categoriesMigrated: true,
       products,
       suppliers,
       customers,
