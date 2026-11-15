@@ -2297,3 +2297,32 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 /* Developer chat card at the foot of Settings --------------------- */
 .support-card { margin-top: 10px; }
 .support-card .data-icon { background: var(--lime-soft); color: var(--forest-3); }
+
+/* Pull-to-refresh: progressive bar, fixed hero, green toast -------- */
+.ptr-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(90deg, var(--forest-2), var(--forest));
+  box-shadow: 0 1px 8px rgba(29, 78, 216, .5);
+  opacity: 0;
+  transition: opacity .15s ease, width .08s linear;
+  z-index: 40;
+  pointer-events: none;
+}
+.ptr-bar.is-active { opacity: 1; }
+.ptr-bar.is-ready { background: linear-gradient(90deg, #22c55e, #16a34a); box-shadow: 0 1px 8px rgba(22, 163, 74, .55); }
+.ptr-bar.is-loading {
+  width: 100% !important;
+  background: linear-gradient(90deg, #16a34a, #22c55e, #16a34a);
+  background-size: 200% 100%;
+  animation: ptr-slide .7s linear infinite;
+}
+@keyframes ptr-slide { from { background-position: 0 0; } to { background-position: 200% 0; } }
+.viewport.is-pulling { will-change: transform; }
+.viewport.ptr-settle { transition: transform .28s cubic-bezier(.2, .7, .3, 1.1); }
+.toast.is-green { background: #16a34a; color: #fff; }
+.toast.is-green .ico { color: #bbf7d0; }
