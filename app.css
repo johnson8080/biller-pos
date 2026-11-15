@@ -1091,6 +1091,7 @@ h1, h2, h3, h4, p { margin: 0; }
   font-weight: 700;
   letter-spacing: .05em;
   white-space: nowrap;
+  margin: 0 auto;
 }
 /* The hero carries the app's standard border. The shop meta — name, date,
    serving shopkeeper, version — stays on one single line, wrapped in one

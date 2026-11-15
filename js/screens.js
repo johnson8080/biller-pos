@@ -233,6 +233,7 @@
       </div>
       <div class="section-head sell-head-row">
         <h2>${T.ui.category === "All" ? "Quick add" : esc(T.ui.category)}</h2>
+        <span class="sell-status-box">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); return d === null ? "Active" : (d < 0 ? "Overdue" : `${d}d left`); })())}</span>
         <div class="sell-head-tools">
           <span class="small muted">${products.length} ${products.length === 1 ? "item" : "items"}</span>
           <button class="tool-btn" data-act="open-sell-sort" aria-label="Sort items, currently ${esc(sortLabel)}" title="Sort: ${esc(sortLabel)}">${icon("i-sort")}</button>
@@ -265,10 +266,6 @@
     const searchOpen = Boolean(T.ui.searchOpen);
     const retail = T.stockValue();
     const count = T.itemCount();
-    const planGlance = (() => {
-      const daysLeft = T.subscriptionActiveDaysLeft?.();
-      return daysLeft === null ? "Active" : (daysLeft < 0 ? "Overdue" : `${daysLeft}d left`);
-    })();
     const customerDebt = (T.state.customers || []).reduce((sum, c) => {
       // Balance, not just bills: payments made must reduce what is owed.
       const balance = T.customerTotals(c).balance;
@@ -281,7 +278,6 @@
     }, 0);
 
     return `<section class="screen sell" aria-labelledby="sell-title">
-      <div class="sell-glance"><span class="sell-status-box">${esc(planGlance)}</span></div>
       ${searchOpen ? `<div class="search-field sell-search-pop ${T.ui.search ? "has-value" : ""}" id="sell-search-wrap">
         ${icon("i-search")}
         <input id="sell-search" type="search" inputmode="search" autocomplete="off" spellcheck="false"
