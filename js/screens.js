@@ -282,13 +282,16 @@
       </div>` : `<div class="sell-head">
         <div class="sell-meta">
           <span class="sell-meta-item is-shop">${esc(T.state.store.name || "Unnamed shop")}</span>
+          <span class="sell-meta-sep" aria-hidden="true"></span>
           <span class="sell-meta-item is-date">${esc(T.shortDateFmt.format(new Date()))}</span>
+          <span class="sell-meta-sep" aria-hidden="true"></span>
           ${(() => {
             const selling = T.activeStaff ? T.activeStaff() : (T.state.store.staff || "");
             return selling
-              ? `<button class="sell-staff" data-act="choose-staff" aria-label="Selling as ${esc(selling)}. Tap to change">${esc(selling)}</button>`
+              ? `<button class="sell-staff" data-act="choose-staff" aria-label="Selling as ${esc(selling)}. Tap to change">${esc(selling)}<span class="sell-staff-arrow" aria-hidden="true">${icon("i-chevron")}</span></button>`
               : `<span class="sell-meta-empty">No shopkeeper</span>`;
           })()}
+          <span class="sell-meta-sep" aria-hidden="true"></span>
           ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : `<span class="sell-meta-item">—</span>`}
         </div>
         <div class="sell-title-row">
