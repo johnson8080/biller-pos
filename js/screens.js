@@ -773,8 +773,7 @@
     return `<section class="screen" aria-labelledby="stock-title">
       <div class="screen-head with-action">
         <div>
-          <p class="eyebrow">Product catalog</p>
-          <h1 id="stock-title">Inventory</h1>
+          <h1 id="stock-title">INVENTORY</h1>
           <p class="sub">Stock levels save as you go.</p>
         </div>
         <button class="btn btn-primary btn-sm" data-act="new-product">${icon("i-plus")} Add</button>
@@ -1141,8 +1140,7 @@
 
     const head = `<div class="screen-head with-action">
       <div>
-        <p class="eyebrow">Customer credit</p>
-        <h1 id="debt-title">Debt</h1>
+        <h1 id="debt-title">DEBT</h1>
         <p class="sub">Goods taken now, paid later.</p>
       </div>
     </div>`;
