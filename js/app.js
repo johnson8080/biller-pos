@@ -767,6 +767,22 @@ function runAction(btn) {
   else if (act === "checkout") { go("#/payment"); }
   else if (act === "add-to-cart" && id) {
     const product = T.findProduct(id);
+    // Before the very first item of a sale can be added: the owner needs the
+    // shop details saved and at least one shopkeeper on the roster.
+    if (!T.itemCount()) {
+      const needsStaff = !(T.staffRoster ? T.staffRoster() : []).length;
+      const needsStore = !(T.state.store.name || "").trim();
+      if (needsStaff || needsStore) {
+        T.toast(
+          needsStaff && needsStore
+            ? "Add a shopkeeper and save the shop details before your first sale"
+            : needsStaff ? "Add a shopkeeper before your first sale" : "Save the shop details before your first sale",
+          "i-alert"
+        );
+        if (needsStaff || needsStore) go("#/store");
+        return;
+      }
+    }
     // A weighed item has no fixed "one": the scale opens instead.
     if (product?.soldByMass) {
       T.sheets?.openWeigh?.(product);
