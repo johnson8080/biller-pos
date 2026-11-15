@@ -272,6 +272,10 @@
       </div>` : `<div class="sell-head">
         <div class="sell-eyebrow-row">
           <p class="eyebrow">${esc(T.state.store.name)} · ${esc(T.shortDateFmt.format(new Date()))}</p>
+          ${(() => {
+            const selling = T.activeStaff ? T.activeStaff() : (T.state.store.staff || "");
+            return selling ? `<button class="sell-staff" data-act="choose-staff" aria-label="Selling as ${esc(selling)}. Tap to change">${esc(selling)}</button>` : "";
+          })()}
           ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : ""}
         </div>
         <div class="sell-title-row">
@@ -1783,6 +1787,7 @@
 
   function storeSettings() {
     const store = T.state.store;
+    const roster = T.staffRoster ? T.staffRoster() : (store.staff ? [store.staff] : []);
     return `<section class="screen" aria-labelledby="store-title">
       <div class="screen-head">
         <p class="eyebrow">Shop details</p>
@@ -1807,6 +1812,22 @@
         <div class="field">
           <label for="store-staff">Staff name</label>
           <input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name">
+          <p class="field-help">The single staff name from before. Used when a device has not picked a shopkeeper yet.</p>
+        </div>
+        <div class="field">
+          <label>Shopkeepers</label>
+          <p class="field-help">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts.</p>
+          <div class="staff-roster">
+            ${roster.length ? roster.map((name) => `
+              <span class="staff-chip">
+                <span class="staff-chip-name">${esc(name)}</span>
+                <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
+              </span>`).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
+          </div>
+          <div class="staff-add-row">
+            <input class="input" id="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name">
+            <button class="btn" type="button" data-act="add-staff">Add</button>
+          </div>
         </div>
 
         <div class="section-head"><h2>Sales &amp; receipts</h2></div>
@@ -2281,6 +2302,9 @@
         : tx.payment.method === "mpesa"
           ? `M-Pesa: ${money(tx.total)}${tx.payment.customerPhone ? ` from ${T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone}` : ""}${tx.payment.accountRef ? ` · Account ${tx.payment.accountRef}` : ""}${tx.payment.reference ? ` · Ref ${tx.payment.reference}` : ""}${!tx.payment.reference && tx.payment.checkoutId ? ` · Request ${tx.payment.checkoutId}` : ""}`
           : `Debt: ${tx.payment.customerName || "Customer"} (${tx.payment.customerPhone || ""}) · Due ${tx.payment.dueDate}`;
+    // The name printed is the shopkeeper who rang this sale up, kept on the
+    // transaction itself so history never changes after a re-edit.
+    const servedBy = String(tx.staff || store.staff || "").trim();
     return [
       store.name.toUpperCase(),
       store.address,
@@ -2288,7 +2312,7 @@
       "",
       `Receipt #${tx.receiptNo}`,
       `${T.receiptDateFmt.format(new Date(tx.createdAt))} · ${T.timeFmt.format(new Date(tx.createdAt))}`,
-      store.staff ? `Served by ${store.staff}` : null,
+      servedBy ? `Served by ${servedBy}` : null,
       "",
       ...lines,
       "",
@@ -2427,7 +2451,7 @@
         <div class="receipt-payment">
           <div class="row"><span>Payment</span><strong>${tx.payment.method === "cash" ? "Cash" : tx.payment.method === "card" ? "Card · demo" : tx.payment.method === "mpesa" ? "M-Pesa" : `Debt · ${esc(tx.payment.customerName || "Customer")}`}</strong></div>
           ${tx.payment.method === "cash" ? `<div class="row"><span>Tendered</span><span>${money(tx.payment.tendered)}</span></div><div class="row"><span>Change</span><span>${money(tx.payment.change)}</span></div>` : tx.payment.method === "card" ? `<div class="row"><span>Reference</span><span>${esc(tx.payment.reference || "—")}</span></div>` : tx.payment.method === "mpesa" ? `<div class="row"><span>Customer phone</span><span>${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone || "—")}</span></div>${tx.payment.accountRef ? `<div class="row"><span>Account number</span><span>${esc(tx.payment.accountRef)}</span></div>` : ""}<div class="row"><span>M-Pesa reference</span><span>${esc(tx.payment.reference || "Confirmed")}</span></div>${!tx.payment.reference && tx.payment.checkoutId ? `<div class="row"><span>Request ID</span><span>${esc(tx.payment.checkoutId)}</span></div>` : ""}${tx.payment.account ? `<div class="row"><span>Paid to</span><span>${esc(tx.payment.account)}</span></div>` : ""}` : `<div class="row"><span>Customer phone</span><span>${esc(tx.payment.customerPhone || "—")}</span></div><div class="row"><span>Due date</span><span>${esc(tx.payment.dueDate || "—")}</span></div>`}
-          <div class="row"><span>Served by</span><span>${esc(store.staff || "—")}</span></div>
+          <div class="row"><span>Served by</span><span>${esc(String(tx.staff || store.staff || "").trim() || "—")}</span></div>
           ${tx.payment.method === "mpesa" && !tx.payment.reference ? `<button class="text-btn mpesa-code-link" data-act="add-mpesa-code" data-id="${esc(tx.id)}">Add M-Pesa code</button>` : ""}
         </div>
         <div class="receipt-bar" aria-hidden="true"></div>

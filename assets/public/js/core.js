@@ -20,6 +20,10 @@ const firebaseConfig = {
   const STORAGE_KEY = "biller.pos.v1";
   const AUTH_KEY = "biller.pos.auth";
   const DEBT_REMINDER_KEY = "biller.pos.debtReminder";
+  // Per-device pick of who is selling. Deliberately NOT synced: the same
+  // account logged in on several devices should each be able to ring up
+  // sales as a different shopkeeper.
+  const STAFF_KEY = "biller.pos.staff";
   // Each account keeps its own till, so signing in as somebody else never
   // shows the previous shop.
   const SHOP_PREFIX = "biller.pos.shop.";
@@ -165,6 +169,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       address: "",
       phone: "",
       staff: "",
+      staffList: [],
       taxRate: 0,
       currency: "KES",
       theme: "forest",
@@ -269,6 +274,12 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
+    // Shopkeepers: a synced list of names. Older saves only carry the single
+    // "Staff name" string, which keeps working as the one-name roster.
+    store.staff = String(store.staff || "").trim();
+    store.staffList = Array.isArray(store.staffList)
+      ? store.staffList.map((name) => String(name || "").trim()).filter(Boolean)
+      : [];
     // The permanent shop code, used to identify paid accounts.
     store.shopCode = String(store.shopCode || "").trim().slice(0, 24);
     // The monthly plan: keep only sane values, never trust a half-saved copy.
@@ -831,6 +842,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       cardBusy: false,
       mpesa: { stage: "idle", phone: "", account: "", error: "", checkoutId: "", startedAt: 0 },
       settingsOpen: {},
+      // The "who is selling?" picker is offered once per device, not per visit.
+      staffAsked: false,
       justPaidId: null,
       scanPurpose: "sale",
       scanReturn: "#/sell",
@@ -1860,6 +1873,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       total: charged,
       cost: totals.cost,
       profit: totals.profit + rounding,
+      // The shopkeeper who rang this up on this device, frozen into the
+      // receipt so old sales keep the name they were sold under.
+      staff: T.activeStaff() || store.staff || null,
       payment: isDebt
         ? {
             method: "debt",
@@ -1962,6 +1978,56 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       localStorage.setItem(savedAtKey(stateOwner), String(value));
     } catch { /* ignore */ }
     return value;
+  };
+
+  /* ---------- Shopkeepers ---------- */
+
+  // The shop's staff list: owner-edited and synced with every device. Shops
+  // on the older single "Staff name" field keep working — the roster falls
+  // back to that name until the owner adds more shopkeepers.
+  T.staffRoster = () => {
+    const seen = new Set();
+    const list = (T.state.store.staffList || [])
+      .map((name) => String(name || "").trim())
+      .filter((name) => {
+        if (!name) return false;
+        const key = name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    const legacy = String(T.state.store.staff || "").trim();
+    if (!list.length && legacy) list.push(legacy);
+    return list;
+  };
+
+  // Who is selling on THIS device right now. A device pick always wins;
+  // otherwise the legacy single staff name stands in until someone chooses.
+  T.activeStaff = () => {
+    const roster = T.staffRoster();
+    let pick = "";
+    try { pick = String(localStorage.getItem(STAFF_KEY) || "").trim(); } catch { /* ignore */ }
+    if (pick && roster.includes(pick)) return pick;
+    const legacy = String(T.state.store.staff || "").trim();
+    if (legacy && (!roster.length || roster.includes(legacy))) return legacy;
+    return roster[0] || legacy || "";
+  };
+
+  // Whether this device has an explicit shopkeeper choice (as opposed to a
+  // fallback). The Sell tab uses it to offer the picker exactly once.
+  T.hasDeviceStaff = () => {
+    try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
+  };
+
+  // Choose the shopkeeper for this device. Every receipt rung up here
+  // carries this name until someone picks a different one.
+  T.setActiveStaff = (name) => {
+    const pick = String(name || "").trim();
+    try {
+      if (pick) localStorage.setItem(STAFF_KEY, pick);
+      else localStorage.removeItem(STAFF_KEY);
+    } catch { /* ignore */ }
+    return T.activeStaff();
   };
 
   T.toast = (message, icon = "i-check") => {

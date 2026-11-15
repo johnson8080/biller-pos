@@ -599,6 +599,46 @@ function runAction(btn) {
     render();
     requestAnimationFrame(() => document.getElementById("supplier-search")?.focus({ preventScroll: true }));
   }
+  else if (act === "choose-staff") {
+    T.sheets?.openStaffPicker?.();
+  }
+  else if (act === "pick-staff" && value) {
+    const name = T.setActiveStaff?.(value) || value;
+    T.sheets?.close?.();
+    render();
+    T.toast(`Selling as ${name}`, "i-check");
+  }
+  else if (act === "add-staff") {
+    const input = document.getElementById("new-staff-name");
+    const name = String(input?.value || "").trim();
+    if (!name) {
+      T.toast("Type a shopkeeper name first", "i-alert");
+      input?.focus({ preventScroll: true });
+      return;
+    }
+    const list = T.state.store.staffList || [];
+    if (list.some((n) => String(n).trim().toLowerCase() === name.toLowerCase())) {
+      T.toast("That name is already in the list", "i-alert");
+      return;
+    }
+    T.state.store.staffList = [...list, name];
+    T.save();
+    render();
+    T.toast(`${name} added to shopkeepers`, "i-check");
+  }
+  else if (act === "remove-staff" && value) {
+    T.state.store.staffList = (T.state.store.staffList || []).filter((n) => String(n).trim() !== value);
+    // If this device was selling as the removed shopkeeper, the fallback
+    // name takes over automatically.
+    try {
+      if (String(localStorage.getItem("biller.pos.staff") || "").trim() === value) {
+        localStorage.removeItem("biller.pos.staff");
+      }
+    } catch { /* ignore */ }
+    T.save();
+    render();
+    T.toast(`${value} removed`, "i-check");
+  }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {
     T.ui.debtSearch = "";
@@ -1533,6 +1573,14 @@ function render() {
   wireActions(dockEl);
   wireActions(tabbarEl);
   wireActions(layersEl);
+
+  // Two or more shopkeepers on the roster and this device has not picked one
+  // yet: ask who is selling, exactly once per device (not per visit), so the
+  // right name lands on the receipts rung up here.
+  if (screenName === "sell" && !T.ui.staffAsked && (T.staffRoster?.() || []).length >= 2 && !T.hasDeviceStaff?.()) {
+    T.ui.staffAsked = true;
+    T.sheets?.openStaffPicker?.();
+  }
 
   // Wire up search inputs
   const sellSearch = document.getElementById("sell-search");

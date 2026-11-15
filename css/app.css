@@ -989,6 +989,28 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 999px;
   white-space: nowrap;
 }
+/* The shopkeeper selling on this device: the middle piece of the eyebrow
+   row, between the store name and the version chip. Tapping it opens the
+   staff picker. */
+.sell-staff {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: calc(9px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
 .sell-title-row { display: flex; gap: 8px; margin-top: 2px; }
 .sell-title-col {
   flex: 1;
@@ -1079,6 +1101,65 @@ h1, h2, h3, h4, p { margin: 0; }
 .sort-option-copy small { display: block; margin-top: 1px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
 .sort-option-check { flex: none; color: var(--forest-3); }
 .sort-option-check .ico { width: 16px; height: 16px; stroke-width: 2.2; }
+
+/* Staff picker — who is selling on this device */
+.staff-picker { display: flex; flex-direction: column; gap: 6px; }
+.staff-pick-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: #fff;
+  font-weight: 800;
+  font-size: calc(13px * var(--fs));
+}
+.staff-pick.is-active .staff-pick-avatar { background: #16a34a; }
+
+/* Shopkeepers roster editor in Store & receipts */
+.staff-roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.staff-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px 5px 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: calc(11.5px * var(--fs));
+  font-weight: 650;
+  color: var(--ink);
+}
+.staff-chip-name { white-space: nowrap; }
+.staff-chip-x {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.staff-chip-x .ico { width: 11px; height: 11px; stroke-width: 2.4; }
+.staff-chip-x:active { background: var(--line); }
+.staff-roster-empty { font-size: calc(11px * var(--fs)); color: var(--muted); }
+.staff-add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.staff-add-row .input { flex: 1; min-width: 0; }
+.staff-add-row .btn { flex: none; }
 .product-card {
   position: relative;
   min-width: 0;

@@ -1809,6 +1809,31 @@
   }
 
   /**
+   * Pick who is selling on this device. The choice stays on the device (not
+   * in the cloud), so the same account signed in on several phones can each
+   * ring up sales as a different shopkeeper — and each receipt rung up here
+   * prints that name.
+   */
+  function openStaffPicker() {
+    const roster = T.staffRoster ? T.staffRoster() : [];
+    if (!roster.length) return;
+    const current = T.activeStaff ? T.activeStaff() : "";
+    open({
+      title: "Who is selling?",
+      subtitle: "This device only — the name goes on your receipts",
+      iconName: "i-user",
+      body: `<div class="staff-picker">
+        ${roster.map((name) => `
+          <button class="sort-option staff-pick ${name === current ? "is-active" : ""}" data-act="pick-staff" data-value="${esc(name)}" aria-pressed="${name === current}">
+            <span class="staff-pick-avatar" aria-hidden="true">${esc(String(name).slice(0, 1).toUpperCase())}</span>
+            <span class="sort-option-copy"><strong>${esc(name)}</strong><small>${name === current ? "Selling on this device" : "Tap to sell as " + esc(name) + " here"}</small></span>
+            ${name === current ? `<span class="sort-option-check">${icon("i-check")}</span>` : ""}
+          </button>`).join("")}
+      </div>`
+    });
+  }
+
+  /**
    * Collect the monthly plan. When the developer has a Till or Paybill
    * configured, the shop pays with an M-Pesa prompt like any other sale.
    * Without one - which is now - the sheet walks the shop through sending the
@@ -2061,7 +2086,7 @@
   function openWastage() {
     const products = [...T.state.products].sort((a, b) => a.name.localeCompare(b.name));
     const recent = (T.state.wastage || []).slice(0, 6);
-    const defaultEmployee = String(T.state.store?.staff || T.getSession?.()?.email?.split("@")[0] || "").trim();
+    const defaultEmployee = String((T.activeStaff ? T.activeStaff() : "") || T.state.store?.staff || T.getSession?.()?.email?.split("@")[0] || "").trim();
     const reasons = T.WASTAGE_REASONS || ["Spoiled", "Damaged", "Expired", "Spilled", "Missing", "Other"];
     open({
       title: "Record wastage",
@@ -2284,6 +2309,7 @@
     openCategoryEditor, categoryError, openExitPrompt, openAccount,
     openSupplierEditor, supplierError, openSupplierPayment, openSupplierBill,
     openDebtCheckout, openCustomerPayment, openDebtReminder, openSellSort,
+    openStaffPicker,
     openStockIn, openMpesaCode, openSubscriptionPayment,
     setFormError
   };
