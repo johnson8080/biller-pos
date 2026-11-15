@@ -2302,6 +2302,31 @@
   }
 
 
+  /**
+   * Pick an older day from the stock book. The compact stock-tab card shows
+   * the latest day; this sheet is the way back through the older ones.
+   */
+  function openStockDays() {
+    const days = T.stockDaysList ? T.stockDaysList() : [];
+    if (!days.length) return;
+    open({
+      title: "Stock book",
+      subtitle: "Opening and closing counts by day",
+      iconName: "i-box",
+      body: `<div class="report-list">${days.map((day) => {
+        const openingCount = Object.keys(day.opening || {}).length;
+        const closingCount = Object.keys(day.closing || day.latest || {}).length;
+        const when = T.dayLabel(`${day.date}T00:00:00`);
+        return `<button class="report-row report-row-btn" data-act="open-stock-day" data-value="${esc(day.date)}">
+          <span class="report-rank">${icon("i-box")}</span>
+          <span class="report-row-copy"><strong>${esc(when)}</strong><small>${openingCount} opening · ${closingCount} closing</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </button>`;
+      }).join("")}</div>`
+    });
+  }
+
+
   T.sheets = {
     open, close, isOpen, openManual, manualError, openUnknown, openOutOfStock,
     openWeigh, openWastage, openTarget, openStockDay,
@@ -2313,6 +2338,7 @@
     openSupplierEditor, supplierError, openSupplierPayment, openSupplierBill,
     openDebtCheckout, openCustomerPayment, openDebtReminder, openSellSort,
     openStaffPicker,
+    openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
     setFormError
   };

@@ -746,7 +746,8 @@
     const low = T.lowStockCount();
     const monthWastage = T.wastageSince(30);
     const monthWastageCost = monthWastage.cost || 0;
-    const days = (T.stockDaysList?.() || []).slice(0, 5);
+    const allDays = T.stockDaysList?.() || [];
+    const latestDay = allDays[0] || null;
     return `<section class="screen" aria-labelledby="stock-title">
       <div class="screen-head with-action">
         <div>
@@ -762,6 +763,7 @@
         <div class="inv-stat"><span class="label">Retail value</span><strong>${compactMoney(T.stockValue())}</strong></div>
         <div class="inv-stat"><span class="label">Stock at cost</span><strong>${compactMoney(T.stockCost())}</strong></div>
       </div>
+      ${stockToolsCard({ wastage: monthWastage, wastageCost: monthWastageCost, latestDay, olderDays: Math.max(0, allDays.length - 1) })}
       ${out ? `<div class="inventory-alert">${icon("i-alert")}<span><strong>${out} ${out === 1 ? "item is" : "items are"} out of stock.</strong> They’re shown first below.</span></div>` : ""}
       <div class="search-field ${T.ui.stockSearch ? "has-value" : ""}" id="stock-search-wrap">
         ${icon("i-search")}
@@ -771,30 +773,37 @@
       </div>
       <div id="inventory-list">${stockFilterRow()}${inventoryRows()}</div>
       <p class="list-note">Low-stock items appear first. Tap a product to edit its details.</p>
-
-      <div class="settings-card">
-        <div class="report-card-head"><h2>Wastage</h2><span class="report-total">Last 30 days</span></div>
-        ${monthWastage.count || monthWastageCost ? `<div class="report-list"><div class="report-row">
-            <span class="report-row-copy"><strong>${monthWastage.count} ${monthWastage.count === 1 ? "record" : "records"}</strong><small>stock written off without a sale</small></span>
-            <span class="report-amount is-profit">−${compactMoney(monthWastageCost)}</span>
-          </div></div>` : `<p class="report-empty">Nothing written off yet.</p>`}
-        <button class="btn btn-ghost btn-block" data-act="open-wastage" style="margin-top:10px">${icon("i-alert")} Record wastage</button>
-      </div>
-
-      <div class="settings-card">
-        <div class="report-card-head"><h2>Daily stock</h2><span class="report-total">Opening → closing</span></div>
-        ${days.length ? `<div class="report-list">${days.map((day) => {
-          const openingCount = Object.keys(day.opening || {}).length;
-          const closingCount = Object.keys(day.closing || day.latest || {}).length;
-          const when = T.dayLabel(`${day.date}T00:00:00`);
-          return `<button class="report-row report-row-btn" data-act="open-stock-day" data-value="${esc(day.date)}">
-            <span class="report-rank">${icon("i-box")}</span>
-            <span class="report-row-copy"><strong>${esc(when)}</strong><small>${openingCount} opening · ${closingCount} closing</small></span>
-            <span class="chev">${icon("i-chevron")}</span>
-          </button>`;
-        }).join("")}</div>` : `<p class="report-empty">The stock book fills in as you trade. Each day’s opening and closing counts appear here.</p>`}
-      </div>
     </section>`;
+  }
+
+  /**
+   * Wastage and the daily stock book as one compact card, pinned right under
+   * the retail value stat. They used to sit at the bottom of the inventory
+   * list, which put them a long scroll away once the catalog grew.
+   */
+  function stockToolsCard({ wastage, wastageCost, latestDay, olderDays }) {
+    const hadLoss = Boolean(wastage.count || wastageCost);
+    const latestWhen = latestDay ? T.dayLabel(`${latestDay.date}T00:00:00`) : "";
+    const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
+    const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
+    return `<div class="settings-card stock-side">
+      <div class="stock-side-grid">
+        <div class="stock-side-col">
+          <span class="stock-side-label">${icon("i-alert")} Wastage</span>
+          <span class="stock-side-value ${hadLoss ? "is-loss" : ""}">${hadLoss ? `−${compactMoney(wastageCost)}` : "Clean"}</span>
+          <span class="stock-side-sub">${hadLoss ? `${wastage.count} ${wastage.count === 1 ? "record" : "records"} written off · 30 days` : "Nothing written off · 30 days"}</span>
+          <button class="btn btn-ghost btn-sm" data-act="open-wastage">${icon("i-alert")} Record</button>
+        </div>
+        <span class="stock-side-div" aria-hidden="true"></span>
+        <div class="stock-side-col">
+          <span class="stock-side-label">${icon("i-box")} Daily stock</span>
+          <span class="stock-side-value">${latestWhen ? esc(latestWhen) : "—"}</span>
+          <span class="stock-side-sub">${latestWhen ? `${openingCount} opening · ${closingCount} closing` : "Fills in as you trade"}</span>
+          ${latestDay ? `<button class="btn btn-ghost btn-sm" data-act="open-stock-day" data-value="${esc(latestDay.date)}">${icon("i-box")} Open book</button>` : ""}
+          ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">Older days (${olderDays})</button>` : ""}
+        </div>
+      </div>
+    </div>`;
   }
 
   /* ---------- Suppliers ---------- */

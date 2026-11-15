@@ -1105,6 +1105,7 @@ function runAction(btn) {
   else if (act === "open-wastage") { T.sheets?.openWastage?.(); }
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
   else if (act === "open-stock-day" && value) { T.sheets?.openStockDay?.(value); }
+  else if (act === "open-stock-days") { T.sheets?.openStockDays?.(); }
   else if (act === "set-mix-period" && value) {
     T.ui.reportMixPeriod = ["today", "week", "month", "all"].includes(value) ? value : "today";
     render();
