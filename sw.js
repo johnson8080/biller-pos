@@ -1,5 +1,5 @@
 /* Till POS - offline shell cache */
-const VERSION = "till-v1.4.8";
+const VERSION = "till-v1.4.9";
 const SHELL = [
   "./",
   "./index.html",
