@@ -1491,6 +1491,11 @@ h1, h2, h3, h4, p { margin: 0; }
 .report-row.is-top .report-rank { background: #16a34a; color: #fff; }
 .report-row.is-top strong { color: var(--forest-2); }
 /* Report period chips (Top sellers, Payment mix) share the boxed border design. */
+.report-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .report-chips .chip {
   min-height: 26px;
   padding: 3px 7px;
