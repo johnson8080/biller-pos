@@ -265,6 +265,10 @@
     const searchOpen = Boolean(T.ui.searchOpen);
     const retail = T.stockValue();
     const count = T.itemCount();
+    const planGlance = (() => {
+      const daysLeft = T.subscriptionActiveDaysLeft?.();
+      return daysLeft === null ? "Active" : (daysLeft < 0 ? "Overdue" : `${daysLeft}d left`);
+    })();
     const customerDebt = (T.state.customers || []).reduce((sum, c) => {
       // Balance, not just bills: payments made must reduce what is owed.
       const balance = T.customerTotals(c).balance;
@@ -277,6 +281,7 @@
     }, 0);
 
     return `<section class="screen sell" aria-labelledby="sell-title">
+      <div class="sell-glance"><span class="sell-status-box">${esc(planGlance)}</span></div>
       ${searchOpen ? `<div class="search-field sell-search-pop ${T.ui.search ? "has-value" : ""}" id="sell-search-wrap">
         ${icon("i-search")}
         <input id="sell-search" type="search" inputmode="search" autocomplete="off" spellcheck="false"
@@ -1613,8 +1618,6 @@
     const themeName = T.THEMES.find((theme) => theme.id === T.themeId())?.name || "Forest";
     const isDeveloper = T.isDeveloperAccount();
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
-    const daysLeft = T.subscriptionActiveDaysLeft?.();
-    const planGlance = daysLeft === null ? "Active" : (daysLeft < 0 ? "Overdue" : `${daysLeft}d left`);
     const settingsGroup = (id, iconName, title, sub, body) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}">
         <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}">
@@ -1726,12 +1729,9 @@
         <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
       </div>`;
     return `<section class="screen">
-      <div class="screen-head with-action">
-        <div>
-          <h1 id="more-title">SETTINGS</h1>
-          <p class="sub">Everything in one place, grouped.</p>
-        </div>
-        <span class="settings-status-pill">${esc(planGlance)}</span>
+      <div class="screen-head">
+        <h1 id="more-title">SETTINGS</h1>
+        <p class="sub">Everything in one place, grouped.</p>
       </div>
 
       <div class="settings-groups">

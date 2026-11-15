@@ -1076,7 +1076,22 @@ h1, h2, h3, h4, p { margin: 0; }
 .search-field.has-value .field-clear, .sell-search-pop.has-value .field-clear { display: grid; }
 .sell-search-pop { margin-top: 10px; }
 
-/* Sell ------------------------------------------------------------ */
+/* Sell glance: activation countdown at the top right of the home tab. */
+.sell-glance { display: flex; justify-content: flex-end; margin: 0 0 6px; }
+.sell-status-box {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  color: var(--forest-2);
+  font-size: calc(10px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
 /* The hero carries the app's standard border. The shop meta — name, date,
    serving shopkeeper, version — stays on one single line, wrapped in one
    border that spans across all four items. */
