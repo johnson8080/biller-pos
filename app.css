@@ -1290,7 +1290,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .about-mark { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--forest); color: var(--lime); }
 .about-mark .ico { width: 23px; height: 23px; }
 .about-name { font-size: calc(17px * var(--fs)); font-weight: 750; letter-spacing: -.03em; }
-.about-version { margin-top: 2px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
+.about-version { margin-top: 2px; font-size: calc(9.5px * var(--fs)); color: var(--muted); text-transform: uppercase; }
 
 /* Inventory ------------------------------------------------------- */
 .inv-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; margin-bottom: 10px; }

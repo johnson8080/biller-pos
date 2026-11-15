@@ -1635,7 +1635,7 @@
       <div class="about-card">
         <div class="about-top">
           <span class="about-mark">${icon("i-store")}</span>
-          <div><div class="about-name">BILLER POS</div><div class="about-version">Version 1.0.6 · cloud-synced till</div></div>
+          <div><div class="about-name">BILLER POS</div><div class="about-version">V 1.0.6 · cloud-synced till</div></div>
         </div>
         <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
       </div>`;
