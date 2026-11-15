@@ -739,7 +739,19 @@ h1, h2, h3, h4, p { margin: 0; }
   white-space: nowrap;
 }
 .appbar .appbar-bar { width: 100%; box-sizing: border-box; }
-.brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  border: 2px solid var(--red);
+  border-radius: 8px;
+  padding: 4px 8px;
+  transition: border-color .25s;
+}
+.brand.sync-synced { border-color: #3ADC77; }
+.brand.sync-connecting { border-color: var(--amber); animation: syncPulse 1s ease-in-out infinite; }
+@keyframes syncPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 .brand-mark {
   width: 36px;
   height: 36px;

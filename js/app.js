@@ -34,6 +34,8 @@ function initFirebase(retries = 0) {
     window.firebaseAuth = window.firebase.auth();
     window.Till?.cloud?.init?.();
     setupAuthObserver();
+    // Keep the sync status dot fresh.
+    setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
   } catch (e) {
     console.warn("Firebase init error:", e);
     window.localOnlyMode = true;
@@ -58,6 +60,7 @@ function setupAuthObserver() {
           T.activateAccount?.(user);
           // The cloud copy of this shop belongs to the signed-in account.
           T.cloud?.attach?.(user);
+          T.cloud?.onChange?.(() => updateSyncDot());
           if (!location.hash || location.hash === "#/auth") {
             // Sell is the home screen of the app.
             goHome();
@@ -1476,6 +1479,21 @@ async function testMpesaPush() {
   T.toast(result.ok ? "Test prompt sent" : "Test prompt failed", result.ok ? "i-check" : "i-alert");
 }
 
+function updateSyncDot() {
+  const brand = document.querySelector(".brand");
+  if (!brand) return;
+  const cs = (typeof T !== "undefined" && T.cloud?.status?.()) || {};
+  brand.classList.remove("sync-synced", "sync-connecting");
+  const offline = cs.online === false || (typeof navigator !== "undefined" && navigator.onLine === false);
+  if (cs.mode === "local" || cs.phase === "error" || offline) {
+    // stays red (default border color)
+  } else if (cs.phase === "synced") {
+    brand.classList.add("sync-synced");
+  } else {
+    brand.classList.add("sync-connecting");
+  }
+}
+
 function render() {
   const T = window.Till;
   if (!T || !T.screens) {
@@ -1545,6 +1563,8 @@ function render() {
     // The login screen carries its own branding, and the scanner is a
     // full-screen camera view — neither needs the app bar.
     appbarEl.classList.toggle("is-hidden", isAuthRoute || route.name === "scan");
+    // Refresh the sync status dot on the brand.
+    updateSyncDot();
   }
   if (dockEl) {
     // The cart is in the hero bar now; there is no bottom cart banner.

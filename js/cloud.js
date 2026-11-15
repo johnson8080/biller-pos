@@ -41,6 +41,7 @@
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
+  let online = (typeof navigator !== "undefined") ? navigator.onLine !== false : true;
   const listeners = new Set();
 
   /* ---------- Small helpers ---------- */
@@ -109,7 +110,8 @@
       accounts: accounts.slice(),
       accountsError,
       isOwner: isOwner(),
-      email: user?.email || T.getSession()?.email || ""
+      email: user?.email || T.getSession()?.email || "",
+      online
     };
   }
 
@@ -127,6 +129,11 @@
       fs = window.firebase.firestore();
       try { fs.settings({ ignoreUndefinedProperties: true }); } catch { /* older SDK */ }
       try { fs.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch { /* private mode */ }
+      // Track connectivity so the app can react to going offline/online.
+      try {
+        window.addEventListener("online", () => { online = true; if (user && fs) pull({ silent: true }); notify(); });
+        window.addEventListener("offline", () => { online = false; notify(); });
+      } catch { /* ignore */ }
       setPhase(user ? "syncing" : "signed-out");
       return true;
     } catch (error) {
@@ -272,8 +279,32 @@
     }
   }
 
-  /** Put the cloud copy in place on this device. */
-  function applyRemote(remote, stamp = 0) {
+  /** Force a one-time read straight from the server — a real connectivity check. */
+  async function refreshNow() {
+    if (!fs || !user) return { ok: false, reason: "signed-out" };
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      lastError = "No connection.";
+      setPhase("error", lastError);
+      return { ok: false, reason: "offline" };
+    }
+    try {
+      const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
+      const data = snap.exists ? snap.data() : null;
+      if (data && data.state) {
+        const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
+        applyRemote(data.state, remoteAt);
+      } else {
+        await push({ immediate: true });
+      }
+      lastSyncAt = Date.now();
+      setPhase("synced");
+      return { ok: true, data };
+    } catch (error) {
+      lastError = friendlyError(error);
+      setPhase("error", lastError);
+      return { ok: false, reason: error?.code || error?.message || "unknown" };
+    }
+  }
     const merged = T.normalizeState(remote);
     T.state = merged;
     try {
@@ -563,6 +594,7 @@
     detach,
     push,
     pull,
+    refreshNow,
     status,
     onChange,
     isOwner,

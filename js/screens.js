@@ -2065,6 +2065,23 @@
           <div class="account-row"><span>Days remaining</span><strong>${esc(daysText)}</strong></div>
         </div>`;
       })()}
+      ${(() => {
+        const st = T.cloud?.status?.() || {};
+        const online = st.online !== false && (typeof navigator === "undefined" || navigator.onLine !== false);
+        const phase = String(st.phase || (st.mode === "cloud" ? "syncing" : "local"));
+        const statusText = st.mode === "local"
+          ? "Offline mode — data stays on this device."
+          : (phase === "synced" ? "Synced with the cloud" : (phase === "error" ? (st.error || "Could not reach the cloud") : "Syncing…"));
+        return `<div class="settings-card">
+          <h2>Sync &amp; offline</h2>
+          <p class="card-sub">Your data is saved on this device and syncs when online.</p>
+          <div class="account-row"><span>Connection</span><strong>${online ? "Online" : "Offline"}</strong></div>
+          <div class="account-row"><span>Cloud sync</span><strong>${esc(statusText)}</strong></div>
+          <div class="settings-actions">
+            <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Refresh data</button>
+          </div>
+        </div>`;
+      })()}
       <p class="account-note">${icon("i-lock", "ico ico-sm")}<span>Products, stock and orders stay saved on this device. Signing out only ends the email session.</span></p>`
       : `
       <div class="settings-card">
