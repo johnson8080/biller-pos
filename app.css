@@ -2262,7 +2262,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .settings-groups { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .settings-group { background: var(--surface); border: 1px solid var(--ui-line); border-radius: 7px; box-shadow: var(--shadow-card); overflow: hidden; }
 .settings-group-head { width: 100%; display: flex; align-items: center; gap: 9px; padding: 10px; background: none; border: 0; text-align: left; font-family: inherit; font-size: inherit; color: inherit; }
-.settings-group-head .data-copy strong { display: block; font-size: calc(11.5px * var(--fs)); font-weight: 650; }
+.settings-group-head .data-copy strong { display: block; font-size: calc(11.5px * var(--fs)); font-weight: 650; text-transform: uppercase; }
 .settings-group-head .data-copy small { display: block; margin-top: 1px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
 .settings-group-head .chev { flex: none; color: var(--faint); display: grid; place-items: center; transition: transform .18s ease; }
 .settings-group-head .chev .ico { width: 14px; height: 14px; }

@@ -1429,15 +1429,14 @@ function render() {
   const previousRouteName = T.ui.route?.name;
   T.ui.route = route;
 
-  // Opening the Settings tab starts with the shop group open so the M-Pesa
-  // entry is visible right away, and every other category dropdown closed.
+  // Opening the Settings tab starts with every category dropdown closed.
   if (route.name === "more") {
     if (T.ui.openSubscription) {
       // Arrived from the plan banner: open that category straight away.
       T.ui.openSubscription = false;
       T.ui.settingsOpen = { ...(T.ui.settingsOpen || {}), subscription: true };
     } else if (previousRouteName !== "more") {
-      T.ui.settingsOpen = { shop: true };
+      T.ui.settingsOpen = {};
     }
   }
 

@@ -1594,7 +1594,7 @@
         </button>
         <button class="data-row" data-act="open-pro">
           <span class="data-icon">${icon("i-flash")}</span>
-          <span class="data-copy"><strong>Biller Pro</strong><small>${T.isPro() ? "Active on this device" : `Ad-free, reports and receipt tools · ${money(T.proPrice())}`}</small></span>
+          <span class="data-copy"><strong>Biller Pro</strong><small>coming soon!</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
@@ -1635,7 +1635,7 @@
       <div class="about-card">
         <div class="about-top">
           <span class="about-mark">${icon("i-store")}</span>
-          <div><div class="about-name">Biller POS</div><div class="about-version">Version 1.0.6 · cloud-synced till</div></div>
+          <div><div class="about-name">BILLER POS</div><div class="about-version">Version 1.0.6 · cloud-synced till</div></div>
         </div>
         <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
       </div>`;
@@ -1651,10 +1651,10 @@
         ${settingsGroup("subscription", "i-card", "Monthly plan", (T.subscriptionStatus() === "active" ? "Active" : T.subscriptionStatus() === "trial" ? "Free trial" : T.subscriptionStatus() === "awaiting" ? "Awaiting confirmation" : "Payment due"), subscriptionBody)}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"}`, appearanceBody)}
-        ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
-        ${settingsGroup("about", "i-info", "About", "Version 1.0.6", aboutBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
+        ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
+        ${settingsGroup("about", "i-info", "About", "Version 1.0.6", aboutBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat">
