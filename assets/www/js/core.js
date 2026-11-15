@@ -170,7 +170,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       theme: "forest",
       colorScheme: "light",
       textSize: "small",
-      sellView: "grid",
+      sellView: "list",
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -267,7 +267,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // Light and dark are forced by the shop, never taken from the phone.
     store.colorScheme = store.colorScheme === "dark" ? "dark" : "light";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
-    store.sellView = store.sellView === "list" ? "list" : "grid";
+    store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // The permanent shop code, used to identify paid accounts.
     store.shopCode = String(store.shopCode || "").trim().slice(0, 24);
@@ -752,9 +752,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       return true;
     },
     /** How the Sell screen lays out its items: "grid" (3 across) or "list". */
-    sellView: () => (T.state.store.sellView === "list" ? "list" : "grid"),
+    sellView: () => (T.state.store.sellView === "grid" ? "grid" : "list"),
     setSellView: (view) => {
-      const next = view === "list" ? "list" : "grid";
+      const next = view === "grid" ? "grid" : "list";
       if (T.state.store.sellView === next) return false;
       T.state.store.sellView = next;
       T.save({ quiet: true });
@@ -1432,31 +1432,28 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     sub.codeHistory = [{ code: clean, at: Date.now() }, ...(sub.codeHistory || []).filter((entry) => entry.code !== clean)].slice(0, 24);
   };
 
-  /* ---------- CSV export ---------- */
+  /* ---------- file export ---------- */
 
   /**
-   * Save a CSV file. On Android the native bridge writes it straight into
+   * Save a text file. On Android the native bridge writes it straight into
    * the phone's Downloads folder so the shop can find it; a plain browser
    * falls back to a normal file download.
    */
-  T.exportCsv = async (fileName, rows) => {
-    const table = Array.isArray(rows) ? rows : [];
-    const cell = (value) => {
-      const text = String(value ?? "");
-      return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-    };
-    const body = table.map((row) => (Array.isArray(row) ? row : [row]).map(cell).join(",")).join("\r\n");
-    const csv = `\uFEFF${body}`; // BOM keeps Excel reading commas right.
+  T.saveFile = async (fileName, text, mime = "text/csv") => {
     // The native bridge first: it saves into Downloads/Biller POS/.
-    try {
-      const bridge = window.Capacitor?.Plugins?.TillReceipt;
-      if (bridge?.saveCsv) {
-        const result = await bridge.saveCsv({ fileName, text: csv });
-        if (result?.saved) return { ok: true, where: result.path || "Downloads/Biller POS" };
+    const bridge = window.Capacitor?.Plugins?.TillReceipt;
+    if (bridge?.saveCsv) {
+      try {
+        const result = await bridge.saveCsv({ fileName, text, mime });
+        if (result?.ok) return { ok: true, where: result.path || "Downloads/Biller POS" };
+        return { ok: false, error: result?.error || "Could not save the file" };
+      } catch (error) {
+        return { ok: false, error: String(error?.message || error) };
       }
-    } catch { /* fall through to the browser download */ }
+    }
+    // A plain browser gets the usual file download.
     try {
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const blob = new Blob([text], { type: `${mime};charset=utf-8` });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -1469,6 +1466,18 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     } catch (error) {
       return { ok: false, error: String(error?.message || error) };
     }
+  };
+
+  /** A spreadsheet of rows, saved as CSV. */
+  T.exportCsv = async (fileName, rows) => {
+    const table = Array.isArray(rows) ? rows : [];
+    const cell = (value) => {
+      const text = String(value ?? "");
+      return /[",\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const body = table.map((row) => (Array.isArray(row) ? row : [row]).map(cell).join(",")).join("\r\n");
+    const csv = `\uFEFF${body}`; // BOM keeps Excel reading commas right.
+    return T.saveFile(fileName, csv, "text/csv");
   };
 
   /** The shop's M-Pesa setup, with the shortcode that receives the money. */

@@ -170,7 +170,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       theme: "forest",
       colorScheme: "light",
       textSize: "small",
-      sellView: "grid",
+      sellView: "list",
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -267,7 +267,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // Light and dark are forced by the shop, never taken from the phone.
     store.colorScheme = store.colorScheme === "dark" ? "dark" : "light";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
-    store.sellView = store.sellView === "list" ? "list" : "grid";
+    store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // The permanent shop code, used to identify paid accounts.
     store.shopCode = String(store.shopCode || "").trim().slice(0, 24);
@@ -752,9 +752,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       return true;
     },
     /** How the Sell screen lays out its items: "grid" (3 across) or "list". */
-    sellView: () => (T.state.store.sellView === "list" ? "list" : "grid"),
+    sellView: () => (T.state.store.sellView === "grid" ? "grid" : "list"),
     setSellView: (view) => {
-      const next = view === "list" ? "list" : "grid";
+      const next = view === "grid" ? "grid" : "list";
       if (T.state.store.sellView === next) return false;
       T.state.store.sellView = next;
       T.save({ quiet: true });
