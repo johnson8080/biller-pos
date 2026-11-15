@@ -612,7 +612,7 @@
         : `<button class="btn btn-ghost btn-block target-offer" data-act="open-target">${icon("i-chart")} Set a monthly sales target</button>`}
 
       <div class="report-stats">
-        <div class="report-stat"><span class="label">Last 7 days</span><strong>${compactMoney(weekTotal)}</strong></div>
+        <div class="report-stat"><span class="label">Sales (7 days)</span><strong>${compactMoney(weekTotal)}</strong></div>
         <div class="report-stat"><span class="label">This month</span><strong>${compactMoney(monthTotal)}</strong></div>
         <div class="report-stat"><span class="label">Average sale</span><strong>${compactMoney(avgSale)}</strong></div>
         <div class="report-stat"><span class="label">Items today</span><strong>${todayItems}</strong></div>
@@ -623,7 +623,7 @@
       </div>
 
       <div class="settings-card">
-        <div class="report-card-head"><h2>Last 7 days</h2><span class="report-total">${compactMoney(weekTotal)}</span></div>
+        <div class="report-card-head"><h2>Sales (last 7 days)</h2><span class="report-total">${compactMoney(weekTotal)}</span></div>
         <div class="report-chart" role="img" aria-label="Sales for the last seven days">
           ${days.map((day) => `<div class="chart-col ${day.today ? "is-today" : ""}" title="${esc(day.label)}: ${money(day.total)}">
             <span class="chart-bar" style="height:${Math.max(3, Math.round((day.total / maxDay) * 82))}px"></span>

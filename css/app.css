@@ -1490,6 +1490,28 @@ h1, h2, h3, h4, p { margin: 0; }
 /* The best seller leads the staff scoreboard with a green badge. */
 .report-row.is-top .report-rank { background: #16a34a; color: #fff; }
 .report-row.is-top strong { color: var(--forest-2); }
+/* Report period chips (Top sellers, Payment mix) share the boxed border design. */
+.report-chips .chip {
+  min-height: 30px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--ui-line);
+  box-shadow: var(--shadow-card);
+  font-size: calc(9px * var(--fs));
+  font-weight: 650;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.report-chips .chip.is-active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--lime);
+}
+/* Gap between the today's-revenue hero and the monthly target. */
+.target-card, .target-offer { margin-top: 8px; }
 /* Unattributed slots: sales from before staff tracking show a quiet dash
    instead of a guessed name. */
 .order-staff.is-empty,
