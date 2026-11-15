@@ -1085,7 +1085,11 @@
       const dueClass = summary.nextDue && (T.debtDueInfo(summary.nextDue).status === "overdue" || T.debtDueInfo(summary.nextDue).status === "due") ? "is-overdue" : "";
       // The latest shopkeeper who served this customer — entries are newest
       // first, and T.entryStaff also reads the name off the linked sale.
-      const staffName = (customer.entries || []).map((entry) => T.entryStaff ? T.entryStaff(entry) : "").find(Boolean) || "";
+      // Falls back to the shop's staff name so every card shows a seller at
+      // a glance, exactly like the order cards do.
+      const staffName = (customer.entries || []).map((entry) => T.entryStaff ? T.entryStaff(entry) : "").find(Boolean)
+        || String(T.state.store.staff || "").trim()
+        || "";
       return `<article class="debt-card ${status === "overdue" ? "is-overdue" : ""}">
         <button class="debt-open" data-nav="#/debt/${esc(customer.id)}" aria-label="Open ${esc(customer.name)}${staffName ? `, last served by ${esc(staffName)}` : ""}">
           <span class="debt-avatar ${summary.balance <= 0 ? "is-settled" : ""}" aria-hidden="true">${esc(T.initials(customer.name))}</span>
