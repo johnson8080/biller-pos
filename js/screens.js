@@ -333,15 +333,16 @@
           const tone = method === "cash" ? "fresh" : method === "card" ? "goods" : method === "mpesa" ? "fresh" : "bakery";
           const methodLabel = method === "mpesa" ? "M-Pesa" : method;
           // The shopkeeper who rang the sale up, shown in the open middle of
-          // the card so a multi-staff shop can see at a glance who sold what.
-          const staffName = String(tx.staff || T.state.store.staff || "").trim();
+          // the card. Sales made before staff tracking carry no stamp — they
+          // show a dash instead of guessing one person for all of them.
+          const staffName = String(tx.staff || "").trim();
           return `<button class="order-row" data-nav="#/receipt/${esc(tx.id)}" aria-label="Open receipt ${tx.receiptNo}, ${money(tx.total)}${staffName ? `, sold by ${esc(staffName)}` : ""}">
             <span class="tile tile-sm tone-${tone}" aria-hidden="true">${icon(methodIcon, "ico")}</span>
             <span class="order-main">
               <span class="order-title">#${tx.receiptNo} <span class="method ${method}">${icon(methodIcon, "ico")}${methodLabel}</span></span>
               <span class="order-sub">${count} ${count === 1 ? "item" : "items"} · ${T.timeFmt.format(new Date(tx.createdAt))}</span>
             </span>
-            ${staffName ? `<span class="order-staff" aria-hidden="true">${esc(staffName)}</span>` : ""}
+            <span class="order-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "—"}</span>
             <span class="order-total">${money(tx.total)}</span>
             <span class="order-chevron">${icon("i-chevron")}</span>
           </button>`;
@@ -484,14 +485,17 @@
 
     // Staff scoreboard: how the shopkeepers' sales compare over the window,
     // so a multi-staff shop can see who is moving the most stock. Sales from
-    // before staff stamps existed count towards the shop's staff name.
+    // before staff tracking have no stamp — they stay unattributed and out
+    // of the ranking instead of piling onto one person's name.
     const sellerPeriod = T.ui.sellerPeriod === "30" ? 30 : 7;
     const sellerStart = startOfDay(now);
     sellerStart.setDate(sellerStart.getDate() - (sellerPeriod - 1));
     const sellerWindow = txs.filter((tx) => new Date(tx.createdAt) >= sellerStart);
     const staffTotals = new Map();
+    let unattributed = 0;
     for (const tx of sellerWindow) {
-      const name = String(tx.staff || T.state.store.staff || "").trim() || "No staff name";
+      const name = String(tx.staff || "").trim();
+      if (!name) { unattributed += 1; continue; }
       const row = staffTotals.get(name) || { name, count: 0, total: 0, items: 0 };
       row.count += 1;
       row.total += tx.total;
@@ -644,7 +648,7 @@
               <span class="report-amount ${index === 0 ? "is-profit" : ""}">${money(row.total)}</span>
             </div>`).join("")}
         </div>
-        <p class="report-note">Ranked by sales taken. Each name is the shopkeeper who rang the sales up on their device.</p>
+        <p class="report-note">Ranked by sales taken. Each name is the shopkeeper who rang the sales up on their device.${unattributed ? ` ${unattributed} ${unattributed === 1 ? "sale" : "sales"} from before staff tracking show no name and are not ranked.` : ""}</p>
       </div>` : ""}
 
       <div class="settings-card">
@@ -1085,11 +1089,9 @@
       const dueClass = summary.nextDue && (T.debtDueInfo(summary.nextDue).status === "overdue" || T.debtDueInfo(summary.nextDue).status === "due") ? "is-overdue" : "";
       // The latest shopkeeper who served this customer — entries are newest
       // first, and T.entryStaff also reads the name off the linked sale.
-      // Falls back to the shop's staff name so every card shows a seller at
-      // a glance, exactly like the order cards do.
-      const staffName = (customer.entries || []).map((entry) => T.entryStaff ? T.entryStaff(entry) : "").find(Boolean)
-        || String(T.state.store.staff || "").trim()
-        || "";
+      // History from before staff tracking stays unattributed (a dash)
+      // rather than crediting one person for everything.
+      const staffName = (customer.entries || []).map((entry) => T.entryStaff ? T.entryStaff(entry) : "").find(Boolean) || "";
       return `<article class="debt-card ${status === "overdue" ? "is-overdue" : ""}">
         <button class="debt-open" data-nav="#/debt/${esc(customer.id)}" aria-label="Open ${esc(customer.name)}${staffName ? `, last served by ${esc(staffName)}` : ""}">
           <span class="debt-avatar ${summary.balance <= 0 ? "is-settled" : ""}" aria-hidden="true">${esc(T.initials(customer.name))}</span>
@@ -1105,7 +1107,7 @@
         </button>
         <div class="debt-card-foot">
           <span class="debt-due-inline ${dueClass}">${icon("i-clock")}<span>${esc(dueInfo.label)}</span></span>
-          ${staffName ? `<span class="debt-card-staff" aria-hidden="true">${esc(staffName)}</span>` : ""}
+          <span class="debt-card-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "—"}</span>
           <span class="supplier-pill ${pillClass}">${esc(statusLabel)}</span>
         </div>
       </article>`;
@@ -2361,9 +2363,10 @@
         : tx.payment.method === "mpesa"
           ? `M-Pesa: ${money(tx.total)}${tx.payment.customerPhone ? ` from ${T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone}` : ""}${tx.payment.accountRef ? ` · Account ${tx.payment.accountRef}` : ""}${tx.payment.reference ? ` · Ref ${tx.payment.reference}` : ""}${!tx.payment.reference && tx.payment.checkoutId ? ` · Request ${tx.payment.checkoutId}` : ""}`
           : `Debt: ${tx.payment.customerName || "Customer"} (${tx.payment.customerPhone || ""}) · Due ${tx.payment.dueDate}`;
-    // The name printed is the shopkeeper who rang this sale up, kept on the
-    // transaction itself so history never changes after a re-edit.
-    const servedBy = String(tx.staff || store.staff || "").trim();
+    // Only the shopkeeper stamped on the transaction is shown. Sales made
+    // before staff tracking print no name rather than crediting whoever
+    // happens to hold the shop's staff field today.
+    const servedBy = String(tx.staff || "").trim();
     return [
       store.name.toUpperCase(),
       store.address,
@@ -2510,7 +2513,7 @@
         <div class="receipt-payment">
           <div class="row"><span>Payment</span><strong>${tx.payment.method === "cash" ? "Cash" : tx.payment.method === "card" ? "Card · demo" : tx.payment.method === "mpesa" ? "M-Pesa" : `Debt · ${esc(tx.payment.customerName || "Customer")}`}</strong></div>
           ${tx.payment.method === "cash" ? `<div class="row"><span>Tendered</span><span>${money(tx.payment.tendered)}</span></div><div class="row"><span>Change</span><span>${money(tx.payment.change)}</span></div>` : tx.payment.method === "card" ? `<div class="row"><span>Reference</span><span>${esc(tx.payment.reference || "—")}</span></div>` : tx.payment.method === "mpesa" ? `<div class="row"><span>Customer phone</span><span>${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone || "—")}</span></div>${tx.payment.accountRef ? `<div class="row"><span>Account number</span><span>${esc(tx.payment.accountRef)}</span></div>` : ""}<div class="row"><span>M-Pesa reference</span><span>${esc(tx.payment.reference || "Confirmed")}</span></div>${!tx.payment.reference && tx.payment.checkoutId ? `<div class="row"><span>Request ID</span><span>${esc(tx.payment.checkoutId)}</span></div>` : ""}${tx.payment.account ? `<div class="row"><span>Paid to</span><span>${esc(tx.payment.account)}</span></div>` : ""}` : `<div class="row"><span>Customer phone</span><span>${esc(tx.payment.customerPhone || "—")}</span></div><div class="row"><span>Due date</span><span>${esc(tx.payment.dueDate || "—")}</span></div>`}
-          <div class="row"><span>Served by</span><span>${esc(String(tx.staff || store.staff || "").trim() || "—")}</span></div>
+          <div class="row"><span>Served by</span><span>${esc(String(tx.staff || "").trim() || "—")}</span></div>
           ${tx.payment.method === "mpesa" && !tx.payment.reference ? `<button class="text-btn mpesa-code-link" data-act="add-mpesa-code" data-id="${esc(tx.id)}">Add M-Pesa code</button>` : ""}
         </div>
         <div class="receipt-bar" aria-hidden="true"></div>

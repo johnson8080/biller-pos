@@ -1367,6 +1367,10 @@ h1, h2, h3, h4, p { margin: 0; }
 /* The best seller leads the staff scoreboard with a green badge. */
 .report-row.is-top .report-rank { background: #16a34a; color: #fff; }
 .report-row.is-top strong { color: var(--forest-2); }
+/* Unattributed slots: sales from before staff tracking show a quiet dash
+   instead of a guessed name. */
+.order-staff.is-empty,
+.debt-card-staff.is-empty { color: var(--faint); letter-spacing: 0; }
 .report-note { margin-top: 9px; font-size: calc(9.5px * var(--fs)); color: var(--muted); line-height: 1.4; }
 .sales-hero-profit { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.11); }
 .sales-hero-profit span { font-size: calc(10.5px * var(--fs)); color: rgba(248,246,236,.82); }
