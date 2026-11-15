@@ -44,7 +44,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   }
   // Categories are part of the saved state — the shop adds, renames and
   // removes them from the More tab. This is only the starting list.
-  const CATEGORIES = ["Coffee", "Bakery", "Drinks", "Fresh", "Pantry", "Goods"];
+  const CATEGORIES = ["Groceries", "Beverages", "Snacks", "Personal Care", "Household", "Dairy", "Bakery", "Baby"];
   // Delivery days for suppliers. Stored as short codes so the same data can be
   // shown as chips on the supplier account and picked in the editor.
   const SUPPLIER_DAYS = [
