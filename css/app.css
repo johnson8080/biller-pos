@@ -699,7 +699,7 @@ h1, h2, h3, h4, p { margin: 0; }
   animation: screenIn .22s ease both;
 }
 @keyframes screenIn { from { opacity: .25; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.screen-head { padding: 12px 0 16px; }
+.screen-head { padding: 6px 0 16px; }
 .screen-head h1 { margin-top: 3px; font-size: calc(30px * var(--fs)); line-height: 1.02; font-weight: 700; letter-spacing: -.045em; }
 .screen-head.with-action { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .screen-head.with-action > div { min-width: 0; }
@@ -970,7 +970,7 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 /* Order filter chips share the same boxed border design as the category chips. */
 .chips.order-filters {
-  margin: 0 0 6px;
+  margin: 8px 0 6px;
   padding: 6px 8px;
   border: 1px solid var(--ui-line);
   border-radius: 8px;
