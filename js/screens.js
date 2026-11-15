@@ -1613,6 +1613,8 @@
     const themeName = T.THEMES.find((theme) => theme.id === T.themeId())?.name || "Forest";
     const isDeveloper = T.isDeveloperAccount();
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
+    const daysLeft = T.subscriptionActiveDaysLeft?.();
+    const planGlance = daysLeft === null ? "Active" : (daysLeft < 0 ? "Overdue" : `${daysLeft}d left`);
     const settingsGroup = (id, iconName, title, sub, body) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}">
         <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}">
@@ -1724,9 +1726,12 @@
         <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
       </div>`;
     return `<section class="screen">
-      <div class="screen-head">
-        <h1 id="more-title">SETTINGS</h1>
-        <p class="sub">Everything in one place, grouped.</p>
+      <div class="screen-head with-action">
+        <div>
+          <h1 id="more-title">SETTINGS</h1>
+          <p class="sub">Everything in one place, grouped.</p>
+        </div>
+        <span class="settings-status-pill">${esc(planGlance)}</span>
       </div>
 
       <div class="settings-groups">
@@ -2047,6 +2052,18 @@
           <button class="btn btn-ghost btn-block" data-act="sign-out">Sign out</button>
         </div>
       </div>
+      ${(() => {
+        const activated = T.subscriptionActivatedAt?.();
+        const daysLeft = T.subscriptionActiveDaysLeft?.();
+        const activatedText = activated ? T.shortDateFmt.format(activated) : "—";
+        const daysText = daysLeft === null ? "—" : (daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`);
+        return `<div class="settings-card">
+          <h2>Plan status</h2>
+          <p class="card-sub">Your activation and remaining active days.</p>
+          <div class="account-row"><span>Activated on</span><strong>${esc(activatedText)}</strong></div>
+          <div class="account-row"><span>Days remaining</span><strong>${esc(daysText)}</strong></div>
+        </div>`;
+      })()}
       <p class="account-note">${icon("i-lock", "ico ico-sm")}<span>Products, stock and orders stay saved on this device. Signing out only ends the email session.</span></p>`
       : `
       <div class="settings-card">

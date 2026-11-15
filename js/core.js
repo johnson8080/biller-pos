@@ -1706,6 +1706,32 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (!due) return null;
     return Math.ceil((due.getTime() - Date.now()) / dayMs);
   };
+  /** The date the plan was activated (trial start or first payment). */
+  T.subscriptionActivatedAt = () => {
+    const sub = T.subscription();
+    const raw = String(sub.startedAt || sub.lastPaidAt || "").trim();
+    if (!raw) return null;
+    const date = new Date(raw);
+    return Number.isFinite(date.getTime()) ? date : null;
+  };
+  /** Days remaining in the current active period (trial or paid). */
+  T.subscriptionActiveDaysLeft = () => {
+    const sub = T.subscription();
+    const plan = planConfig();
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    if (sub.paidUntil) {
+      const due = new Date(sub.paidUntil);
+      if (Number.isFinite(due.getTime())) return Math.ceil((due.getTime() - now) / dayMs);
+    }
+    const startedRaw = String(sub.startedAt || "").trim();
+    const started = startedRaw ? new Date(startedRaw).getTime() : now;
+    if (Number.isFinite(started) && plan.trialDays > 0) {
+      const trialEnd = started + plan.trialDays * dayMs;
+      return Math.ceil((trialEnd - now) / dayMs);
+    }
+    return null;
+  };
 
   /** Record a payment and move the plan forward by a month. */
   T.markSubscriptionPaid = ({ method = "mpesa", reference = "" } = {}) => {

@@ -726,6 +726,18 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
+.settings-status-pill {
+  flex: none;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--ui-line);
+  background: var(--surface-2);
+  color: var(--forest-2);
+  font-size: calc(9px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
 .appbar .appbar-bar { width: 100%; box-sizing: border-box; }
 .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .brand-mark {
