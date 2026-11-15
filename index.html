@@ -36,7 +36,7 @@
     }
   } catch (e) {}
 </script>
-<link rel="stylesheet" href="app.css?v=1.3.6">
+<link rel="stylesheet" href="app.css?v=1.3.7">
 </head>
 <body>
 
@@ -121,21 +121,21 @@
 
 <!-- Bump ASSET_VERSION whenever app.css / js/*.js change, so browsers and
      the installed PWA never keep serving a stale copy of the login screen. -->
-<script>window.ASSET_VERSION = "1.3.6";</script>
-<script src="assets/vendor/zxing.min.js?v=1.3.6" defer></script>
-<script src="js/daraja.js?v=1.3.6" defer></script>
-<script src="js/core.js?v=1.3.6" defer></script>
-<script src="js/cloud.js?v=1.3.6" defer></script>
-<script src="js/notify.js?v=1.3.6" defer></script>
-<script src="js/mpesa.js?v=1.3.6" defer></script>
-<script src="js/screens.js?v=1.3.6" defer></script>
-<script src="js/sheets.js?v=1.3.6" defer></script>
-<script src="js/scanner.js?v=1.3.6" defer></script>
-<script src="js/auth.js?v=1.3.6" defer></script>
+<script>window.ASSET_VERSION = "1.3.7";</script>
+<script src="assets/vendor/zxing.min.js?v=1.3.7" defer></script>
+<script src="js/daraja.js?v=1.3.7" defer></script>
+<script src="js/core.js?v=1.3.7" defer></script>
+<script src="js/cloud.js?v=1.3.7" defer></script>
+<script src="js/notify.js?v=1.3.7" defer></script>
+<script src="js/mpesa.js?v=1.3.7" defer></script>
+<script src="js/screens.js?v=1.3.7" defer></script>
+<script src="js/sheets.js?v=1.3.7" defer></script>
+<script src="js/scanner.js?v=1.3.7" defer></script>
+<script src="js/auth.js?v=1.3.7" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js" defer></script>
-<script src="js/app.js?v=1.3.6" defer></script>
+<script src="js/app.js?v=1.3.7" defer></script>
 <script>
   /* Pull-to-refresh — Material-style circular indicator below the hero.
      Pull: the spinner scales in and rotates with the drag while the page
@@ -154,7 +154,7 @@
     const spin = document.createElement("div");
     spin.className = "ptr-spin";
     spin.setAttribute("aria-hidden", "true");
-    spin.innerHTML = '<svg viewBox="0 0 24 24"><circle class="ptr-track" cx="12" cy="12" r="9.5"></circle><path class="ptr-arc" d="M12 2.5 A 9.5 9.5 0 1 1 2.5 12"></path></svg>';
+    spin.innerHTML = '<svg viewBox="0 0 24 24"><circle class="ptr-track" cx="12" cy="12" r="9.5"></circle><circle class="ptr-arc" cx="12" cy="12" r="9.5"></circle></svg>';
     app.prepend(spin);
 
     // Pinned just below the hero bar; re-measured per gesture and on resize.
@@ -168,11 +168,15 @@
 
     const damp = (d) => Math.min(d / (1 + d / 240), MAX_Y);
     const stopFrame = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
+    const C = 2 * Math.PI * 9.5;                 // ring circumference
+    const arc = spin.querySelector(".ptr-arc");
     const frame = () => {
       raf = 0;
       const d = lastDy;
-      if (d <= 0) { spin.style.transform = ""; vp.style.transform = ""; return; }
+      if (d <= 0) { spin.style.transform = ""; arc.style.strokeDasharray = ""; vp.style.transform = ""; return; }
       const p = Math.min(d / THRESH, 1);
+      // The arc progressively fills the ring while the ring spins with the pull.
+      arc.style.strokeDasharray = ((0.08 + 0.84 * p) * C).toFixed(2) + " " + C.toFixed(2);
       spin.style.transform = "rotate(" + (p * 285).toFixed(1) + "deg) scale(" + (0.45 + 0.55 * p).toFixed(3) + ")";
       vp.style.transform = "translateY(" + damp(d).toFixed(1) + "px)";
     };
@@ -188,6 +192,7 @@
       vp.classList.remove("is-pulling");
       vp.classList.add("ptr-settle");
       spin.style.transform = "";
+      arc.style.strokeDasharray = "";
       vp.style.transform = "";
       setTimeout(() => {
         spin.classList.remove("is-settling");
@@ -241,6 +246,7 @@
         spin.classList.remove("is-ready");
         spin.classList.add("is-loading");
         spin.style.transform = "";
+        arc.style.strokeDasharray = "";                 // CSS takes over: fixed sweep + rotation
         vp.classList.add("ptr-settle");
         vp.style.transform = "translateY(" + damp(THRESH).toFixed(1) + "px)";
         try { window.T && T.vibrate && T.vibrate(18); } catch (err) {}

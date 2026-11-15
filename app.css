@@ -2327,7 +2327,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 }
 .ptr-spin svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .ptr-spin .ptr-track { fill: none; stroke: rgba(29, 78, 216, .16); stroke-width: 2.6; }
-.ptr-spin .ptr-arc { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.ptr-spin .ptr-arc { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 7 59.7; }
 .ptr-spin.is-active { opacity: 1; }
 .ptr-spin.is-ready { color: #16a34a; }
 .ptr-spin.is-loading {
@@ -2336,6 +2336,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   transition: opacity .18s ease, transform .22s ease;
   animation: ptr-spin-rot .8s cubic-bezier(.45, .05, .55, .95) infinite;
 }
+.ptr-spin.is-loading .ptr-arc { stroke-dasharray: 44 59.7; }
 .ptr-spin.is-settling { transition: opacity .2s ease, transform .3s cubic-bezier(.3, .8, .4, 1.08); }
 @keyframes ptr-spin-rot {
   from { transform: rotate(0deg) scale(1); }
