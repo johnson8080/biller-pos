@@ -985,33 +985,78 @@
       body: `<form id="supplier-payment-form" novalidate>
         ${supplierPayTarget(supplier)}
         ${supplierOpenBillsField(supplier)}
-        <div class="field">
-          <label for="supplier-payment-amount">Amount paid</label>
-          <div class="input-affix"><input class="input" id="supplier-payment-amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required data-amount-target><span class="affix">${esc(T.currencySymbol())}</span></div>
-          <p class="field-help">Settles the oldest unpaid bill first, or pays for stock you are taking right now.</p>
-        </div>
-        <div class="field">
-          <label>Payment method</label>
-          <div class="pay-method-picker" id="supplier-pay-method">
-            <button type="button" class="pay-method is-active" data-method="cash" aria-pressed="true">${icon("i-cash")} Cash</button>
-            <button type="button" class="pay-method" data-method="mpesa" aria-pressed="false">${icon("i-phone")} M-Pesa</button>
+        <!-- Amount Section Card -->
+        <div class="supplier-pay-card">
+          <div class="card-header">
+            <span class="card-header title">Amount paid</span>
+          </div>
+          <div class="card-body">
+            <div class="supplier-pay-section">
+              <label class="section-title"><span class="icon">&#xf013;</span>Amount</label>
+              <div class="field">
+                <label for="supplier-payment-amount">Amount paid</label>
+                <div class="input-affix">
+                  <input class="input supplier-pay-amount-input" id="supplier-payment-amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required data-amount-target>
+                  <span class="affix">${esc(T.currencySymbol())}</span>
+                </div>
+                <p class="field-help">Settles the oldest unpaid bill first, or pays for stock you are taking right now.</p>
+              </div>
+            </div>
           </div>
         </div>
-        ${stockLinesField({
-          title: "Stock received with this payment",
-          help: "Optional. Items taken now are added to your inventory and counted in this payment."
-        })}
-        <div class="field">
-          <label for="supplier-payment-date">Date</label>
-          <input class="input" id="supplier-payment-date" name="date" type="date" value="${T.isoDay()}">
+        <!-- Payment Method Section Card -->
+        <div class="supplier-pay-card">
+          <div class="card-header">
+            <span class="card-header title">Payment method</span>
+          </div>
+          <div class="card-body">
+            <div class="supplier-pay-section">
+              <label class="section-title"><span class="icon">&#xf099;</span>Method</label>
+              <div class="pay-method-picker" id="supplier-pay-method">
+                <button type="button" class="pay-method is-active" data-method="cash" aria-pressed="true">${icon("i-cash")} Cash</button>
+                <button type="button" class="pay-method" data-method="mpesa" aria-pressed="false">${icon("i-phone")} M-Pesa</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="field">
-          <label for="supplier-payment-note">Reference or note <span class="field-optional">Optional</span></label>
-          <input class="input" id="supplier-payment-note" name="note" placeholder="e.g. M-Pesa code QGH7X8Y2Z1" maxlength="120">
+        <!-- Stock Section Card -->
+        <div class="supplier-pay-card">
+          <div class="card-header">
+            <span class="card-header title">Stock received</span>
+          </div>
+          <div class="card-body">
+            ${stockLinesField({
+              title: "Stock received with this payment",
+              help: "Optional. Items taken now are added to your inventory and counted in this payment."
+            })}
+          </div>
+        </div>
+        <!-- Date/Note Section Card -->
+        <div class="supplier-pay-card">
+          <div class="card-header">
+            <span class="card-header title">Details</span>
+            <span class="card-header subtitle">Date and reference</span>
+          </div>
+          <div class="card-body">
+            <div class="supplier-pay-section" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label class="section-title"><span class="icon">&#xf073;</span>Date</label>
+                <div class="field">
+                  <input class="input" id="supplier-payment-date" name="date" type="date" value="${T.isoDay()}">
+                </div>
+              </div>
+              <div>
+                <label class="section-title"><span class="icon">&#xf0e7;</span>Note</label>
+                <div class="field">
+                  <input class="input" id="supplier-payment-note" name="note" placeholder="e.g. M-Pesa code QGH7X8Y2Z1" maxlength="120">
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="form-error" role="alert"></div>
         <div class="sheet-actions">
-          <button class="btn btn-primary btn-block" type="submit">Record payment ${icon("i-check")}</button>
+          <button class="btn btn-primary btn-block supplier-pay-submit" type="submit">Record payment ${icon("i-check")}</button>
         </div>
       </form>`
     });
