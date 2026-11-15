@@ -166,6 +166,93 @@
       e.preventDefault();
     }
   }, { passive: false });
+}
+
+// --- after page load: show "Refreshed!" toast if timestamp query param exists ---
+(function checkRefresh() {
+  const search = window.location.search;
+  if (search.includes('?t=') && !search.includes('?t=' + Date.now())) {
+    // this is a refresh landing — show toast, then remove the param so it doesn't re-toast
+    setTimeout(() => {
+      T.toast('Refreshed!', 'i-check');
+    }, 100);
+    // strip the timestamp param so it doesn't keep showing on every load
+    try {
+      const newSearch = search.replace(/\?t=[0-9]+/, '');
+      window.history.replaceState(null, '', newSearch || window.location.pathname);
+    } catch (e) {}
+  }
+})();
+
+  // Pull-to-refresh — forces fresh page load with cache-busting timestamp
+  // so users see new designs/updates without manually clearing WebView cache.
+  // When pulling down, the page content moves down and the hero stays fixed,
+  // then on release past threshold the page refreshes and shows a "Refreshed!" toast.
+  
+  let startY = 0;
+  let isPulling = false;
+  const threshold = 50; // px dragged down from top
+  const hero = document.querySelector('.about-name, .hero-name, [class*="about-name"], [class*="hero-name"]');
+  const root = document.documentElement;
+
+  function startPull(e) {
+    if (window.scrollY > 0) return;
+    startY = e.touches[0].clientY;
+    isPulling = true;
+    // fix hero during pull
+    if (hero) {
+      hero.style.transition = 'none';
+      hero.style.position = 'fixed';
+      hero.style.top = 0;
+      hero.style.left = 'auto';
+      hero.style.right = 'auto';
+      hero.style.width = '100%';
+    }
+    // move content down
+    root.style.setProperty('--pull-y', '0px');
+  }
+
+  function movePull(e) {
+    if (!isPulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 0) {
+      // move content down proportionally
+      const pullPct = Math.min(dy / threshold, 1);
+      root.style.setProperty('--pull-y', `${dy}px`);
+      // hide scroll bar
+      root.style.scrollBehavior = 'auto';
+    }
+  }
+
+  function endPull(e) {
+    if (!isPulling) return;
+    isPulling = false;
+    const dy = e.changedTouches ? e.changedTouches[0].clientY - startY : 0;
+    root.style.setProperty('--pull-y', '');
+    root.style.scrollBehavior = '';
+    // restore hero
+    if (hero) {
+      hero.style.position = '';
+      hero.style.top = '';
+      hero.style.left = '';
+      hero.style.right = '';
+      hero.style.width = '';
+      hero.style.transition = '';
+    }
+    if (dy > threshold) {
+      // show refreshing state briefly, then reload
+      root.style.setProperty('--pull-y', `${threshold}px`);
+      // reload with timestamp to force fresh asset fetch
+      setTimeout(() => {
+        window.location.href = window.location.pathname + '?t=' + Date.now();
+      }, 300);
+    }
+  }
+
+  document.addEventListener('touchstart', startPull);
+  document.addEventListener('touchmove', movePull);
+  document.addEventListener('touchend', endPull);
+  document.addEventListener('touchcancel', endPull);
 </script>
 </body>
 </html>
