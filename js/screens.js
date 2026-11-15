@@ -1646,6 +1646,15 @@
         <p class="sub">Everything in one place, grouped.</p>
       </div>
 
+      <button type="button" class="account-card support-card" data-act="open-developer-chat">
+        <span class="data-icon">${icon("i-chat")}</span>
+        <span class="account-card-copy">
+          <strong>Chat with developer</strong>
+          <small>Spotted a bug or need help setting up? Send a message.</small>
+        </span>
+        <span class="chev">${icon("i-chevron")}</span>
+      </button>
+
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · ${store.currency} · tax ${store.taxRate}%`, shopBody)}
         ${settingsGroup("subscription", "i-card", "Monthly plan", (T.subscriptionStatus() === "active" ? "Active" : T.subscriptionStatus() === "trial" ? "Free trial" : T.subscriptionStatus() === "awaiting" ? "Awaiting confirmation" : "Payment due"), subscriptionBody)}
@@ -1657,17 +1666,8 @@
         ${settingsGroup("about", "i-info", "About", "Version 1.0.6", aboutBody)}
       </div>
 
-      <button type="button" class="account-card support-card" data-act="open-developer-chat">
-        <span class="data-icon">${icon("i-chat")}</span>
-        <span class="account-card-copy">
-          <strong>Chat with developer</strong>
-          <small>Spotted a bug or need help setting up? Send a message.</small>
-        </span>
-        <span class="chev">${icon("i-chevron")}</span>
-      </button>
     </section>`;
   }
-
 
   function mpesaSettings() {
     const store = T.state.store;
