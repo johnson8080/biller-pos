@@ -46,7 +46,7 @@
 
   /* ---------- App chrome ---------- */
 
-  function appbar(route) {
+  function appbarInner(route) {
     if (route.name === "scan") return "";
     if (route.name === "debt" && route.param) {
       const customer = T.findCustomer(route.param);
@@ -99,6 +99,16 @@
           ${session ? `<span class="avatar-status" aria-hidden="true">${icon("i-check")}</span>` : ""}
         </button>
       </div>`;
+  }
+
+  /**
+   * The top bar's contents — app icon and name, the scan/eye/cart actions and
+   * the account avatar — sit inside one bordered bar, the same border design
+   * used elsewhere in the app.
+   */
+  function appbar(route) {
+    const inner = appbarInner(route);
+    return inner ? `<div class="appbar-bar">${inner}</div>` : "";
   }
 
   const TABS = [
