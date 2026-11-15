@@ -892,8 +892,7 @@
     const query = T.ui.supplierSearch.trim();
     const head = `<div class="screen-head with-action">
         <div>
-          <p class="eyebrow">Restock contacts</p>
-          <h1 id="suppliers-title">Suppliers</h1>
+          <h1 id="suppliers-title">SUPPLIERS</h1>
           <p class="sub">The people and numbers you order from.</p>
         </div>
         <button class="btn btn-primary btn-sm" data-act="new-supplier">${icon("i-plus")} Add</button>
