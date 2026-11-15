@@ -8,6 +8,9 @@
   const { esc, money, compactMoney } = T;
 
   const icon = (name, cls = "ico") => `<svg class="${cls}" aria-hidden="true"><use href="#${name}"></use></svg>`;
+  // App version comes from index.html (window.ASSET_VERSION), so the About
+  // screen, Settings and the Sell hero always show the same version.
+  const VERSION = String(window.ASSET_VERSION || "").trim();
   const supplierDayLabel = (code) => (T.SUPPLIER_DAYS.find(([key]) => key === code) || [code, code])[1];
 
   function productTile(product, size = "") {
@@ -267,7 +270,10 @@
           placeholder="Search products or barcode" value="${esc(T.ui.search)}" aria-label="Search products">
         <button class="field-clear" data-act="clear-search" aria-label="Clear search">${icon("i-close")}</button>
       </div>` : `<div class="sell-head">
-        <p class="eyebrow">${esc(T.state.store.name)} · ${esc(T.shortDateFmt.format(new Date()))}</p>
+        <div class="sell-eyebrow-row">
+          <p class="eyebrow">${esc(T.state.store.name)} · ${esc(T.shortDateFmt.format(new Date()))}</p>
+          ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : ""}
+        </div>
         <div class="sell-title-row">
           <button class="sell-title-col" data-nav="#/stock" aria-label="Stock price ${money(retail)}, open inventory">
             <span class="sell-title-label">Stock price</span>
@@ -1635,7 +1641,7 @@
       <div class="about-card">
         <div class="about-top">
           <span class="about-mark">${icon("i-store")}</span>
-          <div><div class="about-name">BILLER POS</div><div class="about-version">V 1.3.4 · cloud-synced till</div></div>
+          <div><div class="about-name">BILLER POS</div><div class="about-version">${VERSION ? `V ${esc(VERSION)} · ` : ""}cloud-synced till</div></div>
         </div>
         <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
       </div>`;
@@ -1654,7 +1660,7 @@
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("about", "i-info", "About Biller POS", "V 1.3.4", aboutBody)}
+        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)}` : "", aboutBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat">

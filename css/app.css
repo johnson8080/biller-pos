@@ -975,7 +975,20 @@ h1, h2, h3, h4, p { margin: 0; }
 
 /* Sell ------------------------------------------------------------ */
 .sell-head { padding: 8px 0 2px; }
-.sell-head .eyebrow { margin-bottom: 10px; }
+.sell-head .sell-eyebrow-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sell-head .sell-eyebrow-row .eyebrow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sell-version {
+  flex: none;
+  font-size: calc(9px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
 .sell-title-row { display: flex; gap: 8px; margin-top: 2px; }
 .sell-title-col {
   flex: 1;
