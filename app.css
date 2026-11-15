@@ -935,7 +935,7 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 .chips::-webkit-scrollbar { display: none; }
 #category-chips {
-  margin: 6px 0 6px;
+  margin: 4px 0 6px;
   padding: 6px 8px;
   border: 1px solid var(--ui-line);
   border-radius: 8px;
@@ -1075,7 +1075,7 @@ h1, h2, h3, h4, p { margin: 0; }
   color: var(--ink-2);
   white-space: nowrap;
 }
-.sell-title-row { display: flex; gap: 6px; padding: 6px 0 8px; }
+.sell-title-row { display: flex; gap: 6px; padding: 6px 0 4px; }
 .sell-title-col {
   flex: 1;
   min-width: 0;
@@ -1109,7 +1109,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .sell-title-col:has(.sell-title-value.is-debt) { background: linear-gradient(180deg, var(--surface), var(--amber-bg)); border-color: rgba(var(--amber-rgb),.28); }
 #sell-results { display: flex; flex-direction: column; }
 .product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.sell-head-row { align-items: center; margin-top: 6px; }
+.sell-head-row { align-items: center; margin-top: 4px; }
 .sell-head-tools { display: flex; align-items: center; gap: 6px; }
 .tool-btn {
   width: 32px;
