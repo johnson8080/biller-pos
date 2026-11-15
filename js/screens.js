@@ -332,12 +332,16 @@
           const methodIcon = method === "cash" ? "i-cash" : method === "card" ? "i-card" : method === "mpesa" ? "i-phone" : "i-user";
           const tone = method === "cash" ? "fresh" : method === "card" ? "goods" : method === "mpesa" ? "fresh" : "bakery";
           const methodLabel = method === "mpesa" ? "M-Pesa" : method;
-          return `<button class="order-row" data-nav="#/receipt/${esc(tx.id)}" aria-label="Open receipt ${tx.receiptNo}, ${money(tx.total)}">
+          // The shopkeeper who rang the sale up, shown in the open middle of
+          // the card so a multi-staff shop can see at a glance who sold what.
+          const staffName = String(tx.staff || T.state.store.staff || "").trim();
+          return `<button class="order-row" data-nav="#/receipt/${esc(tx.id)}" aria-label="Open receipt ${tx.receiptNo}, ${money(tx.total)}${staffName ? `, sold by ${esc(staffName)}` : ""}">
             <span class="tile tile-sm tone-${tone}" aria-hidden="true">${icon(methodIcon, "ico")}</span>
             <span class="order-main">
               <span class="order-title">#${tx.receiptNo} <span class="method ${method}">${icon(methodIcon, "ico")}${methodLabel}</span></span>
               <span class="order-sub">${count} ${count === 1 ? "item" : "items"} · ${T.timeFmt.format(new Date(tx.createdAt))}</span>
             </span>
+            ${staffName ? `<span class="order-staff" aria-hidden="true">${esc(staffName)}</span>` : ""}
             <span class="order-total">${money(tx.total)}</span>
             <span class="order-chevron">${icon("i-chevron")}</span>
           </button>`;
@@ -478,6 +482,24 @@
     }
     const topWeek = [...weekSellers.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
+    // Staff scoreboard: how the shopkeepers' sales compare over the window,
+    // so a multi-staff shop can see who is moving the most stock. Sales from
+    // before staff stamps existed count towards the shop's staff name.
+    const sellerPeriod = T.ui.sellerPeriod === "30" ? 30 : 7;
+    const sellerStart = startOfDay(now);
+    sellerStart.setDate(sellerStart.getDate() - (sellerPeriod - 1));
+    const sellerWindow = txs.filter((tx) => new Date(tx.createdAt) >= sellerStart);
+    const staffTotals = new Map();
+    for (const tx of sellerWindow) {
+      const name = String(tx.staff || T.state.store.staff || "").trim() || "No staff name";
+      const row = staffTotals.get(name) || { name, count: 0, total: 0, items: 0 };
+      row.count += 1;
+      row.total += tx.total;
+      row.items += tx.items.reduce((n, item) => n + item.qty, 0);
+      staffTotals.set(name, row);
+    }
+    const staffBoard = [...staffTotals.values()].sort((a, b) => b.total - a.total);
+
     // The monthly target the shop set, next to what the month made so far.
     const target = T.monthTarget?.() || { set: false };
     const targetMonthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(now);
@@ -606,6 +628,24 @@
           : `<p class="report-empty">No items sold in this window yet.</p>`}
         ${topPeriod === 7 ? `<p class="report-note">Ranked by what they brought in over the last 7 days.</p>` : ""}
       </div>
+
+      ${staffBoard.length >= 2 ? `<div class="settings-card">
+        <div class="report-card-head"><h2>Staff scoreboard</h2>
+          <span class="report-chips" role="group" aria-label="Staff scoreboard period">
+            <button class="chip chip-sm ${sellerPeriod === 7 ? "is-active" : ""}" data-act="set-seller-period" data-value="7">7 days</button>
+            <button class="chip chip-sm ${sellerPeriod === 30 ? "is-active" : ""}" data-act="set-seller-period" data-value="30">30 days</button>
+          </span>
+        </div>
+        <div class="report-list">
+          ${staffBoard.map((row, index) => `
+            <div class="report-row ${index === 0 ? "is-top" : ""}">
+              <span class="report-rank">${index + 1}</span>
+              <span class="report-row-copy"><strong>${esc(row.name)}</strong><small>${row.count} ${row.count === 1 ? "sale" : "sales"} · ${row.items} ${row.items === 1 ? "item" : "items"}${index === 0 ? ` · ${Math.round((row.total / (staffBoard.reduce((sum, r) => sum + r.total, 0)) || 1) * 100)}% of sales` : ""}</small></span>
+              <span class="report-amount ${index === 0 ? "is-profit" : ""}">${money(row.total)}</span>
+            </div>`).join("")}
+        </div>
+        <p class="report-note">Ranked by sales taken. Each name is the shopkeeper who rang the sales up on their device.</p>
+      </div>` : ""}
 
       <div class="settings-card">
         <div class="report-card-head"><h2>Profit by item</h2><span class="report-total">Last 30 days</span></div>
@@ -977,11 +1017,12 @@
             : remaining
               ? `<span class="supplier-entry-state is-open">${money(remaining)} still owed</span>`
               : `<span class="supplier-entry-state is-paid">Paid in full</span>`;
+          const entryStaff = T.entryStaff ? T.entryStaff(entry) : String(entry.staff || "").trim();
           return `<div class="supplier-entry">
             <span class="supplier-entry-icon ${entry.type} ${entry.method || ""}">${icon(isPayment ? (entry.method === "mpesa" ? "i-phone" : "i-cash") : "i-box")}</span>
             <span class="supplier-entry-copy">
               <strong>${isPayment ? `${method} payment` : "Stock bill"}</strong>
-              <small>${esc(entryDate(entry))}${entry.note ? ` · ${esc(entry.note)}` : ""}</small>
+              <small>${esc(entryDate(entry))}${entry.note ? ` · ${esc(entry.note)}` : ""}${entryStaff ? ` · ${esc(entryStaff)}` : ""}</small>
               ${stockText ? `<span class="supplier-entry-stock">${icon("i-box")} ${esc(stockText)}</span>` : ""}
               ${billState}
             </span>
@@ -1033,8 +1074,11 @@
       const pillClass = status === "overdue" || status === "due" ? "is-debt" : summary.balance < 0 ? "is-credit" : status === "open" ? "is-credit" : "is-settled";
       const dueInfo = summary.nextDue ? T.debtDueInfo(summary.nextDue) : { label: "No payment date" };
       const dueClass = summary.nextDue && (T.debtDueInfo(summary.nextDue).status === "overdue" || T.debtDueInfo(summary.nextDue).status === "due") ? "is-overdue" : "";
+      // The latest shopkeeper who served this customer — entries are newest
+      // first, and T.entryStaff also reads the name off the linked sale.
+      const staffName = (customer.entries || []).map((entry) => T.entryStaff ? T.entryStaff(entry) : "").find(Boolean) || "";
       return `<article class="debt-card ${status === "overdue" ? "is-overdue" : ""}">
-        <button class="debt-open" data-nav="#/debt/${esc(customer.id)}" aria-label="Open ${esc(customer.name)}">
+        <button class="debt-open" data-nav="#/debt/${esc(customer.id)}" aria-label="Open ${esc(customer.name)}${staffName ? `, last served by ${esc(staffName)}` : ""}">
           <span class="debt-avatar ${summary.balance <= 0 ? "is-settled" : ""}" aria-hidden="true">${esc(T.initials(customer.name))}</span>
           <span class="debt-copy">
             <strong>${esc(customer.name)}</strong>
@@ -1048,6 +1092,7 @@
         </button>
         <div class="debt-card-foot">
           <span class="debt-due-inline ${dueClass}">${icon("i-clock")}<span>${esc(dueInfo.label)}</span></span>
+          ${staffName ? `<span class="debt-card-staff" aria-hidden="true">${esc(staffName)}</span>` : ""}
           <span class="supplier-pill ${pillClass}">${esc(statusLabel)}</span>
         </div>
       </article>`;
@@ -1228,11 +1273,12 @@
           const isPayment = entry.type === "payment";
           const method = entry.method === "mpesa" ? "M-Pesa" : "Cash";
           const tx = entry.txId ? txFor(entry.txId) : null;
+          const entryStaff = T.entryStaff ? T.entryStaff(entry) : String(entry.staff || "").trim();
           return `<div class="supplier-entry">
             <span class="supplier-entry-icon ${isPayment ? `payment ${entry.method}` : "bill"}">${icon(isPayment ? (entry.method === "mpesa" ? "i-phone" : "i-cash") : "i-user")}</span>
             <span class="supplier-entry-copy">
               <strong>${isPayment ? `${method} payment` : "Goods on credit"}</strong>
-              <small>${esc(entryDate(entry))}${entry.note ? ` · ${esc(entry.note)}` : tx ? ` · #${tx.receiptNo}` : ""}</small>
+              <small>${esc(entryDate(entry))}${entry.note ? ` · ${esc(entry.note)}` : tx ? ` · #${tx.receiptNo}` : ""}${entryStaff ? ` · ${esc(entryStaff)}` : ""}</small>
             </span>
             <span class="supplier-entry-amount ${isPayment ? "payment" : "bill"}">${isPayment ? "−" : "+"}${money(entry.amount)}</span>
           </div>`;

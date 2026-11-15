@@ -1113,6 +1113,10 @@ function runAction(btn) {
     T.ui.topSellersPeriod = value === "30" ? "30" : "7";
     render();
   }
+  else if (act === "set-seller-period" && value) {
+    T.ui.sellerPeriod = value === "30" ? "30" : "7";
+    render();
+  }
   else if (act === "export-csv-sales") { exportSalesCsv(); }
   else if (act === "export-csv-items") { exportItemsCsv(); }
   else if (act === "export-csv-wastage") { exportWastageCsv(); }

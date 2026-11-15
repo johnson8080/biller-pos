@@ -1116,6 +1116,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       method: String(method || "").toLowerCase() === "mpesa" ? "mpesa" : "cash",
       amount: cents,
       note: String(note || "").trim(),
+      staff: T.activeStaff() || T.state.store.staff || null,
       reference: String(reference || "").trim(),
       checkoutId: String(checkoutId || "").trim(),
       accountRef: String(accountRef || "").trim().slice(0, 12),
@@ -1920,6 +1921,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         method: null,
         amount: totals.total,
         note: String(note || "").trim(),
+        staff: tx.staff || null,
         txId: tx.id,
         dueDate: debtDueDate,
         date: isoDay(),
@@ -2028,6 +2030,16 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       else localStorage.removeItem(STAFF_KEY);
     } catch { /* ignore */ }
     return T.activeStaff();
+  };
+
+  // Who recorded a ledger entry: the entry's own staff stamp when it has
+  // one, otherwise the sale it points at (older entries before the stamp
+  // existed still show the shopkeeper from their transaction).
+  T.entryStaff = (entry) => {
+    const own = entry && typeof entry === "object" ? String(entry.staff || "").trim() : "";
+    if (own) return own;
+    const tx = entry && entry.txId ? T.state.transactions.find((t) => t.id === entry.txId) : null;
+    return tx ? String(tx.staff || "").trim() : "";
   };
 
   T.toast = (message, icon = "i-check") => {

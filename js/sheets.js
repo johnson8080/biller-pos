@@ -1112,6 +1112,7 @@
         method,
         amount,
         note: String(data.get("note") || "").trim(),
+        staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
         items,
         date,
         createdAt: new Date().toISOString()
@@ -1186,6 +1187,7 @@
         method: null,
         amount,
         note: String(data.get("note") || "").trim(),
+        staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
         items,
         date,
         createdAt: new Date().toISOString()
@@ -1738,6 +1740,7 @@
           method: null,
           amount: billAmount,
           note: note || `Stock: ${product.name}`,
+          staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
           items: [{ productId: product.id, name: product.name, unit, qty, cost }],
           date: T.isoDay(),
           createdAt: new Date().toISOString()

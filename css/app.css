@@ -1294,6 +1294,22 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 .order-row:active { transform: scale(.99); }
 .order-main { flex: 1; min-width: 0; }
+/* The shopkeeper who rang the order up, centered in the open middle of the
+   card between the receipt details and the total. */
+.order-staff {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: calc(9px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
 .order-title { display: flex; align-items: center; gap: 6px; font-size: calc(13px * var(--fs)); font-weight: 650; }
 .order-sub { display: block; margin-top: 3px; font-size: calc(10px * var(--fs)); color: var(--muted); }
 .order-total { flex: none; font-size: calc(13px * var(--fs)); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -1348,6 +1364,9 @@ h1, h2, h3, h4, p { margin: 0; }
 .report-row-copy small { display: block; margin-top: 1px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
 .report-amount { flex: none; font-size: calc(11.5px * var(--fs)); font-weight: 700; font-variant-numeric: tabular-nums; }
 .report-amount.is-profit { color: var(--forest-3); }
+/* The best seller leads the staff scoreboard with a green badge. */
+.report-row.is-top .report-rank { background: #16a34a; color: #fff; }
+.report-row.is-top strong { color: var(--forest-2); }
 .report-note { margin-top: 9px; font-size: calc(9.5px * var(--fs)); color: var(--muted); line-height: 1.4; }
 .sales-hero-profit { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.11); }
 .sales-hero-profit span { font-size: calc(10.5px * var(--fs)); color: rgba(248,246,236,.82); }
@@ -1718,6 +1737,20 @@ h1, h2, h3, h4, p { margin: 0; }
 .debt-due-inline { display: flex; align-items: center; gap: 4px; font-size: calc(9px * var(--fs)); color: var(--muted); min-width: 0; }
 .debt-due-inline .ico { width: 11px; height: 11px; flex: none; }
 .debt-due-inline.is-overdue { color: var(--amber); }
+/* Last shopkeeper who served this customer, centered in the card foot. */
+.debt-card-staff {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-size: calc(9px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
 .debt-hero { text-align: left; }
 .debt-hero .sales-amount { text-align: left; }
 .debt-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
