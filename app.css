@@ -742,29 +742,29 @@ h1, h2, h3, h4, p { margin: 0; }
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
   min-width: 0;
-  border: 2px solid var(--red);
-  border-radius: 8px;
-  padding: 4px 8px;
+  border: 2px solid #ef4444;
+  border-radius: 6px;
+  padding: 2px 6px;
   transition: border-color .25s;
 }
-.brand.sync-synced { border-color: #3ADC77; }
-.brand.sync-connecting { border-color: var(--amber); animation: syncPulse 1s ease-in-out infinite; }
+.brand.sync-synced { border-color: #22c55e; }
+.brand.sync-connecting { border-color: #f59e0b; animation: syncPulse 1s ease-in-out infinite; }
 @keyframes syncPulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 .brand-mark {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: 6px;
   background: var(--forest);
   color: var(--lime);
   box-shadow: 0 8px 16px -10px rgba(var(--forest-rgb),.8);
 }
-.brand-mark .ico { width: 20px; height: 20px; }
-.brand-name { font-size: calc(18px * var(--fs)); font-weight: 750; letter-spacing: -.04em; color: var(--forest); }
+.brand-mark .ico { width: 18px; height: 18px; }
+.brand-name { font-size: calc(14px * var(--fs)); font-weight: 750; letter-spacing: -.04em; color: var(--forest); }
 .appbar-context { flex: 1; min-width: 0; }
 .appbar-title { font-size: calc(15px * var(--fs)); font-weight: 700; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .appbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
