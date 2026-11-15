@@ -213,6 +213,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       awaiting: false,
       reference: "",
       lastConfirmedAt: 0,
+      maxSeenTimestamp: 0,
       payments: [],
       // The M-Pesa code the shop last sent to the developer, plus the codes
       // sent before it. Used to warn when the same code is sent twice.
@@ -1608,6 +1609,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // subscriptions always stay reachable.
     if (T.isDeveloperAccount()) return false;
     const status = T.subscriptionStatus();
+    if (status === "clock_tampered") return true;
     if (status !== "due" && status !== "overdue" && status !== "awaiting") return false;
     return true;
   };
@@ -1678,24 +1680,33 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (T.isDeveloperAccount()) return "active";
     if (sub.awaiting) return "awaiting";
     const now = Date.now();
+    const maxSeen = Number(sub.maxSeenTimestamp || 0);
+    const toleranceMs = 15 * 60 * 1000;
+    // Clock rollback check
+    if (maxSeen > 0 && now < maxSeen - toleranceMs) return "clock_tampered";
+    if (sub.startedAt && now < new Date(sub.startedAt).getTime() - toleranceMs) return "clock_tampered";
+
+    if (sub.awaiting) return "awaiting";
     if (!sub.startedAt) {
-      // First run: the free trial starts today.
-      T.state.store.subscription = { ...sub, startedAt: new Date().toISOString(), reference: T.subscriptionReference() };
+      T.state.store.subscription = { ...sub, startedAt: new Date().toISOString(), maxSeenTimestamp: now, reference: T.subscriptionReference() };
       T.save({ quiet: true });
       if (plan.trialDays > 0) return "trial";
       return "due";
     }
+
+    // Update maxSeen
+    if (now > maxSeen) {
+      if (!T.state.store.subscription) T.state.store.subscription = { ...sub };
+      T.state.store.subscription.maxSeenTimestamp = now;
+      sub.maxSeenTimestamp = now;
+    }
+
     const started = new Date(sub.startedAt).getTime();
     if (!sub.paidUntil && plan.trialDays > 0 && Number.isFinite(started) && now - started < plan.trialDays * dayMs) return "trial";
     if (!sub.paidUntil) return "due";
     const until = new Date(sub.paidUntil).getTime();
     if (!Number.isFinite(until)) return "due";
-    // A paid shop stays active right up to the end of the period it paid for.
-    // The three-day reminder is scheduled from the active state; the shop is
-    // only locked once the plan has actually fallen due.
     if (now < until) return "active";
-    // A week late is labelled overdue for the stronger "shop is paused" copy.
-    // Both due and overdue are locked until the payment is confirmed.
     if (now - until > 7 * dayMs) return "overdue";
     return "due";
   };
