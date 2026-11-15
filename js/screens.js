@@ -554,8 +554,7 @@
     if (!txs.length) {
       return `<section class="screen" aria-labelledby="reports-title">
         <div class="screen-head">
-          <p class="eyebrow">Business at a glance</p>
-          <h1 id="reports-title">Reports</h1>
+          <h1 id="reports-title">REPORTS</h1>
           <p class="sub">Sales, profit, best sellers, and payment mix.</p>
         </div>
         <div class="empty-state">
@@ -569,8 +568,7 @@
 
     return `<section class="screen" aria-labelledby="reports-title">
       <div class="screen-head">
-        <p class="eyebrow">Business at a glance</p>
-        <h1 id="reports-title">Reports</h1>
+        <h1 id="reports-title">REPORTS</h1>
         <p class="sub">Sales, profit, best sellers, and payment mix.</p>
       </div>
 
