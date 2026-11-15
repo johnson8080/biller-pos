@@ -36,7 +36,7 @@
     }
   } catch (e) {}
 </script>
-<link rel="stylesheet" href="app.css?v=1.3.5">
+<link rel="stylesheet" href="app.css?v=1.3.6">
 </head>
 <body>
 
@@ -104,6 +104,10 @@
 
     <div id="layers" class="layers"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="ptr-pop" class="ptr-pop" role="status" aria-live="polite">
+      <span class="ptr-pop-badge" aria-hidden="true"><svg class="ico"><use href="#i-check"></use></svg></span>
+      <span class="ptr-pop-text" id="ptr-pop-text">Refreshed!</span>
+    </div>
   </div>
 </div>
 
@@ -117,123 +121,133 @@
 
 <!-- Bump ASSET_VERSION whenever app.css / js/*.js change, so browsers and
      the installed PWA never keep serving a stale copy of the login screen. -->
-<script>window.ASSET_VERSION = "1.3.5";</script>
-<script src="assets/vendor/zxing.min.js?v=1.3.5" defer></script>
-<script src="js/daraja.js?v=1.3.5" defer></script>
-<script src="js/core.js?v=1.3.5" defer></script>
-<script src="js/cloud.js?v=1.3.5" defer></script>
-<script src="js/notify.js?v=1.3.5" defer></script>
-<script src="js/mpesa.js?v=1.3.5" defer></script>
-<script src="js/screens.js?v=1.3.5" defer></script>
-<script src="js/sheets.js?v=1.3.5" defer></script>
-<script src="js/scanner.js?v=1.3.5" defer></script>
-<script src="js/auth.js?v=1.3.5" defer></script>
+<script>window.ASSET_VERSION = "1.3.6";</script>
+<script src="assets/vendor/zxing.min.js?v=1.3.6" defer></script>
+<script src="js/daraja.js?v=1.3.6" defer></script>
+<script src="js/core.js?v=1.3.6" defer></script>
+<script src="js/cloud.js?v=1.3.6" defer></script>
+<script src="js/notify.js?v=1.3.6" defer></script>
+<script src="js/mpesa.js?v=1.3.6" defer></script>
+<script src="js/screens.js?v=1.3.6" defer></script>
+<script src="js/sheets.js?v=1.3.6" defer></script>
+<script src="js/scanner.js?v=1.3.6" defer></script>
+<script src="js/auth.js?v=1.3.6" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js" defer></script>
-<script src="js/app.js?v=1.3.5" defer></script>
+<script src="js/app.js?v=1.3.6" defer></script>
 <script>
-  /* Pull-to-refresh — a progressive bar fills right below the hero bar as
-     you drag, the hero stays fixed while the page content slides down, and
-     past the threshold the app reloads with a cache-busting timestamp, then
-     shows a green "Refreshed!" toast so new designs land without clearing
-     the cache. */
+  /* Pull-to-refresh — Material-style circular indicator below the hero.
+     Pull: the spinner scales in and rotates with the drag while the page
+     content slides down (hero stays fixed). Past the threshold it turns
+     green; releasing reloads with a cache-busting timestamp, and the fresh
+     page shows a green "Refreshed!" popup (or "Updated to V x.y.z"). */
   (() => {
-    const THRESH = 64;    // raw drag distance (px) that fills the bar
-    const MAX_Y = 96;     // farthest the content slides down
-    const HOLD_MS = 420;  // how long the green bar holds before reloading
+    const THRESH = 58;    // raw drag distance (px) that commits the refresh
+    const MAX_Y = 84;     // farthest the content slides down
+    const HOLD_MS = 450;  // spinner hold before the reload navigates
     const app = document.getElementById("app");
     const vp = document.getElementById("viewport");
     const layers = document.getElementById("layers");
     if (!app || !vp) return;
 
-    const bar = document.createElement("div");
-    bar.className = "ptr-bar";
-    bar.setAttribute("aria-hidden", "true");
-    app.prepend(bar);
+    const spin = document.createElement("div");
+    spin.className = "ptr-spin";
+    spin.setAttribute("aria-hidden", "true");
+    spin.innerHTML = '<svg viewBox="0 0 24 24"><circle class="ptr-track" cx="12" cy="12" r="9.5"></circle><path class="ptr-arc" d="M12 2.5 A 9.5 9.5 0 1 1 2.5 12"></path></svg>';
+    app.prepend(spin);
 
-    // The bar sits right below the hero bar (the viewport's top edge), so it
-    // stays visible and pinned under the hero for the whole pull.
-    const place = () => { bar.style.top = vp.offsetTop + "px"; };
+    // Pinned just below the hero bar; re-measured per gesture and on resize.
+    const place = () => { spin.style.top = (vp.offsetTop + 10) + "px"; };
     place();
     window.addEventListener("resize", place, { passive: true });
     window.addEventListener("orientationchange", place, { passive: true });
 
-    let sy = 0, sx = 0, armed = false, pulling = false, locked = false;
+    let ptrId = null, sy = 0, sx = 0, armed = false, pulling = false, locked = false;
     let lastDy = 0, raf = 0;
 
-    const damp = (d) => Math.min(d / (1 + d / 260), MAX_Y);
-    const setBar = (pct, ready) => {
-      bar.style.width = (pct * 100).toFixed(1) + "%";
-      bar.classList.toggle("is-ready", !!ready);
-    };
+    const damp = (d) => Math.min(d / (1 + d / 240), MAX_Y);
     const stopFrame = () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } };
     const frame = () => {
       raf = 0;
       const d = lastDy;
-      if (d <= 0) { setBar(0, false); vp.style.transform = ""; return; }
-      setBar(Math.min(d / THRESH, 1), d >= THRESH);
+      if (d <= 0) { spin.style.transform = ""; vp.style.transform = ""; return; }
+      const p = Math.min(d / THRESH, 1);
+      spin.style.transform = "rotate(" + (p * 285).toFixed(1) + "deg) scale(" + (0.45 + 0.55 * p).toFixed(3) + ")";
       vp.style.transform = "translateY(" + damp(d).toFixed(1) + "px)";
     };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
     const settle = () => {
       pulling = false;
       lastDy = 0;
       stopFrame();
+      ptrId = null;
+      spin.classList.remove("is-active", "is-ready");
+      spin.classList.add("is-settling");
       vp.classList.remove("is-pulling");
       vp.classList.add("ptr-settle");
+      spin.style.transform = "";
       vp.style.transform = "";
-      bar.classList.add("is-releasing");   // ease the bar back instead of a snap
-      setBar(0, false);
-      bar.classList.remove("is-active");
       setTimeout(() => {
+        spin.classList.remove("is-settling");
         vp.classList.remove("ptr-settle");
-        bar.classList.remove("is-releasing");
-      }, 320);
+      }, 340);
     };
 
-    document.addEventListener("touchstart", (e) => {
-      if (locked || armed) return;
-      if (!e.touches || e.touches.length !== 1) return;
+    const begin = (e) => {
+      if (locked || armed || ptrId !== null) return;
+      if (!e.isPrimary) return;
       if (vp.scrollTop > 0 || window.scrollY > 0) return;
       if (layers && layers.childElementCount) return;   // a sheet or modal is open
-      place();                                          // hero height differs per screen
+      place();
       armed = true;
-      sy = e.touches[0].clientY;
-      sx = e.touches[0].clientX;
-    }, { passive: true });
+      ptrId = e.pointerId;
+      sy = e.clientY;
+      sx = e.clientX;
+    };
 
-    document.addEventListener("touchmove", (e) => {
-      if (!armed || locked) return;
-      const t = e.touches[0];
-      const dy = t.clientY - sy;
-      const dx = t.clientX - sx;
+    const move = (e) => {
+      if (!armed || locked || e.pointerId !== ptrId) return;
+      const dy = e.clientY - sy;
+      const dx = e.clientX - sx;
 
       if (!pulling) {
-        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) { armed = false; return; }
-        if (dy < 8) return;                             // wait for a clear downward drag
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 12) {
+          armed = false;
+          ptrId = null;
+          return;
+        }
+        if (dy < 10) return;                            // wait for a clear downward drag
         pulling = true;
-        lastDy = 0;
+        spin.classList.add("is-active");
         vp.classList.add("is-pulling");
-        bar.classList.add("is-active");
+        try { vp.setPointerCapture(e.pointerId); } catch (err) {}
       }
-      if (dy <= 0) { lastDy = 0; if (!raf) raf = requestAnimationFrame(frame); return; }
-      e.preventDefault();                               // no native overscroll while pulling
+      if (dy <= 0) { lastDy = 0; schedule(); return; }
       lastDy = dy;
-      if (!raf) raf = requestAnimationFrame(frame);     // one update per frame = smooth
-    }, { passive: false });
+      spin.classList.toggle("is-ready", dy >= THRESH);
+      schedule();                                       // one update per frame = smooth
+    };
 
-    const release = () => {
-      if (!armed) return;
+    const up = (e) => {
+      if (!armed || e.pointerId !== ptrId) return;
       armed = false;
+      ptrId = null;
       stopFrame();
       if (!pulling) return;
       if (lastDy >= THRESH) {
-        locked = true;                                  // hold the green bar while reloading
-        bar.classList.add("is-loading");
+        locked = true;                                  // indeterminate spin while reloading
+        spin.classList.remove("is-ready");
+        spin.classList.add("is-loading");
+        spin.style.transform = "";
         vp.classList.add("ptr-settle");
         vp.style.transform = "translateY(" + damp(THRESH).toFixed(1) + "px)";
-        try { T.vibrate && T.vibrate(18); } catch (err) {}
-        try { localStorage.setItem("biller.pos.ptr", String(Date.now())); } catch (err) {}
+        try { window.T && T.vibrate && T.vibrate(18); } catch (err) {}
+        try {
+          localStorage.setItem("biller.pos.ptr", String(Date.now()));
+          localStorage.setItem("biller.pos.ptrFrom", String(window.ASSET_VERSION || ""));
+        } catch (err) {}
         setTimeout(() => {
           const u = new URL(location.href);
           u.searchParams.set("t", Date.now());
@@ -243,43 +257,60 @@
         settle();
       }
     };
-    const cancelNow = () => {
+    const cancelP = (e) => {
       if (!armed) return;
+      if (e && e.pointerId !== undefined && e.pointerId !== ptrId) return;
       armed = false;
-      if (pulling) settle();
+      ptrId = null;
+      if (pulling) settle(); else stopFrame();
     };
-    document.addEventListener("touchend", release);
-    document.addEventListener("touchcancel", cancelNow);
 
-    // After a cache-bust reload: green "Refreshed!" toast, then clean up.
-    // The localStorage flag keeps the toast working even if the ?t= parameter
-    // is lost on the way; ?t= itself is what bypasses the cached shell.
-    let fresh = false;
+    document.addEventListener("pointerdown", begin);
+    document.addEventListener("pointermove", move, { passive: true });
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", cancelP);
+    // Pointer events do not block native scrolling on their own (MDN:
+    // touch-action / touchmove), so guard the scroll while committed.
+    document.addEventListener("touchmove", (e) => {
+      if (pulling && !locked) e.preventDefault();
+    }, { passive: false });
+
+    // Fresh load after the cache-bust reload: pop the green confirmation.
+    // The localStorage flag keeps this working even if the ?t= parameter is
+    // lost on the way; ?t= itself is what bypasses the cached shell.
+    let fresh = false, fromVer = "";
     try {
       const ts = Number(localStorage.getItem("biller.pos.ptr") || 0);
       if (ts && Date.now() - ts < 15000) {
         fresh = true;
         localStorage.removeItem("biller.pos.ptr");
       }
+      fromVer = localStorage.getItem("biller.pos.ptrFrom") || "";
+      if (fresh || fromVer) localStorage.removeItem("biller.pos.ptrFrom");
     } catch (err) {}
     const q = new URLSearchParams(location.search);
     if (fresh || q.has("t")) {
-      let tries = 0;
-      (function show() {
-        const el = document.getElementById("toast");
-        if (window.T && T.toast && el) {
-          T.toast("Refreshed!", "i-check");
-          el.classList.add("is-green");
-          setTimeout(() => el.classList.remove("is-green"), 2300);
-          try {
-            const u = new URL(location.href);
-            u.searchParams.delete("t");
-            history.replaceState(null, "", u.pathname + u.search + u.hash);
-          } catch (err) {}
-        } else if (tries++ < 40) {
-          setTimeout(show, 120);                        // wait for core.js (deferred)
+      const pop = document.getElementById("ptr-pop");
+      const popText = document.getElementById("ptr-pop-text");
+      const cur = String(window.ASSET_VERSION || "");
+      if (popText) popText.textContent = fromVer && fromVer !== cur ? "Updated to V " + cur : "Refreshed!";
+      const announce = () => {
+        if (pop) {
+          pop.classList.add("show");
+          try { window.T && T.vibrate && T.vibrate([14, 40, 14]); } catch (err) {}
+          setTimeout(() => pop.classList.remove("show"), 2100);
+        } else if (window.T && T.toast) {
+          T.toast("Refreshed!", "i-check");             // fallback if the popup is gone
+        } else {
+          setTimeout(announce, 150);
         }
-      })();
+        try {
+          const u = new URL(location.href);
+          u.searchParams.delete("t");
+          history.replaceState(null, "", u.pathname + u.search + u.hash);
+        } catch (err) {}
+      };
+      setTimeout(announce, 380);                        // land after first paint
     }
   })();
 </script>
