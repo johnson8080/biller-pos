@@ -1725,8 +1725,7 @@
       </div>`;
     return `<section class="screen">
       <div class="screen-head">
-        <p class="eyebrow">Your shop</p>
-        <h1 id="more-title">Settings</h1>
+        <h1 id="more-title">SETTINGS</h1>
         <p class="sub">Everything in one place, grouped.</p>
       </div>
 
