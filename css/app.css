@@ -1092,7 +1092,11 @@ h1, h2, h3, h4, p { margin: 0; }
   letter-spacing: .05em;
   white-space: nowrap;
   margin: 0 auto;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
 }
+.sell-status-box:active { transform: scale(.96); }
 /* The hero carries the app's standard border. The shop meta — name, date,
    serving shopkeeper, version — stays on one single line, wrapped in one
    border that spans across all four items. */

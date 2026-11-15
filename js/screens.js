@@ -233,7 +233,7 @@
       </div>
       <div class="section-head sell-head-row">
         <h2>${T.ui.category === "All" ? "Quick add" : esc(T.ui.category)}</h2>
-        <span class="sell-status-box">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); return d === null ? "Active" : (d < 0 ? "Overdue" : `${d}d left`); })())}</span>
+        <button class="sell-status-box" data-nav="#/account" aria-label="Open account settings">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); return d === null ? "Active" : (d < 0 ? "Overdue" : `${d}d left`); })())}</button>
         <div class="sell-head-tools">
           <span class="small muted">${products.length} ${products.length === 1 ? "item" : "items"}</span>
           <button class="tool-btn" data-act="open-sell-sort" aria-label="Sort items, currently ${esc(sortLabel)}" title="Sort: ${esc(sortLabel)}">${icon("i-sort")}</button>
