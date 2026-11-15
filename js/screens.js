@@ -378,8 +378,7 @@
     const debt = today.filter((tx) => tx.payment.method === "debt").reduce((sum, tx) => sum + tx.total, 0);
     return `<section class="screen" aria-labelledby="orders-title">
       <div class="screen-head">
-        <p class="eyebrow">Sold &amp; settled</p>
-        <h1 id="orders-title">Orders</h1>
+        <h1 id="orders-title">ORDERS</h1>
         <p class="sub">Every sale, receipt, and payment method.</p>
       </div>
       <div class="sales-hero">

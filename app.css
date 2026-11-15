@@ -963,6 +963,39 @@ h1, h2, h3, h4, p { margin: 0; }
   font-weight: 750;
   color: var(--forest-2);
 }
+#category-chips .chip.is-active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--lime);
+}
+/* Order filter chips share the same boxed border design as the category chips. */
+.chips.order-filters {
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  gap: 6px;
+}
+.chips.order-filters .chip {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--ui-line);
+  box-shadow: var(--shadow-card);
+  font-size: calc(10px * var(--fs));
+  font-weight: 650;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.chips.order-filters .chip.is-active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--lime);
+}
 .chip {
   flex: none;
   min-height: 38px;
