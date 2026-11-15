@@ -983,14 +983,14 @@ h1, h2, h3, h4, p { margin: 0; }
    serving shopkeeper, version — stays on one single line, wrapped in one
    border that spans across all four items. */
 .sell-head {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .sell-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 10px 10px 0;
-  padding: 7px 11px;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
   border: 1px solid var(--ui-line);
   border-radius: 8px;
   background: var(--surface-2);
@@ -1046,11 +1046,11 @@ h1, h2, h3, h4, p { margin: 0; }
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.sell-title-row { display: flex; gap: 8px; padding: 12px 10px 13px; }
+.sell-title-row { display: flex; gap: 6px; padding: 6px 0 8px; }
 .sell-title-col {
   flex: 1;
   min-width: 0;
-  padding: 9px 6px;
+  padding: 7px 5px;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
