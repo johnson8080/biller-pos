@@ -1351,6 +1351,7 @@
   function subscriptionLockPanel() {
     if (!T.subscriptionLocked()) return "";
     const status = T.subscriptionStatus();
+    const clockTampered = status === "clock_tampered";
     const plan = T.planSummary();
     const amount = money(plan.amountCents);
     const code = T.shopCode();
@@ -1360,19 +1361,23 @@
     const sub = T.subscription();
     const reference = sub.reference || T.subscriptionReference();
     return `<div class="plan-lock ${waiting ? "is-waiting" : ""}">
-      <span class="plan-lock-mark">${icon(waiting ? "i-clock" : "i-lock")}</span>
-      <h2>${waiting ? "Waiting for your payment" : overdue ? "Your shop is paused" : "Your plan is due"}</h2>
-      <p>${waiting
+      <span class="plan-lock-mark">${icon(clockTampered ? "i-alert" : waiting ? "i-clock" : "i-lock")}</span>
+      <h2>${clockTampered ? "System Date Tampered" : waiting ? "Waiting for your payment" : overdue ? "Your shop is paused" : "Your plan is due"}</h2>
+      <p>${clockTampered
+        ? `Your device date/time has been set backward or is inaccurate. To protect your subscription, Biller POS requires accurate time. Please enable **Automatic Date & Time** in your phone settings or exit.`
+        : waiting
         ? `We are checking your ${esc(amount)} payment (ref ${esc(reference)}). The developer is looking for it in M-Pesa - usually that is minutes, not hours. If it takes longer, call us and we will switch you straight on.`
         : `The ${esc(amount)} monthly plan for Biller POS is ${overdue ? "overdue" : "due"}. Pay it to carry on selling.`}</p>
-      <div class="plan-lock-ref">
+      ${clockTampered ? "" : `<div class="plan-lock-ref">
         <span>Your shop code</span>
         <strong>${esc(code)}</strong>
-      </div>
+      </div>`}
       <div class="plan-lock-actions">
-        <button class="btn btn-primary btn-block" data-act="pay-subscription">${icon("i-phone")} ${waiting ? "Payment details" : `Pay ${esc(amount)}`}</button>
-        ${fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
-        <button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>
+        ${clockTampered ? `<button class="btn btn-primary btn-block" data-act="open-date-settings">${icon("i-gear")} Open Date & Time Settings</button>` : ""}
+        ${clockTampered ? `<button class="btn btn-ghost btn-block" data-act="exit-app">${icon("i-close")} Close App</button>` : ""}
+        ${clockTampered ? "" : `<button class="btn btn-primary btn-block" data-act="pay-subscription">${icon("i-phone")} ${waiting ? "Payment details" : `Pay ${esc(amount)}`}</button>`}
+        ${!clockTampered && fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
+        ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
       </div>
     </div>`;
   }

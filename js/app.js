@@ -904,6 +904,24 @@ function runAction(btn) {
   else if (act === "notify-off") { turnRemindersOff(); }
 
   else if (act === "open-developer-chat") { openDeveloperChat({ code: btn.dataset.code, amountCents: btn.dataset.amount, mpesaCode: btn.dataset.mpesa }); }
+  else if (act === "open-date-settings") {
+    const cap = window.Capacitor;
+    if (cap?.Plugins?.App?.openUrl) {
+      cap.Plugins.App.openUrl({ url: "package:com.android.settings" }).catch(() => {
+        alert("Please open your device settings -> System -> Date & time and enable 'Automatic Date & Time'.");
+      });
+    } else {
+      alert("Please open your device settings -> System -> Date & time and enable 'Automatic Date & Time'.");
+    }
+  }
+  else if (act === "exit-app") {
+    const cap = window.Capacitor;
+    if (cap?.Plugins?.App?.exitApp) {
+      cap.Plugins.App.exitApp();
+    } else {
+      alert("Please close the app and set your device date to Automatic.");
+    }
+  }
   else if (act === "pay-subscription") { T.sheets?.openSubscriptionPayment?.(); }
   else if (act === "subscription-sent") {
     const ref = btn.dataset.ref || T.subscriptionReference();
