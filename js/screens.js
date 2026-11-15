@@ -270,13 +270,28 @@
           placeholder="Search products or barcode" value="${esc(T.ui.search)}" aria-label="Search products">
         <button class="field-clear" data-act="clear-search" aria-label="Clear search">${icon("i-close")}</button>
       </div>` : `<div class="sell-head">
-        <div class="sell-eyebrow-row">
-          <p class="eyebrow">${esc(T.state.store.name)} · ${esc(T.shortDateFmt.format(new Date()))}</p>
-          ${(() => {
-            const selling = T.activeStaff ? T.activeStaff() : (T.state.store.staff || "");
-            return selling ? `<button class="sell-staff" data-act="choose-staff" aria-label="Selling as ${esc(selling)}. Tap to change">${esc(selling)}</button>` : "";
-          })()}
-          ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : ""}
+        <div class="sell-meta">
+          <div class="sell-meta-row">
+            <span class="sell-meta-label">Shop</span>
+            <span class="sell-meta-value">${esc(T.state.store.name || "Unnamed shop")}</span>
+          </div>
+          <div class="sell-meta-row">
+            <span class="sell-meta-label">Date</span>
+            <span class="sell-meta-value">${esc(T.shortDateFmt.format(new Date()))}</span>
+          </div>
+          <div class="sell-meta-row">
+            <span class="sell-meta-label">Serving</span>
+            ${(() => {
+              const selling = T.activeStaff ? T.activeStaff() : (T.state.store.staff || "");
+              return selling
+                ? `<button class="sell-staff" data-act="choose-staff" aria-label="Selling as ${esc(selling)}. Tap to change">${esc(selling)}</button>`
+                : `<span class="sell-meta-empty">No shopkeeper</span>`;
+            })()}
+          </div>
+          <div class="sell-meta-row">
+            <span class="sell-meta-label">App</span>
+            ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : `<span class="sell-meta-empty">—</span>`}
+          </div>
         </div>
         <div class="sell-title-row">
           <button class="sell-title-col" data-nav="#/stock" aria-label="Stock price ${money(retail)}, open inventory">

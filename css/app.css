@@ -974,9 +974,46 @@ h1, h2, h3, h4, p { margin: 0; }
 .sell-search-pop { margin-top: 10px; }
 
 /* Sell ------------------------------------------------------------ */
-.sell-head { padding: 8px 0 2px; }
-.sell-head .sell-eyebrow-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.sell-head .sell-eyebrow-row .eyebrow { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The hero is one card carrying the app's standard border, and the shop
+   meta — name, date, serving shopkeeper, version — each sits on its own
+   thin border line, matching the list-row separators used across the app. */
+.sell-head {
+  margin-bottom: 4px;
+  border: 1px solid var(--ui-line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.sell-meta { display: flex; flex-direction: column; }
+.sell-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: calc(11px * var(--fs));
+}
+.sell-meta-row:last-child { border-bottom: 0; }
+.sell-meta-label {
+  flex: none;
+  font-size: calc(8px * var(--fs));
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sell-meta-value {
+  min-width: 0;
+  font-weight: 650;
+  color: var(--ink);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sell-meta-empty { color: var(--faint); font-weight: 600; }
 .sell-version {
   flex: none;
   font-size: calc(9px * var(--fs));
@@ -989,29 +1026,26 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 999px;
   white-space: nowrap;
 }
-/* The shopkeeper selling on this device: the middle piece of the eyebrow
-   row, between the store name and the version chip. Tapping it opens the
-   staff picker. */
+/* The shopkeeper selling on this device: the value on the "Serving" line.
+   Tapping it opens the staff picker. */
 .sell-staff {
-  flex: 1 1 0;
   min-width: 0;
-  text-align: center;
+  text-align: right;
   background: none;
   border: 0;
   padding: 0;
   margin: 0;
   font: inherit;
-  font-size: calc(9px * var(--fs));
+  font-size: calc(11px * var(--fs));
   font-weight: 700;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--ink-2);
+  letter-spacing: .02em;
+  color: var(--forest-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.sell-title-row { display: flex; gap: 8px; margin-top: 2px; }
+.sell-title-row { display: flex; gap: 8px; padding: 12px 10px 13px; border-top: 1px solid var(--line); }
 .sell-title-col {
   flex: 1;
   min-width: 0;
