@@ -226,7 +226,10 @@
     const listView = T.sellView?.() === "list";
     return `
       <div class="chips" id="category-chips" aria-label="Filter by category">
-        ${chips.map((category) => `<button class="chip ${T.ui.category === category ? "is-active" : ""}" data-act="set-category" data-value="${esc(category)}">${esc(category)}</button>`).join("")}
+        ${chips.map((category) => {
+          const featured = category === "Groceries" || category === "Beverages" || category === "Snacks";
+          return `<button class="chip ${T.ui.category === category ? "is-active" : ""} ${featured ? "is-featured" : ""}" data-act="set-category" data-value="${esc(category)}">${esc(category)}</button>`;
+        }).join("")}
       </div>
       <div class="section-head sell-head-row">
         <h2>${T.ui.category === "All" ? "Quick add" : esc(T.ui.category)}</h2>

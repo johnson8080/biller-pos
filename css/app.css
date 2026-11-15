@@ -956,10 +956,12 @@ h1, h2, h3, h4, p { margin: 0; }
   align-items: center;
   justify-content: center;
 }
-#category-chips .chip.is-active {
-  background: var(--forest);
-  border-color: var(--forest);
-  color: var(--lime);
+#category-chips .chip.is-featured {
+  border-left: 3px solid var(--forest);
+}
+#category-chips .chip.is-featured:not(.is-active) {
+  font-weight: 750;
+  color: var(--forest-2);
 }
 .chip {
   flex: none;
