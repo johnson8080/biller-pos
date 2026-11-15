@@ -887,14 +887,42 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
 
   /**
    * Add stock that was received to the catalog. Lines look like
-   * { productId, qty, cost }. Returns the lines that were applied so they can
-   * be stored on the supplier's ledger.
+   * { productId, qty, cost } or { newItem: true, name, category, price, qty, cost }
+   * for an item that is not in stock yet (the product is created and wired into
+   * stock in one go). Returns the lines that were applied so they can be stored
+   * on the supplier's ledger.
    */
   T.applyStockLines = (lines) => {
     const applied = [];
     (Array.isArray(lines) ? lines : []).forEach((line) => {
-      const product = T.findProduct(line.productId);
       const qty = clampInt(line.qty, 0, 100000);
+      if (line.newItem) {
+        const name = String(line.name || "").trim();
+        if (!name || !(line.price > 0) || qty <= 0) return;
+        const product = {
+          id: T.uid(),
+          name,
+          detail: "",
+          price: clampInt(line.price, 0, 100000000),
+          cost: clampInt(line.cost, 0, 100000000),
+          stock: qty,
+          lowStockAt: 5,
+          unit: "pcs",
+          barcode: "",
+          category: String(line.category || "") || T.categories()[0] || "General",
+          soldByMass: false
+        };
+        T.state.products.unshift(product);
+        applied.push({
+          productId: product.id,
+          name: product.name,
+          unit: product.unit,
+          qty,
+          cost: product.cost
+        });
+        return;
+      }
+      const product = T.findProduct(line.productId);
       if (!product || qty <= 0) return;
       product.stock = clampInt(product.stock + qty, 0, 1000000);
       const cost = clampInt(line.cost, 0, 100000000);

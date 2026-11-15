@@ -834,14 +834,30 @@
     return `<div class="stock-line" data-line>
       <select class="select stock-line-product" aria-label="Item received">
         <option value="">Choose an item…</option>
+        <option value="__new__">+ New item (not in stock yet)</option>
         ${options}
       </select>
+      <div class="stock-line-newfields" hidden>
+        <input class="input stock-line-name" type="text" placeholder="New product name" aria-label="New product name" autocomplete="off" spellcheck="false">
+        <div class="stock-line-newrow">
+          <select class="select stock-line-category" aria-label="Category">
+            ${T.categories().map((category) => `<option value="${esc(category)}">${esc(category)}</option>`).join("")}
+          </select>
+          <div class="input-affix"><input class="input stock-line-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Selling price" aria-label="Selling price"><span class="affix">${esc(T.currencySymbol())}</span></div>
+        </div>
+      </div>
       <div class="stock-line-fields">
         <input class="input stock-line-qty" type="number" min="1" step="1" inputmode="numeric" placeholder="Qty" aria-label="Quantity received">
         <div class="input-affix"><input class="input stock-line-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Cost each" aria-label="Cost for each"><span class="affix">${esc(T.currencySymbol())}</span></div>
         <button type="button" class="stock-line-remove" data-remove-line aria-label="Remove this item">${icon("i-close")}</button>
       </div>
     </div>`;
+  }
+
+  /** New-item lines need a name and a selling price before they can go into stock. */
+  function stockLineError(lines) {
+    const bad = (lines || []).find((line) => line.newItem && (!line.name || !(line.price > 0)));
+    return bad ? "Each new item needs a name and a selling price." : null;
   }
 
   function stockLinesField({ title, help }) {
@@ -871,11 +887,23 @@
         const qty = T.clampInt(row.querySelector(".stock-line-qty")?.value, 0, 100000);
         const costRaw = row.querySelector(".stock-line-cost")?.value;
         const cost = String(costRaw ?? "").trim() === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
+        if (productId === "__new__") {
+          const name = String(row.querySelector(".stock-line-name")?.value || "").trim();
+          const category = String(row.querySelector(".stock-line-category")?.value || "") || T.categories()[0] || "General";
+          const priceRaw = row.querySelector(".stock-line-price")?.value;
+          const price = String(priceRaw ?? "").trim() === "" ? 0 : (T.parsePriceToCents(priceRaw) || 0);
+          return { newItem: true, name, category, price, qty, cost };
+        }
         return { productId, qty, cost };
       })
-      .filter((line) => line.productId && line.qty > 0);
+      .filter((line) => (line.newItem ? line.qty > 0 : line.productId && line.qty > 0));
 
     const refresh = () => {
+      // Reveal the inline new-item fields only for rows in "new item" mode.
+      container.querySelectorAll("[data-line]").forEach((row) => {
+        const isNew = row.querySelector(".stock-line-product")?.value === "__new__";
+        row.querySelector(".stock-line-newfields")?.toggleAttribute("hidden", !isNew);
+      });
       const lines = readLines();
       const items = lines.reduce((sum, line) => sum + line.qty, 0);
       const total = lines.reduce((sum, line) => sum + line.qty * line.cost, 0);
@@ -900,6 +928,10 @@
         row.querySelector(".stock-line-product").value = "";
         row.querySelector(".stock-line-qty").value = "";
         row.querySelector(".stock-line-cost").value = "";
+        const name = row.querySelector(".stock-line-name");
+        if (name) name.value = "";
+        const price = row.querySelector(".stock-line-price");
+        if (price) price.value = "";
       }
       refresh();
     });
@@ -1014,6 +1046,11 @@
       event.preventDefault();
       const data = new FormData(form);
       const lines = stock?.readLines() || [];
+      const stockError = stockLineError(lines);
+      if (stockError) {
+        setFormError(form, stockError);
+        return;
+      }
       const stockTotal = lines.reduce((sum, line) => sum + line.qty * line.cost, 0);
       const typed = T.parsePriceToCents(data.get("amount"));
       const amount = Number.isFinite(typed) && typed > 0 ? typed : stockTotal;
@@ -1083,6 +1120,11 @@
       event.preventDefault();
       const data = new FormData(form);
       const lines = stock?.readLines() || [];
+      const stockError = stockLineError(lines);
+      if (stockError) {
+        setFormError(form, stockError);
+        return;
+      }
       const stockTotal = lines.reduce((sum, line) => sum + line.qty * line.cost, 0);
       const typed = T.parsePriceToCents(data.get("amount"));
       const amount = Number.isFinite(typed) && typed > 0 ? typed : stockTotal;

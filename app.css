@@ -1524,6 +1524,13 @@ h1, h2, h3, h4, p { margin: 0; }
 .stock-lines { display: flex; flex-direction: column; gap: 8px; }
 .stock-line { padding: 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid rgba(var(--accent-rgb),.2); }
 .stock-line .select { width: 100%; }
+.stock-line-newfields { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding: 8px; border-radius: 6px; background: var(--surface); border: 1px dashed rgba(var(--accent-rgb),.35); }
+.stock-line-newfields[hidden] { display: none; }
+.stock-line-newfields .input, .stock-line-newfields .select { min-height: 40px; width: 100%; }
+.stock-line-newrow { display: flex; align-items: center; gap: 6px; }
+.stock-line-newrow .select { flex: 1 1 44%; min-width: 0; }
+.stock-line-newrow .input-affix { flex: 1 1 56%; min-width: 0; }
+.stock-line-newrow .input-affix .input { width: 100%; }
 .stock-line-fields { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .stock-line-fields .input { min-height: 40px; }
 .stock-line-fields .stock-line-qty { width: 74px; flex: 0 0 74px; }
