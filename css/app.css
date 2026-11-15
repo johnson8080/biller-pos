@@ -1003,6 +1003,11 @@ h1, h2, h3, h4, p { margin: 0; }
   align-items: center;
   justify-content: center;
 }
+.chips.order-filters .chip.is-active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--lime);
+}
 /* Stock filter chips share the same boxed border design. */
 .chips#stock-chips,
 #stock-chips {
