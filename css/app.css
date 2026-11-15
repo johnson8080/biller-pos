@@ -943,8 +943,8 @@ h1, h2, h3, h4, p { margin: 0; }
   gap: 6px;
 }
 #category-chips .chip {
-  min-height: 0;
-  padding: 5px 8px;
+  min-height: 34px;
+  padding: 8px 10px;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
@@ -952,6 +952,11 @@ h1, h2, h3, h4, p { margin: 0; }
   font-size: calc(10px * var(--fs));
   font-weight: 650;
   color: var(--ink-2);
+}
+#category-chips .chip.is-active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--lime);
 }
 .chip {
   flex: none;
