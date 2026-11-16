@@ -662,6 +662,7 @@
         phone: sub.phone || String(window.Till?.state?.store?.phone || ""),
         paidAt: sub.lastPaidAt || "",
         shop: window.Till?.state?.store?.name || "",
+        startedAt: sub.startedAt || "",
         at: Date.now()
       };
     } catch {
