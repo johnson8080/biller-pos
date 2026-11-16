@@ -1889,24 +1889,13 @@
           <input class="input" id="store-phone" name="phone" value="${esc(store.phone)}" autocomplete="tel" inputmode="tel">
         </div>
         <div class="field">
-          <label for="store-staff">Staff name</label>
-          <input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name">
-          <p class="field-help">The single staff name from before. Used when a device has not picked a shopkeeper yet.</p>
-        </div>
-        <div class="field">
-          <label>Shopkeepers</label>
-          <p class="field-help">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts.</p>
-          <div class="staff-roster">
-            ${roster.length ? roster.map((name) => `
-              <span class="staff-chip">
-                <span class="staff-chip-name">${esc(name)}</span>
-                <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
-              </span>`).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
-          </div>
-          <div class="staff-add-row">
-            <input class="input" id="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name">
-            <button class="btn" type="button" data-act="add-staff">Add</button>
-          </div>
+          <label for="store-staff">Default staff name</label>
+          ${roster.length ? `<select class="select" id="store-staff" name="staff">
+            <option value="">No default</option>
+            ${roster.map((name) => `<option value="${esc(name)}" ${String(store.staff || "") === name ? "selected" : ""}>${esc(name)}</option>`).join("")}
+            ${store.staff && !roster.includes(store.staff) ? `<option value="${esc(store.staff)}" selected>${esc(store.staff)}</option>` : ""}
+          </select>` : `<input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name" placeholder="Add a shopkeeper below first">`}
+          <p class="field-help">Used when a device has not picked a shopkeeper yet.</p>
         </div>
 
         <div class="section-head"><h2>Sales &amp; receipts</h2></div>
@@ -1932,6 +1921,22 @@
           <button class="btn btn-primary btn-block" type="submit">Save store settings</button>
         </div>
       </form>
+
+      <div class="settings-card">
+        <h2>Shopkeepers</h2>
+        <p class="card-sub">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts.</p>
+        <div class="staff-roster">
+          ${roster.length ? roster.map((name) => `
+            <span class="staff-chip">
+              <span class="staff-chip-name">${esc(name)}</span>
+              <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
+            </span>`).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
+        </div>
+        <div class="staff-add-row">
+          <input class="input" id="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name">
+          <button class="btn" type="button" data-act="add-staff">Add</button>
+        </div>
+      </div>
     </section>`;
   }
 

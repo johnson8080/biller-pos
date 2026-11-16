@@ -622,13 +622,19 @@ function runAction(btn) {
       T.toast("That name is already in the list", "i-alert");
       return;
     }
+    // Keep whatever is typed in the store form before the page re-renders.
+    applyStoreForm(T);
     T.state.store.staffList = [...list, name];
+    if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.save();
     render();
     T.toast(`${name} added to shopkeepers`, "i-check");
+    requestAnimationFrame(() => document.getElementById("new-staff-name")?.focus({ preventScroll: true }));
   }
   else if (act === "remove-staff" && value) {
+    applyStoreForm(T);
     T.state.store.staffList = (T.state.store.staffList || []).filter((n) => String(n).trim() !== value);
+    if (String(T.state.store.staff || "").trim() === value) T.state.store.staff = "";
     // If this device was selling as the removed shopkeeper, the fallback
     // name takes over automatically.
     try {
@@ -1488,6 +1494,26 @@ async function testMpesaPush() {
   T.toast(result.ok ? "Test prompt sent" : "Test prompt failed", result.ok ? "i-check" : "i-alert");
 }
 
+// Read the store form into state. Used by the Save button, and before any
+// re-render that would otherwise throw away half-typed details.
+function applyStoreForm(Till) {
+  const form = document.getElementById("store-settings-form");
+  if (!form) return false;
+  const data = new FormData(form);
+  const store = Till.state.store;
+  store.name = String(data.get("name") || "").trim() || "My Store";
+  store.address = String(data.get("address") || "").trim();
+  store.phone = String(data.get("phone") || "").trim();
+  store.staff = String(data.get("staff") || "").trim();
+  store.footer = String(data.get("footer") || "").trim();
+  store.taxRate = Math.min(30, Math.max(0, Number(data.get("taxRate")) || 0));
+  const currency = String(data.get("currency") || "KES").toUpperCase();
+  if (["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].includes(currency)) {
+    store.currency = currency;
+  }
+  return true;
+}
+
 function updateSyncDot() {
   const brand = document.querySelector(".brand");
   if (!brand) return;
@@ -1715,18 +1741,7 @@ function render() {
   if (storeSettingsForm) {
     storeSettingsForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const data = new FormData(storeSettingsForm);
-      const store = T.state.store;
-      store.name = String(data.get("name") || "").trim() || "My Store";
-      store.address = String(data.get("address") || "").trim();
-      store.phone = String(data.get("phone") || "").trim();
-      store.staff = String(data.get("staff") || "").trim();
-      store.footer = String(data.get("footer") || "").trim();
-      store.taxRate = Math.min(30, Math.max(0, Number(data.get("taxRate")) || 0));
-      const currency = String(data.get("currency") || "KES").toUpperCase();
-      if (["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].includes(currency)) {
-        store.currency = currency;
-      }
+      applyStoreForm(T);
       T.save();
       T.toast("Store settings saved", "i-check");
       render();
