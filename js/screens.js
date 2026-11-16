@@ -556,7 +556,7 @@
       return `<section class="screen" aria-labelledby="reports-title">
         <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <h1 id="reports-title">REPORTS</h1>
-          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none;padding:4px 8px;font-size:calc(11px * var(--fs))">${icon("i-check")} AUDIT REPORT</button>
+          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none;padding:3px 6px;font-size:calc(10px * var(--fs));border-width:0.5px">${icon("i-check")} AUDIT REPORT</button>
         </div>
         <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
         <div class="empty-state">
