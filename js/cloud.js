@@ -473,7 +473,21 @@
   async function revertPayment(uid) {
     if (!fs || !user || !isOwner()) return { ok: false, error: "Not allowed." };
     try {
-      await fs.collection(PAYMENT_COLLECTION).doc(uid).set({
+      const ref = fs.collection(PAYMENT_COLLECTION).doc(uid);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        // No payment record yet — create one flagged as reverted so the
+        // shop's next sync rolls back to unpaid.
+        await ref.set({
+          status: "reverted",
+          confirmedAt: 0,
+          revertedAt: Date.now()
+        });
+        paymentRequests = paymentRequests.map((item) => (item.id === uid ? { ...item, status: "reverted", confirmedAt: 0, revertedAt: Date.now() } : item));
+        notify();
+        return { ok: true, created: true };
+      }
+      await ref.set({
         status: "reverted",
         confirmedAt: 0,
         revertedAt: Date.now()
