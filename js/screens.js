@@ -556,7 +556,7 @@
       return `<section class="screen" aria-labelledby="reports-title">
         <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <h1 id="reports-title">REPORTS</h1>
-          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none;padding:4px 8px;font-size:calc(11px * var(--fs))">${icon("i-check")} Audit</button>
+          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none;padding:4px 8px;font-size:calc(11px * var(--fs))">${icon("i-check")} AUDIT REPORT</button>
         </div>
         <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
         <div class="empty-state">
@@ -736,7 +736,7 @@
         : `<p class="report-note">No audits recorded yet.</p>`;
       return `<section class="screen" aria-labelledby="audit-title">
         <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <h1 id="audit-title">AUDIT</h1>
+          <h1 id="audit-title" style="font-size:calc(22px * var(--fs))">AUDIT REPORT</h1>
           <button class="btn btn-ghost" data-nav="#/reports" style="flex:none">${icon("i-back")} Reports</button>
         </div>
         <p class="sub" style="margin-top:-4px">Count the stock on the shelf and confirm it matches the record.</p>
@@ -750,18 +750,18 @@
     const checks = T.ui.auditChecks || {};
     const rows = products.map((p) => {
       const on = checks[p.id] === true;
-      return `<div class="inv-row" style="gap:8px;padding:6px 0">
-        <button class="audit-mark" data-act="toggle-audit-mark" data-id="${esc(p.id)}" style="flex:none;width:22px;height:22px;border-radius:5px;border:1px solid var(--ui-line);background:${on ? "var(--lime-soft)" : "var(--surface-2)"};color:${on ? "var(--forest-ink)" : "var(--faint)"};display:grid;place-items:center;font-size:12px">${on ? icon("i-check") : ""}</button>
+      return `<div class="inv-row" data-act="toggle-audit-mark" data-id="${esc(p.id)}" style="gap:8px;padding:6px 0;cursor:pointer">
+        <span class="audit-mark" style="flex:none;width:22px;height:22px;border-radius:5px;border:1px solid var(--ui-line);background:${on ? "var(--lime-soft)" : "var(--surface-2)"};color:${on ? "var(--forest-ink)" : "var(--faint)"};display:grid;place-items:center;font-size:12px">${on ? icon("i-check") : ""}</span>
         ${productTile(p)}
         <span class="inv-copy">
-          <span class="inv-name" style="font-size:calc(13px * var(--fs))">${esc(p.name)}</span>
-          <span class="inv-meta" style="font-size:calc(10px * var(--fs))">Recorded: ${p.stock} ${esc(p.unit)}</span>
+          <span class="inv-name" style="font-size:calc(12px * var(--fs))">${esc(p.name)}</span>
+          <span class="inv-meta" style="font-size:calc(9px * var(--fs))">Recorded: ${p.stock} ${esc(p.unit)}</span>
         </span>
       </div>`;
     }).join("");
     return `<section class="screen" aria-labelledby="audit-title">
       <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <h1 id="audit-title">AUDIT</h1>
+        <h1 id="audit-title" style="font-size:calc(22px * var(--fs))">AUDIT REPORT</h1>
         <button class="btn btn-ghost" data-act="cancel-audit" style="flex:none">${icon("i-close")} Cancel</button>
       </div>
       <p class="sub" style="margin-top:-4px">Tap the marker when the shelf matches the record.</p>

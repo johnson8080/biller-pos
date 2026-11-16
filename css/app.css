@@ -1649,7 +1649,7 @@ html[data-color-scheme="light"] .chip.is-active {
   margin: 9px 0;
   border-radius: 10px;
   background: var(--surface);
-  border: 1px solid var(--ui-line);
+  border: 0.5px solid var(--ui-line);
   box-shadow: var(--shadow-card);
 }
 .settings-card h2, .about-card h2 { font-size: calc(14px * var(--fs)); font-weight: 700; letter-spacing: -.02em; }
@@ -1728,7 +1728,7 @@ html[data-color-scheme="light"] .chip.is-active {
 .inventory-alert .ico { width: 16px; height: 16px; margin-top: 1px; }
 .inventory-alert strong { color: var(--amber); }
 .inv-list { display: flex; flex-direction: column; }
-.inv-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.inv-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 0.5px solid var(--line); }
 .inv-row:last-child { border-bottom: 0; }
 .inv-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; text-align: left; }
 .inv-copy { flex: 1; min-width: 0; }
