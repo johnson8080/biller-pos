@@ -1,5 +1,5 @@
 /* Till POS - offline shell cache */
-const VERSION = "till-v1.8.1";
+const VERSION = "till-v1.8.2";
 const SHELL = [
   "./",
   "./index.html",
@@ -36,6 +36,8 @@ self.addEventListener("activate", (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((key) => key !== VERSION).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: "window" }))
+      .then((clients) => clients.forEach((client) => client.postMessage({ type: "sw-activated", version: VERSION })))
   );
 });
 
@@ -51,11 +53,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // App shell navigations: prefer the network so updates land, fall back to
-  // the cached shell when there is no connection.
+  // App shell navigations: always go to the network (no-store, so a stale
+  // HTTP cache copy cannot resurrect an old version), fall back to the cached
+  // shell when there is no connection.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
           const copy = response.clone();
           caches.open(VERSION).then((cache) => cache.put("./index.html", copy)).catch(() => {});
