@@ -1192,7 +1192,7 @@ function runAction(btn) {
   else if (act === "start-audit") {
     T.ui.auditInProgress = true;
     T.ui.auditChecks = {};
-    (T.state.products || []).forEach((p) => { T.ui.auditChecks[p.id] = true; });
+    (T.state.products || []).forEach((p) => { T.ui.auditChecks[p.id] = false; });
     render();
   }
   else if (act === "toggle-audit-mark" && id) {
@@ -1205,7 +1205,7 @@ function runAction(btn) {
     const checks = T.ui.auditChecks || {};
     let mismatches = 0;
     const items = products.map((p) => {
-      const match = checks[p.id] !== false;
+      const match = checks[p.id] === true;
       if (!match) mismatches++;
       return { productId: p.id, name: p.name, recorded: p.stock, actual: p.stock, match };
     });

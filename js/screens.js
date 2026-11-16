@@ -556,7 +556,7 @@
       return `<section class="screen" aria-labelledby="reports-title">
         <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <h1 id="reports-title">REPORTS</h1>
-          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none">${icon("i-check")} Audit</button>
+          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none;padding:4px 8px;font-size:calc(11px * var(--fs))">${icon("i-check")} Audit</button>
         </div>
         <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
         <div class="empty-state">
@@ -725,7 +725,7 @@
             const badge = a.passed
               ? `<span style="color:#16a34a;font-weight:700">${icon("i-check")} Passed</span>`
               : `<span style="color:#dc2626;font-weight:700">${icon("i-alert")} Failed (${a.mismatches} mismatch${a.mismatches === 1 ? "" : "es"})</span>`;
-            return `<div class="settings-card" style="margin-bottom:10px">
+            return `<div class="settings-card" style="margin-bottom:8px;padding:8px 10px">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
                 <strong>${stamp}</strong>
                 ${badge}
@@ -749,14 +749,14 @@
     }
     const checks = T.ui.auditChecks || {};
     const rows = products.map((p) => {
-      const on = checks[p.id] !== false;
-      const recorded = p.stock;
-      return `<div class="settings-card" style="margin-bottom:8px;padding:10px 12px;display:flex;align-items:center;gap:10px">
-        <button class="audit-mark ${on ? "is-on" : ""}" data-act="toggle-audit-mark" data-id="${esc(p.id)}" style="flex:none;width:28px;height:28px;border-radius:6px;border:1px solid var(--ui-line);background:${on ? "var(--lime-soft)" : "var(--surface-2)"};color:${on ? "var(--forest-ink)" : "var(--faint)"};display:grid;place-items:center">${on ? icon("i-check") : ""}</button>
-        <div style="flex:1;min-width:0">
-          <strong style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</strong>
-          <span class="report-note" style="margin:0">Recorded: ${recorded} ${esc(p.unit)}</span>
-        </div>
+      const on = checks[p.id] === true;
+      return `<div class="inv-row" style="gap:8px;padding:6px 0">
+        <button class="audit-mark" data-act="toggle-audit-mark" data-id="${esc(p.id)}" style="flex:none;width:22px;height:22px;border-radius:5px;border:1px solid var(--ui-line);background:${on ? "var(--lime-soft)" : "var(--surface-2)"};color:${on ? "var(--forest-ink)" : "var(--faint)"};display:grid;place-items:center;font-size:12px">${on ? icon("i-check") : ""}</button>
+        ${productTile(p)}
+        <span class="inv-copy">
+          <span class="inv-name" style="font-size:calc(13px * var(--fs))">${esc(p.name)}</span>
+          <span class="inv-meta" style="font-size:calc(10px * var(--fs))">Recorded: ${p.stock} ${esc(p.unit)}</span>
+        </span>
       </div>`;
     }).join("");
     return `<section class="screen" aria-labelledby="audit-title">
