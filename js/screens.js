@@ -11,6 +11,10 @@
   // App version comes from index.html (window.ASSET_VERSION), so the About
   // screen, Settings and the Sell hero always show the same version.
   const VERSION = String(window.ASSET_VERSION || "").trim();
+  // Currency symbol lives on the label line; the value line carries only the
+  // digits ("1,234" not "Ksh1,234.00").
+  const currencySymbol = () => (typeof T.currencySymbol === "function" ? T.currencySymbol() : "");
+  const amountOnly = (value) => String(value).split(currencySymbol()).join("").trim();
   const supplierDayLabel = (code) => (T.SUPPLIER_DAYS.find(([key]) => key === code) || [code, code])[1];
 
   function productTile(product, size = "") {
@@ -300,16 +304,16 @@
         </div>
         <div class="sell-title-row">
           <button class="sell-title-col" data-nav="#/stock" aria-label="Stock price ${money(retail)}, open inventory">
-            <span class="sell-title-label">Stock price</span>
-            <span class="sell-title-value">${money(retail)}</span>
+            <span class="sell-title-label">Stock price <span style="text-transform:none">[${esc(currencySymbol())}]</span></span>
+            <span class="sell-title-value">${esc(amountOnly(money(retail)))}</span>
           </button>
           <button class="sell-title-col" data-nav="#/debt" aria-label="Customer debt ${money(customerDebt)}, open customer debt">
-            <span class="sell-title-label">Customer debt</span>
-            <span class="sell-title-value is-debt">${money(customerDebt)}</span>
+            <span class="sell-title-label">Customer debt <span style="text-transform:none">[${esc(currencySymbol())}]</span></span>
+            <span class="sell-title-value is-debt">${esc(amountOnly(money(customerDebt)))}</span>
           </button>
           <button class="sell-title-col" data-nav="#/suppliers" aria-label="Supplier debt ${money(myDebt)}, open suppliers">
-            <span class="sell-title-label">Supplier debt</span>
-            <span class="sell-title-value is-debt">${money(myDebt)}</span>
+            <span class="sell-title-label">Supplier debt <span style="text-transform:none">[${esc(currencySymbol())}]</span></span>
+            <span class="sell-title-value is-debt">${esc(amountOnly(money(myDebt)))}</span>
           </button>
         </div>
         <p class="sub"></p>
