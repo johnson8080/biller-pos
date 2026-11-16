@@ -305,6 +305,9 @@
       return { ok: false, reason: error?.code || error?.message || "unknown" };
     }
   }
+
+  /** Put the cloud copy in place on this device. */
+  function applyRemote(remote, stamp = 0) {
     const merged = T.normalizeState(remote);
     T.state = merged;
     try {

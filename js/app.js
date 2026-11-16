@@ -1141,6 +1141,12 @@ function runAction(btn) {
   }
   else if (act === "open-wastage") { T.sheets?.openWastage?.(); }
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
+  else if (act === "refresh-data") {
+    Promise.resolve(T.cloud?.refreshNow?.()).then((result) => {
+      T.toast(result?.ok ? "Refreshed from the cloud" : (result?.reason === "offline" ? "No connection" : "Could not refresh"), result?.ok ? "i-check" : "i-alert");
+      render();
+    });
+  }
   else if (act === "open-stock-day" && value) { T.sheets?.openStockDay?.(value); }
   else if (act === "open-stock-days") { T.sheets?.openStockDays?.(); }
   else if (act === "set-mix-period" && value) {
