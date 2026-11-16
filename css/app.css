@@ -707,7 +707,7 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 @keyframes screenIn { from { opacity: .25; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .screen-head { padding: 0 0 16px; }
-.screen-head h1 { margin-top: 3px; font-size: calc(30px * var(--fs)); line-height: 1.02; font-weight: 700; letter-spacing: -.045em; }
+.screen-head h1 { margin-top: 3px; font-size: calc(22px * var(--fs)); line-height: 1.02; font-weight: 700; letter-spacing: -.045em; }
 .screen-head.with-action { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .screen-head.with-action > div { min-width: 0; }
 .screen-head.with-action .btn { margin-top: 8px; flex: none; }
