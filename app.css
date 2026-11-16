@@ -545,19 +545,19 @@ html[data-color-scheme="dark"] .seg-btn.is-active { background: var(--line-stron
 .plan-stat.is-warn strong { color: var(--amber); }
 .plan-total { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--lime-soft); color: var(--forest-2); font-size: calc(10.5px * var(--fs)); font-weight: 650; }
 .plan-total strong { font-size: calc(14px * var(--fs)); font-weight: 750; }
-.plan-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-.plan-row { padding: 11px; border-radius: 8px; background: var(--surface); border: 1px solid var(--ui-line); }
-.plan-row-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.plan-row-name strong { display: block; font-size: calc(12px * var(--fs)); font-weight: 650; }
-.plan-row-name small { display: block; margin-top: 1px; font-size: calc(9px * var(--fs)); color: var(--muted); word-break: break-all; }
-.plan-row-pill { flex: none; padding: 3px 7px; border-radius: 5px; font-size: calc(8px * var(--fs)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }
+.plan-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.plan-row { padding: 8px 9px; border-radius: 7px; background: var(--surface); border: 0.5px solid var(--ui-line); box-shadow: var(--shadow-card); }
+.plan-row-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.plan-row-name strong { display: block; font-size: calc(11px * var(--fs)); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.plan-row-name small { display: block; margin-top: 0; font-size: calc(8px * var(--fs)); color: var(--muted); word-break: break-all; }
+.plan-row-pill { flex: none; padding: 2px 6px; border-radius: 5px; font-size: calc(7px * var(--fs)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }
 .plan-row-pill.is-good { background: var(--lime-soft); color: var(--forest-2); }
 .plan-row-pill.is-warn { background: var(--amber-bg); color: var(--amber); }
 .plan-row-pill.is-bad { background: var(--red-bg); color: var(--red); }
-.plan-row-meta { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 8px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
+.plan-row-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 6px; font-size: calc(8.5px * var(--fs)); color: var(--muted); }
 .plan-row-code { font-weight: 700; letter-spacing: .03em; color: var(--ink-2); }
-.plan-row-actions { margin-top: 10px; display: flex; gap: 8px; }
-.plan-row-actions .btn { min-height: 36px; padding: 0 12px; font-size: calc(10.5px * var(--fs)); }
+.plan-row-actions { margin-top: 6px; display: flex; gap: 6px; }
+.plan-row-actions .btn { min-height: 30px; padding: 0 9px; font-size: calc(9.5px * var(--fs)); gap: 4px; border-radius: 6px; }
 
 .plan-notice { margin-top: 10px; padding: 12px; border-radius: 8px; background: var(--amber-bg); border: 1px solid rgba(var(--amber-rgb), .35); }
 .plan-notice-head { display: flex; align-items: center; gap: 7px; font-size: calc(11.5px * var(--fs)); font-weight: 700; color: var(--amber); }

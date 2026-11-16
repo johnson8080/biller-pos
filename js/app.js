@@ -485,6 +485,15 @@ async function declineShopPayment(id) {
   render();
 }
 
+/** The developer takes back a confirmation: the shop goes back to unpaid. */
+async function revertShopPayment(id) {
+  const T = window.Till;
+  if (!confirm("Revert this shop to unpaid? On their next sync the plan is wiped back and they will have to pay again.")) return;
+  const result = await T.cloud?.revertPayment?.(id);
+  T.toast(result?.ok ? "Reverted to unpaid. The shop will lock on their next sync." : result?.error || "Could not revert", result?.ok ? "i-check" : "i-alert");
+  render();
+}
+
 /** Copy a shop's code so the developer can read it out over the phone. */
 async function copyShopCode(btn) {
   const T = window.Till;
@@ -965,6 +974,7 @@ function runAction(btn) {
   else if (act === "mpesa-test-push") { testMpesaPush(); }
   else if (act === "confirm-payment" && id) { confirmShopPayment(id); }
   else if (act === "decline-payment" && id) { declineShopPayment(id); }
+  else if (act === "revert-payment" && id) { revertShopPayment(id); }
   else if (act === "delete-account" && id) { deleteShopAccount(id); }
 
   else if (act === "copy-shop-code") { copyShopCode(btn); }

@@ -1600,7 +1600,7 @@
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
         <span class="plan-row-pill ${tone}">${esc(label)}</span>
       </div>
-      <div class="plan-row-meta" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:0.9em; align-items:center;">
+      <div class="plan-row-meta">
         <span class="plan-row-code"><strong>${esc(row.code || "no code")}</strong></span>
         ${row.amount ? ` · <span>${esc(T.money(row.amount))}</span>` : ""}
         ${row.reference ? ` · <span>ref ${esc(row.reference)}</span>` : ""}
@@ -1615,12 +1615,9 @@
         <button class="btn btn-ghost" data-act="decline-payment" data-id="${esc(row.id)}">Not paid</button>
         <button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>
       </div>` : `<div class="plan-row-actions">
+        ${(row.status === "active" || row.status === "confirmed") ? `<button class="btn btn-ghost" data-act="revert-payment" data-id="${esc(row.id)}">${icon("i-refresh")} Revert to unpaid</button>` : ""}
         <button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>
       </div>`}
-      ${row.email && row.email.includes("@") ? `<div class="plan-row-actions">
-        <a class="btn btn-ghost" href="mailto:${esc(row.email)}?subject=${encodeURIComponent("Your Biller POS monthly plan")}">${icon("i-mail")} Email this shop</a>
-        <button class="btn btn-ghost" data-act="copy-shop-code" data-code="${esc(row.code || "")}">${icon("i-check")} Copy code</button>
-      </div>` : ""}
     </div>`;
   }
   /* ---------- Subscription ---------- */

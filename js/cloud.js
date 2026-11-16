@@ -466,6 +466,26 @@
     }
   }
 
+  /**
+   * The developer takes back a confirmation: the shop's own device watches
+   * this document and, on the next snapshot, wipes the plan back to unpaid.
+   */
+  async function revertPayment(uid) {
+    if (!fs || !user || !isOwner()) return { ok: false, error: "Not allowed." };
+    try {
+      await fs.collection(PAYMENT_COLLECTION).doc(uid).set({
+        status: "reverted",
+        confirmedAt: 0,
+        revertedAt: Date.now()
+      }, { merge: true });
+      paymentRequests = paymentRequests.map((item) => (item.id === uid ? { ...item, status: "reverted", confirmedAt: 0, revertedAt: Date.now() } : item));
+      notify();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: friendlyError(error) };
+    }
+  }
+
   /** The developer deletes an account. */
   async function deleteAccount(uid) {
     if (!fs || !user || !isOwner()) return { ok: false, error: "Not allowed." };
@@ -532,6 +552,14 @@
               window.Till.state.store.subscription.lastConfirmedAt = confirmedAt;
               window.Till.save?.({ quiet: true });
             }
+          }
+        }
+        if (data.status === "reverted") {
+          const revertedAt = Number(data.revertedAt) || 0;
+          const sub = window.Till?.subscription?.() || {};
+          const applied = Number(sub.revertedAt || 0);
+          if (revertedAt > applied) {
+            window.Till?.revertSubscription?.({ revertedAt, reason: data.reason || "" });
           }
         }
       }, () => { /* the rules may not allow it yet */ });
@@ -656,6 +684,7 @@
     requestPayment,
     confirmPayment,
     declinePayment,
+    revertPayment,
     deleteAccount,
     onPaymentPrompt: (fn) => { onPaymentPrompt = fn; },
     devEmails: () => DEV_EMAILS.slice()

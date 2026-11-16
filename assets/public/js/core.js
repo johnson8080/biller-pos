@@ -314,6 +314,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       reference: String(savedSub.reference || "").slice(0, 24),
       lastConfirmedAt: Number.isFinite(Number(savedSub.lastConfirmedAt)) ? Number(savedSub.lastConfirmedAt) : 0,
       maxSeenTimestamp: Number.isFinite(Number(savedSub.maxSeenTimestamp)) ? Number(savedSub.maxSeenTimestamp) : 0,
+      revertedAt: Number.isFinite(Number(savedSub.revertedAt)) ? Number(savedSub.revertedAt) : 0,
+      revertedReason: String(savedSub.revertedReason || "").slice(0, 120),
       payments: Array.isArray(savedSub.payments)
         ? savedSub.payments.slice(-12).map((entry) => ({
             at: String(entry?.at || "").slice(0, 40),
@@ -1825,6 +1827,30 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       reference: String(reference || sub.reference || T.subscriptionReference()).slice(0, 24)
     };
     T.save();
+    return T.state.store.subscription;
+  };
+
+  /**
+   * The developer checked again and the money did not land. Roll the plan
+   * back to unpaid on this device: no paidUntil, no trial-extension restart,
+   * no payment state — the lock screen comes straight back.
+   */
+  T.revertSubscription = ({ revertedAt = 0, reason = "" } = {}) => {
+    const sub = T.subscription();
+    T.state.store.subscription = {
+      ...sub,
+      paidUntil: "",
+      lastPaidAt: "",
+      lastMethod: "",
+      lastReference: "",
+      lastConfirmedAt: 0,
+      awaiting: false,
+      reference: "",
+      revertedAt: Number.isFinite(Number(revertedAt)) ? Number(revertedAt) : Date.now(),
+      revertedReason: String(reason || "").slice(0, 120)
+    };
+    T.save();
+    T.toast?.("Your plan was not verified — please pay to keep selling.", "i-alert", "bad");
     return T.state.store.subscription;
   };
 
