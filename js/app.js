@@ -605,6 +605,10 @@ function runAction(btn) {
   }
   else if (act === "pick-staff" && value) {
     const name = T.setActiveStaff?.(value) || value;
+    // Keep the store's legacy name in step, so Store & receipts shows the
+    // same shopkeeper this device is selling as.
+    T.state.store.staff = String(name || "").trim();
+    T.save();
     T.sheets?.close?.();
     render();
     T.toast(`Selling as ${name}`, "i-check");
@@ -625,6 +629,9 @@ function runAction(btn) {
     // Keep whatever is typed in the store form before the page re-renders.
     applyStoreForm(T);
     T.state.store.staffList = [...list, name];
+    // First shopkeeper on the shop: also make it this device's pick, so the
+    // Sell tab and the Store select agree from the start.
+    if (!list.length) T.setActiveStaff?.(name);
     if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.save();
     render();
@@ -1745,6 +1752,15 @@ function render() {
       T.save();
       T.toast("Store settings saved", "i-check");
       render();
+    });
+    // The shopkeeper select is the same choice the Sell tab makes: picking it
+    // here changes who is selling on this device, and vice versa.
+    document.getElementById("store-staff")?.addEventListener("change", (event) => {
+      const name = T.setActiveStaff?.(event.target.value) || event.target.value;
+      T.state.store.staff = String(name || "").trim();
+      T.save();
+      render();
+      T.toast(`Selling as ${name}`, "i-check");
     });
   }
   if (settingsForm) {

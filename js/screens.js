@@ -1867,6 +1867,8 @@
   function storeSettings() {
     const store = T.state.store;
     const roster = T.staffRoster ? T.staffRoster() : (store.staff ? [store.staff] : []);
+    // The same value the Sell tab's picker shows: one shopkeeper per device.
+    const active = T.activeStaff ? T.activeStaff() : "";
     return `<section class="screen" aria-labelledby="store-title">
       <div class="screen-head">
         <p class="eyebrow">Shop details</p>
@@ -1889,13 +1891,11 @@
           <input class="input" id="store-phone" name="phone" value="${esc(store.phone)}" autocomplete="tel" inputmode="tel">
         </div>
         <div class="field">
-          <label for="store-staff">Default staff name</label>
+          <label for="store-staff">Shopkeeper on this device</label>
           ${roster.length ? `<select class="select" id="store-staff" name="staff">
-            <option value="">No default</option>
-            ${roster.map((name) => `<option value="${esc(name)}" ${String(store.staff || "") === name ? "selected" : ""}>${esc(name)}</option>`).join("")}
-            ${store.staff && !roster.includes(store.staff) ? `<option value="${esc(store.staff)}" selected>${esc(store.staff)}</option>` : ""}
+            ${roster.map((name) => `<option value="${esc(name)}" ${String(active) === name ? "selected" : ""}>${esc(name)}</option>`).join("")}
           </select>` : `<input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name" placeholder="Add a shopkeeper below first">`}
-          <p class="field-help">Used when a device has not picked a shopkeeper yet.</p>
+          <p class="field-help">Same choice as the Sell tab — the name printed on this device's receipts.</p>
         </div>
 
         <div class="section-head"><h2>Sales &amp; receipts</h2></div>
