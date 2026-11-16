@@ -1,5 +1,5 @@
 /* Till POS - offline shell cache */
-const VERSION = "till-v1.7.7";
+const VERSION = "till-v1.7.8";
 const SHELL = [
   "./",
   "./index.html",
@@ -16,16 +16,17 @@ const SHELL = [
   "./js/auth.js",
   "./js/app.js",
   "./assets/vendor/zxing.min.js",
-  "./assets/fonts/instrument-sans-latin.woff2",
   "./assets/icon.svg",
   "./assets/icon-192.png",
   "./assets/icon-512.png"
 ];
 
+// Cache each file on its own: one missing file must never fail the whole
+// install, or the app ends up with no offline copy at all.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(VERSION)
-      .then((cache) => cache.addAll(SHELL))
+      .then((cache) => Promise.all(SHELL.map((url) => cache.add(url).catch(() => null))))
       .then(() => self.skipWaiting())
   );
 });
@@ -43,34 +44,41 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
 
-  // App shell navigations: prefer the network so updates land, fall back offline.
+  // App shell navigations: prefer the network so updates land, fall back to
+  // the cached shell when there is no connection.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(VERSION).then((cache) => cache.put("./index.html", copy));
+          caches.open(VERSION).then((cache) => cache.put("./index.html", copy)).catch(() => {});
           return response;
         })
-        .catch(() => caches.match("./index.html").then((cached) => cached || caches.match("./")))
+        .catch(() => caches.match("./index.html")
+          .then((cached) => cached || caches.match("./"))
+          .then((cached) => cached || new Response(
+            "<!doctype html><meta charset=utf-8><title>Offline</title><body style=\"font:16px system-ui;padding:24px\">Biller is offline and no cached copy exists yet. Reconnect once so the app can save itself to this device.</body>",
+            { headers: { "Content-Type": "text/html; charset=utf-8" } }
+          )))
     );
     return;
   }
 
-  // Static assets: cache first, then network, and keep the cache warm.
+  // Everything else: cache first, then network, and keep the cache warm.
+  // Cross-origin files (the Firebase SDK, Google Fonts) are cached too, so the
+  // app can boot with no connection at all.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => {
-        if (response.ok && response.type === "basic") {
+        const cacheable = response.ok || response.type === "opaque";
+        if (cacheable) {
           const copy = response.clone();
-          caches.open(VERSION).then((cache) => cache.put(request, copy));
+          caches.open(VERSION).then((cache) => cache.put(request, copy)).catch(() => {});
         }
         return response;
-      });
+      }).catch(() => cached || Response.error());
     })
   );
 });
-
