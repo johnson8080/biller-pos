@@ -866,7 +866,7 @@ h1, h2, h3, h4, p { margin: 0; }
   justify-content: space-around;
   gap: 3px;
   background: var(--surface);
-  border: 1px solid var(--ui-line);
+  border: 1px solid var(--line-strong);
   border-radius: 12px;
   box-shadow: var(--shadow-card);
   z-index: 9;
@@ -883,7 +883,7 @@ h1, h2, h3, h4, p { margin: 0; }
   justify-content: center;
   gap: 1px;
   position: relative;
-  color: var(--faint);
+  color: var(--muted);
   background: rgba(var(--surface-rgb), .66);
   border: 1px solid rgba(var(--accent-rgb),.22);
   border-radius: 5px;
