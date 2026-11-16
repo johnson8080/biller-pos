@@ -1577,8 +1577,8 @@
     const monthly = filteredEntries.filter((row) => row.status === "active" || row.status === "confirmed").reduce((sum, row) => sum + (row.amount || 0), 0);
 
     // Payment authentication: shops that signed up more than 30 days ago,
-    // never settled their plan (status is due/overdue), yet the device is
-    // heartbeating right now — likely free-riding on the app.
+    // never settled their plan (status is due/overdue), are heartbeating
+    // right now AND actually ringing sales — likely free-riding.
     const DAY_MS = 24 * 60 * 60 * 1000;
     const devEmails = T.DEV_EMAILS || [];
     const cheaters = accounts
@@ -1588,24 +1588,25 @@
         account: a,
         days: a.sub.startedAt
           ? Math.floor((Date.now() - (Date.parse(a.sub.startedAt) || Date.now())) / DAY_MS)
-          : null
+          : null,
+        salesMonth: Number(a.sub.salesMonth || 0)
       }))
-      .filter(({ days, account }) => {
+      .filter(({ days, account, salesMonth }) => {
         if (days === null || days < 30) return false;
         const st = String(account.sub.status || "due");
         if (["active", "confirmed", "trial", "awaiting"].includes(st)) return false;
-        return Date.now() - (account.t || 0) < 150000; // seen within 2.5 min
+        return Date.now() - (account.t || 0) < 150000 && salesMonth > 0; // seen live AND selling
       })
-      .sort((a, b) => (b.days || 0) - (a.days || 0));
+      .sort((a, b) => (b.salesMonth - a.salesMonth) || (b.days - a.days));
 
     const authCard = `<div class="settings-card auth-card">
       <div class="report-card-head"><h2>Payment authentication</h2><span class="report-total">${cheaters.length}</span></div>
-      <p class="report-note" style="margin-top:4px">Shops seen live 30+ days unpaid — likely free-riding. Open the shop and tap Revert to unpaid.</p>
+      <p class="report-note" style="margin-top:4px">Shops signing up 30+ days ago, never paid, live right now AND ringing sales — likely free-riding.</p>
       ${cheaters.length
-        ? cheaters.map(({ account, days }) => `<div class="auth-row">
+        ? cheaters.map(({ account, days, salesMonth }) => `<div class="auth-row">
             <div class="auth-row-main">
               <strong>${esc(account.sub.shop || account.name || "Shop")}</strong>
-              <small>${esc(account.name || "")} · ${days}d unpaid · seen ${seen(account.t)}</small>
+              <small>${esc(account.name || "")} · ${days}d unpaid · ${salesMonth} sale${salesMonth === 1 ? "" : "s"} this month · seen ${seen(account.t)}</small>
             </div>
             <button class="btn btn-ghost" data-act="revert-payment" data-id="${esc(account.id)}">${icon("i-refresh")} Revert</button>
           </div>`).join("")

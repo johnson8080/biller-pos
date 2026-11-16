@@ -651,6 +651,18 @@
     try {
       const sub = window.Till?.subscription?.() || {};
       const plan = window.Till?.planSummary?.() || {};
+      const txs = window.Till?.state?.transactions || [];
+      const monthStart = (() => {
+        const d = new Date();
+        return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+      })();
+      let salesMonth = 0;
+      let lastSaleAt = "";
+      for (const tx of txs) {
+        const created = tx.createdAt || "";
+        if (new Date(created).getTime() >= monthStart) salesMonth++;
+        if (created > lastSaleAt) lastSaleAt = created; // ISO strings compare cleanly
+      }
       return {
         status: window.Till?.subscriptionStatus?.() || "active",
         amount: plan.amountCents || sub.amountCents || 0,
@@ -663,6 +675,10 @@
         paidAt: sub.lastPaidAt || "",
         shop: window.Till?.state?.store?.name || "",
         startedAt: sub.startedAt || "",
+        // Operational signal for the developer panel: how many sales the
+        // shop has rung this calendar month, and when it last sold.
+        salesMonth,
+        lastSaleAt,
         at: Date.now()
       };
     } catch {

@@ -56,7 +56,7 @@ window.TillDaraja = {
   */
   fee: {
     enabled: true,
-    amountCents: 60000,
+    amountCents: 80000,
     currency: "KES",
     // 0 means every shop starts due, so the lock can be tested straight away.
     // Put it back to 7 for a free first week.

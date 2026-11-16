@@ -209,7 +209,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   function defaultSubscription() {
     return {
       plan: "monthly",
-      amountCents: 60000,
+      amountCents: 80000,
       currency: "KES",
       startedAt: "",
       paidUntil: "",
