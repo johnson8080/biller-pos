@@ -887,6 +887,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .offline-card { align-items: flex-start; text-align: left; margin-bottom: 12px; }
 .offline-copy { font-size: calc(11px * var(--fs)); color: var(--muted); line-height: 1.5; margin: 0 0 12px; }
 .offline-actions { display: grid; gap: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* Tab bar --------------------------------------------------------- */
 .tabbar {

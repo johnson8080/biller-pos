@@ -243,8 +243,17 @@ function wireNav(root) {
     btn.dataset.wired = "nav";
     btn.addEventListener("click", (event) => {
       event.preventDefault();
-      const target = btn.dataset.nav;
+      const T = window.Till;
+      let target = btn.dataset.nav;
       if (!target) return;
+      // Unpaid shops can only move between the pay/verify screens — every
+      // other link lands on the "Your plan is due" page.
+      if (T.subscriptionLocked?.()) {
+        const route = String(target).replace(/^#\/?/, "").split("/")[0];
+        if (!["sell", "more", "account", "auth"].includes(route)) {
+          target = "#/sell";
+        }
+      }
       go(target);
     });
   });
@@ -507,6 +516,21 @@ function runAction(btn) {
   const act = btn.dataset.act;
   const id = btn.dataset.id;
   const value = btn.dataset.value;
+  // A shop that has not settled its plan can only reach the screens that pay,
+  // sync, verify and sign out. Every other action bounces straight back to
+  // the "Your plan is due" page.
+  if (T.subscriptionLocked?.()) {
+    const LOCK_ALLOW = new Set([
+      "pay-subscription", "subscription-sent", "cloud-sync", "refresh-data",
+      "open-subscription", "open-date-settings", "open-developer-chat",
+      "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection"
+    ]);
+    if (!LOCK_ALLOW.has(act)) {
+      T.toast("Your plan needs paying first", "i-alert");
+      go("#/sell");
+      return;
+    }
+  }
   // A shop that has not paid cannot change its shop: no selling, no
   // stock, no suppliers, no customers, no categories. Reading, paying the
   // plan, the appearance and the support chat all stay open, so the shop can
@@ -1733,6 +1757,13 @@ function render() {
     html = tx ? T.screens.receipt(tx, T.ui.justPaidId === tx.id) : `<section class="screen">Receipt not found</section>`;
   } else {
     html = T.screens.auth();
+  }
+
+  // Plan gating: an unpaid shop sees only the "Your plan is due" page
+  // everywhere, except the screens needed to pay, sync and sign out.
+  const LOCKED_SCREENS_EXCEPT = new Set(["auth", "more", "account"]);
+  if (T.subscriptionLocked?.() && !LOCKED_SCREENS_EXCEPT.has(screenName)) {
+    html = T.screens.lockedScreen();
   }
 
   viewport.innerHTML = html;

@@ -267,6 +267,7 @@
   }
 
   function sell() {
+    if (T.subscriptionLocked()) return lockedScreen();
     const searchOpen = Boolean(T.ui.searchOpen);
     const retail = T.stockValue();
     const count = T.itemCount();
@@ -825,6 +826,7 @@
   }
 
   function stock() {
+    if (T.subscriptionLocked()) return lockedScreen();
     const out = T.outOfStockCount();
     const low = T.lowStockCount();
     const monthWastage = T.wastageSince(30);
@@ -953,6 +955,7 @@
   }
 
   function suppliers() {
+    if (T.subscriptionLocked()) return lockedScreen();
     const all = T.state.suppliers || [];
     const query = T.ui.supplierSearch.trim();
     const head = `<div class="screen-head with-action">
@@ -1446,6 +1449,17 @@
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
       </div>
     </div>`;
+  }
+
+  /**
+   * The whole screen when the shop has not settled its plan: just the plan
+   * due explanation and the pay button, nothing else reachable.
+   */
+  function lockedScreen() {
+    return `<section class="screen sell locked-screen" aria-labelledby="locked-title">
+      <h1 id="locked-title" class="sr-only">Your plan is due</h1>
+      ${subscriptionLockPanel()}
+    </section>`;
   }
 
   /**
@@ -2706,5 +2720,5 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, icon };
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, icon };
 })();
