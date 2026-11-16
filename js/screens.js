@@ -725,7 +725,7 @@
             const badge = a.passed
               ? `<span style="color:#16a34a;font-weight:700">${icon("i-check")} Passed</span>`
               : `<span style="color:#dc2626;font-weight:700">${icon("i-alert")} Failed (${a.mismatches} mismatch${a.mismatches === 1 ? "" : "es"})</span>`;
-            return `<div class="settings-card" style="margin-bottom:8px;padding:8px 10px">
+            return `<div class="settings-card" style="margin-bottom:4px;padding:6px 8px">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
                 <strong>${stamp}</strong>
                 ${badge}
@@ -740,7 +740,7 @@
           <button class="btn btn-ghost" data-nav="#/reports" style="flex:none">${icon("i-back")} Reports</button>
         </div>
         <p class="sub" style="margin-top:-4px">Count the stock on the shelf and confirm it matches the record.</p>
-        <button class="btn btn-primary btn-block" data-act="start-audit" style="margin:12px 0">${icon("i-check")} Start audit</button>
+        <button class="btn btn-primary btn-block" data-act="start-audit" style="margin:6px 0;padding:6px 10px;font-size:calc(12px * var(--fs))">${icon("i-check")} Start audit</button>
         <div class="settings-card">
           <div class="report-card-head"><h2>History</h2><span class="report-total">${history.length}</span></div>
           ${histHtml}
@@ -765,8 +765,8 @@
         <button class="btn btn-ghost" data-act="cancel-audit" style="flex:none">${icon("i-close")} Cancel</button>
       </div>
       <p class="sub" style="margin-top:-4px">Tap the marker when the shelf matches the record.</p>
-      <div style="margin:12px 0">${rows || `<p class="report-note">No products to audit.</p>`}</div>
-      <button class="btn btn-primary btn-block" data-act="submit-audit">${icon("i-check")} Finish audit</button>
+      <div style="margin:6px 0">${rows || `<p class="report-note">No products to audit.</p>`}</div>
+      <button class="btn btn-primary btn-block" data-act="submit-audit" style="padding:6px 10px;font-size:calc(12px * var(--fs))">${icon("i-check")} Finish audit</button>
     </section>`;
   }
 
