@@ -405,6 +405,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
             amount,
             note: String(entry.note || ""),
             date,
+            staff: String(entry.staff || "").trim().slice(0, 60) || null,
             createdAt: entry.createdAt || new Date().toISOString()
           };
         })
@@ -445,6 +446,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
             checkoutId: String(entry.checkoutId || ""),
             accountRef: String(entry.accountRef || "").slice(0, 12),
             txId: entry.txId || null,
+            staff: String(entry.staff || "").trim().slice(0, 60) || null,
             dueDate,
             date,
             createdAt: entry.createdAt || new Date().toISOString()
@@ -512,6 +514,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
           dueDate: tx.payment?.dueDate || null,
           note: String(tx.payment?.note || "")
         },
+        // The name of the shopkeeper who rang this sale up, frozen at sale
+        // time so it survives roster edits and reloads.
+        staff: String(tx.staff || "").trim().slice(0, 60) || null,
         store: tx.store && typeof tx.store === "object" ? { ...defaultStore(), ...tx.store } : { ...fallback }
       };
     });
