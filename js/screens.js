@@ -1595,6 +1595,9 @@
     const tone = row.status === "active" || row.status === "confirmed" ? "is-good"
       : row.status === "trial" ? "is-good"
         : row.status === "overdue" ? "is-bad" : "is-warn";
+    // The developer's own shop never gets revert/delete — you can force any
+    // other shop back to unpaid, but not this one.
+    const isDev = (T.DEV_EMAILS || []).includes(String(row.email || "").trim().toLowerCase());
     return `<div class="plan-row">
       <div class="plan-row-top">
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
@@ -1602,6 +1605,7 @@
       </div>
       <div class="plan-row-meta">
         <span class="plan-row-code"><strong>${esc(row.code || "no code")}</strong></span>
+        ${isDev ? ` · <span class="plan-dup-flag">${icon("i-check")} You</span>` : ""}
         ${row.amount ? ` · <span>${esc(T.money(row.amount))}</span>` : ""}
         ${row.reference ? ` · <span>ref ${esc(row.reference)}</span>` : ""}
         ${row.mpesaCode ? ` · <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
@@ -1613,10 +1617,10 @@
       ${row.pending ? `<div class="plan-row-actions">
         <button class="btn btn-primary" data-act="confirm-payment" data-id="${esc(row.id)}">Confirm payment</button>
         <button class="btn btn-ghost" data-act="decline-payment" data-id="${esc(row.id)}">Not paid</button>
-        <button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>
+        ${isDev ? "" : `<button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>`}
       </div>` : `<div class="plan-row-actions">
-        ${(row.status === "active" || row.status === "confirmed") ? `<button class="btn btn-ghost" data-act="revert-payment" data-id="${esc(row.id)}">${icon("i-refresh")} Revert to unpaid</button>` : ""}
-        <button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>
+        ${(row.status === "active" || row.status === "confirmed") && !isDev ? `<button class="btn btn-ghost" data-act="revert-payment" data-id="${esc(row.id)}">${icon("i-refresh")} Revert to unpaid</button>` : ""}
+        ${isDev ? "" : `<button class="btn btn-ghost is-bad" data-act="delete-account" data-id="${esc(row.id)}">${icon("i-trash")} Delete</button>`}
       </div>`}
     </div>`;
   }
