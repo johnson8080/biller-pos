@@ -1287,8 +1287,16 @@ h1, h2, h3, h4, p { margin: 0; }
 .sort-option-check { flex: none; color: var(--forest-3); }
 .sort-option-check .ico { width: 16px; height: 16px; stroke-width: 2.2; }
 
-/* Staff picker — who is selling on this device */
-.staff-picker { display: flex; flex-direction: column; gap: 6px; }
+/* Light mode: active chips keep a visible outline (dark mode already does via
+   --forest-ink), so the left accent bar reads as a full-height bar instead of
+   a chopped-off segment. */
+html[data-color-scheme="light"] #category-chips .chip.is-active,
+html[data-color-scheme="light"] .chips.order-filters .chip.is-active,
+html[data-color-scheme="light"] #stock-chips .chip.is-active,
+html[data-color-scheme="light"] .chip.is-active {
+  border-color: rgba(255, 255, 255, .42);
+  border-left-color: var(--lime);
+}
 .staff-pick-avatar {
   flex: none;
   display: grid;
