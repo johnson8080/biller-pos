@@ -2114,6 +2114,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   T.staffClaimedBy = (name) => {
     const key = String(name || "").trim().toLowerCase();
     if (!key) return null;
+    // A single shopkeeper is shared by every device — nothing to enforce.
+    if (T.staffRoster().length <= 1) return null;
     const mine = T.deviceId();
     for (const [staff, claim] of Object.entries(T.staffClaims())) {
       if (String(staff).trim().toLowerCase() !== key) continue;
@@ -2132,7 +2134,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     for (const [staff, claim] of Object.entries(claims)) {
       if (claim?.id === mine) delete claims[staff];
     }
-    if (pick) claims[pick] = { id: mine, at: Date.now() };
+    // Nothing to enforce with a single shopkeeper — leave claims empty.
+    if (pick && T.staffRoster().length > 1) claims[pick] = { id: mine, at: Date.now() };
     T.state.store.staffClaims = claims;
   };
 
