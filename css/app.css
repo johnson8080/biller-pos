@@ -977,9 +977,6 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
-  border-left: 3px solid var(--forest);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -988,11 +985,6 @@ h1, h2, h3, h4, p { margin: 0; }
   align-items: center;
   justify-content: center;
 }
-#category-chips .chip.is-featured {
-  border-left: 3px solid var(--forest);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
 #category-chips .chip.is-featured:not(.is-active) {
   font-weight: 750;
   color: var(--forest-2);
@@ -1000,7 +992,6 @@ h1, h2, h3, h4, p { margin: 0; }
 #category-chips .chip.is-active {
   background: var(--forest);
   border-color: var(--forest-ink);
-  border-left-color: var(--lime);
   color: var(--lime);
 }
 /* Order filter chips share the same boxed border design as the category chips. */
@@ -1018,9 +1009,6 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
-  border-left: 3px solid var(--forest);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -1032,7 +1020,6 @@ h1, h2, h3, h4, p { margin: 0; }
 .chips.order-filters .chip.is-active {
   background: var(--forest);
   border-color: var(--forest-ink);
-  border-left-color: var(--lime);
   color: var(--lime);
 }
 /* Stock filter chips share the same boxed border design. */
@@ -1051,9 +1038,6 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
-  border-left: 3px solid var(--forest);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -1065,7 +1049,6 @@ h1, h2, h3, h4, p { margin: 0; }
 #stock-chips .chip.is-active {
   background: var(--forest);
   border-color: var(--forest-ink);
-  border-left-color: var(--lime);
   color: var(--lime);
 }
 .chip {
@@ -1303,7 +1286,33 @@ html[data-color-scheme="light"] .chips.order-filters .chip.is-active,
 html[data-color-scheme="light"] #stock-chips .chip.is-active,
 html[data-color-scheme="light"] .chip.is-active {
   border-color: rgba(255, 255, 255, .42);
-  border-left-color: var(--lime);
+}
+/* Left accent bar as an inset pill so it stays crisp and is not clipped by
+   the chip's rounded corners (a thick border-left was being chopped off). */
+#category-chips .chip,
+.chips.order-filters .chip,
+#stock-chips .chip,
+.report-chips .chip {
+  position: relative;
+}
+#category-chips .chip::before,
+.chips.order-filters .chip::before,
+#stock-chips .chip::before,
+.report-chips .chip::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  bottom: 5px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--forest);
+}
+#category-chips .chip.is-active::before,
+.chips.order-filters .chip.is-active::before,
+#stock-chips .chip.is-active::before,
+.report-chips .chip.is-active::before {
+  background: var(--lime);
 }
 .staff-pick-avatar {
   flex: none;
@@ -1592,9 +1601,6 @@ html[data-color-scheme="light"] .chip.is-active {
   border-radius: 6px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
-  border-left: 3px solid var(--forest);
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(9px * var(--fs));
   font-weight: 650;
@@ -1606,7 +1612,6 @@ html[data-color-scheme="light"] .chip.is-active {
 .report-chips .chip.is-active {
   background: var(--forest);
   border-color: var(--forest-ink);
-  border-left-color: var(--lime);
   color: var(--lime);
 }
 /* Gap between the today's-revenue hero and the monthly target. */
