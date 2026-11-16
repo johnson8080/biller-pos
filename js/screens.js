@@ -237,7 +237,7 @@
       </div>
       <div class="section-head sell-head-row">
         <h2>${T.ui.category === "All" ? "Quick add" : esc(T.ui.category)}</h2>
-        <button class="sell-status-box" data-nav="#/account" aria-label="Open account settings">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); return d === null ? "Active" : (d < 0 ? "Overdue" : `${d}d left`); })())}</button>
+        <button class="sell-status-box" data-nav="#/account" aria-label="Open account settings">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); if (d === null || d === undefined) return "Active"; return d <= 0 ? "Overdue" : `${d}d left`; })())}</button>
         <div class="sell-head-tools">
           <span class="small muted">${products.length} ${products.length === 1 ? "item" : "items"}</span>
           <button class="tool-btn" data-act="open-sell-sort" aria-label="Sort items, currently ${esc(sortLabel)}" title="Sort: ${esc(sortLabel)}">${icon("i-sort")}</button>
@@ -1624,7 +1624,9 @@
     const meta = SUB_STATUS[status] || SUB_STATUS.active;
     const fee = T.feeConfig();
     const due = T.subscriptionDueDate();
-    const days = T.subscriptionDaysLeft();
+    // Active, trial and paid all share one countdown helper so the plans
+    // screen always shows "X days left".
+    const activeDays = T.subscriptionActiveDaysLeft?.();
     const amount = T.money(plan.amountCents);
     const reference = sub.reference || T.subscriptionReference();
 
@@ -1647,9 +1649,9 @@
       </div>
       <p class="field-small" style="margin-top:8px">
         ${status === "trial"
-          ? `Your first ${plan.trialDays} days are free. Pay ${esc(amount)} when the trial ends.`
+          ? `Your first ${plan.trialDays} days are free. Pay ${esc(amount)} when the trial ends${activeDays !== null ? ` - ${activeDays} day${activeDays === 1 ? "" : "s"} left` : ""}.`
           : status === "active" && due
-            ? `Next payment ${esc(T.shortDateFmt.format(due))}${days !== null ? ` - ${days} day${days === 1 ? "" : "s"} left` : ""}.`
+            ? `Next payment ${esc(T.shortDateFmt.format(due))}${activeDays !== null ? ` - ${activeDays} day${activeDays === 1 ? "" : "s"} left` : ""}.`
             : status === "due" && due
               ? `Payment of ${esc(amount)} was due ${esc(T.shortDateFmt.format(due))}.`
               : status === "awaiting"

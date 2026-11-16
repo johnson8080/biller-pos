@@ -313,6 +313,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       awaiting: savedSub.awaiting === true,
       reference: String(savedSub.reference || "").slice(0, 24),
       lastConfirmedAt: Number.isFinite(Number(savedSub.lastConfirmedAt)) ? Number(savedSub.lastConfirmedAt) : 0,
+      maxSeenTimestamp: Number.isFinite(Number(savedSub.maxSeenTimestamp)) ? Number(savedSub.maxSeenTimestamp) : 0,
       payments: Array.isArray(savedSub.payments)
         ? savedSub.payments.slice(-12).map((entry) => ({
             at: String(entry?.at || "").slice(0, 40),

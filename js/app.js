@@ -195,18 +195,20 @@ function handleBack() {
 /** Ask the native shell to close the app. */
 function requestExit() {
   const T = window.Till;
-  const native = window.Capacitor && window.androidBridge;
-  if (native) {
+  const plugin = window.Capacitor?.Plugins?.TillExit;
+  if (plugin?.exit) {
     try {
-      const plugin = window.Capacitor.Plugins?.TillExit;
-      if (plugin?.exit) {
-        plugin.exit();
-      } else {
-        window.Capacitor.nativePromise?.("TillExit", "exit", {});
-      }
+      plugin.exit();
       return true;
     } catch (error) {
-      console.warn("Could not close the app:", error);
+      console.warn("TillExit plugin failed:", error);
+    }
+  } else if (window.Capacitor?.nativePromise) {
+    try {
+      window.Capacitor.nativePromise("TillExit", "exit", {});
+      return true;
+    } catch (error) {
+      console.warn("TillExit nativePromise failed:", error);
     }
   }
   try { window.close(); } catch { /* the browser may refuse to close itself */ }
