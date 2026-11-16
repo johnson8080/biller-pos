@@ -827,6 +827,10 @@
     const monthWastageCost = monthWastage.cost || 0;
     const allDays = T.stockDaysList?.() || [];
     const latestDay = allDays[0] || null;
+    // Currency symbol lives on the label line, so the value line carries only
+    // the digits ("20.0k" not "Ksh20.0k").
+    const symbol = T.currencySymbol();
+    const amountOnly = (c) => String(compactMoney(c)).split(symbol).join("").trim();
     return `<section class="screen" aria-labelledby="stock-title">
       <div class="screen-head with-action">
         <div>
@@ -838,8 +842,8 @@
       <div class="inv-stats">
         <div class="inv-stat"><span class="label">Products</span><strong>${T.state.products.length}</strong></div>
         <div class="inv-stat ${low ? "warn" : ""}"><span class="label">Low stock</span><strong>${low}</strong></div>
-        <div class="inv-stat"><span class="label">Retail value</span><strong>${compactMoney(T.stockValue())}</strong></div>
-        <div class="inv-stat"><span class="label">Stock at cost</span><strong>${compactMoney(T.stockCost())}</strong></div>
+        <div class="inv-stat"><span class="label">Retail value <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockValue()))}</strong></div>
+        <div class="inv-stat"><span class="label">Stock at cost <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockCost()))}</strong></div>
       </div>
       ${stockToolsCard({ wastage: monthWastage, wastageCost: monthWastageCost, latestDay, olderDays: Math.max(0, allDays.length - 1) })}
       ${out ? `<div class="inventory-alert">${icon("i-alert")}<span><strong>${out} ${out === 1 ? "item is" : "items are"} out of stock.</strong> They’re shown first below.</span></div>` : ""}
