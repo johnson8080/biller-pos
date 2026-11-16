@@ -598,30 +598,6 @@
     if (callback) callback();
   }
 
-  /* ---------- Biller Pro ---------- */
-
-  function openPro() {
-    open({
-      title: T.isPro() ? "Biller Pro" : "Upgrade to Biller Pro",
-      subtitle: T.isPro() ? "You have the Pro unlock on this device." : "One-time unlock for this device.",
-      iconName: "i-check",
-      body: `<p style="margin:0 0 14px;font-size:calc(13px * var(--fs));line-height:1.5;color:var(--muted)">Biller Pro removes ads from the sale screen and unlocks advanced sales reports, receipt export, and multi-staff tills. This demo purchase is simulated - no real money moves.</p>
-        <div class="sheet-actions">
-          ${T.isPro()
-            ? `<button class="btn btn-lime btn-block" data-act="close-sheet">Done</button>`
-            : `<button class="btn btn-primary btn-block" data-act="buy-pro">Unlock · ${money(T.proPrice())}</button>`}
-          <button class="btn btn-ghost btn-block" data-act="close-sheet">Maybe later</button>
-        </div>`
-    });
-  }
-
-  function buyPro() {
-    T.setPro(true);
-    T.ads.sync();
-    close(true);
-    T.toast("Biller Pro unlocked", "i-check");
-  }
-
   /* ---------- Inline scan bar (inside the product editor) ---------- */
 
   /**
@@ -2333,9 +2309,8 @@
   T.sheets = {
     open, close, isOpen, openManual, manualError, openUnknown, openOutOfStock,
     openWeigh, openWastage, openTarget, openStockDay,
-    openDiscount, setDiscountMode, discountError, openProductEditor, renderProductEditor,
-    readProductForm, productEditorError, openSaveInfo, confirm, runConfirm,
-    openPro, buyPro, openMiniScan, closeMiniScan,
+    openDiscount, setDiscountMode, discountError, openProductEditor, renderProductEditor,    readProductForm, productEditorError, openSaveInfo, confirm, runConfirm,
+    openMiniScan, closeMiniScan,
     openQuickScan, refreshQuickScan,
     openCategoryEditor, categoryError, openExitPrompt, openAccount,
     openSupplierEditor, supplierError, openSupplierPayment, openSupplierBill,

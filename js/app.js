@@ -794,12 +794,6 @@ function runAction(btn) {
   else if (act === "confirm-sheet") {
     T.sheets?.runConfirm?.();
   }
-  else if (act === "buy-pro") {
-    T.sheets?.buyPro?.();
-  }
-  else if (act === "open-pro") {
-    T.sheets?.openPro?.();
-  }
   else if (act === "open-discount") {
     T.sheets?.openDiscount?.();
   }

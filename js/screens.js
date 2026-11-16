@@ -1836,11 +1836,6 @@
           <span class="data-copy"><strong>Account &amp; sign-in</strong><small>${session ? session.email : "Not signed in"}</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
-        <button class="data-row" data-act="open-pro">
-          <span class="data-icon">${icon("i-flash")}</span>
-          <span class="data-copy"><strong>Biller Pro</strong><small>coming soon!</small></span>
-          <span class="chev">${icon("i-chevron")}</span>
-        </button>
       </div>`;
     const developerBody = `
       <div class="data-list">
