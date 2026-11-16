@@ -2729,14 +2729,14 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   color: var(--forest-ink);
 }
 .ptr-spin svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.ptr-spin .ptr-track { fill: none; stroke: rgba(29, 78, 216, .16); stroke-width: 2.6; }
-.ptr-spin .ptr-arc { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 7 59.7; }
+.ptr-spin .ptr-track { fill: none; stroke: rgba(29, 78, 216, .16); stroke-width: 1.5; }
+.ptr-spin .ptr-arc { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 7 59.7; }
 .ptr-spin.is-active { opacity: 1; }
 .ptr-spin.is-ready { color: #16a34a; }
 .ptr-spin.is-loading {
   opacity: 1;
   color: #16a34a;
-  transition: opacity .18s ease, transform .22s ease;
+  transition: opacity .18s ease;
   animation: ptr-spin-rot .8s cubic-bezier(.45, .05, .55, .95) infinite;
 }
 .ptr-spin.is-loading .ptr-arc { stroke-dasharray: 44 59.7; }
@@ -2756,12 +2756,13 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   align-items: center;
   gap: 8px;
   padding: 10px 16px 10px 12px;
-  border-radius: 999px;
-  background: #16a34a;
-  color: #fff;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
   font-size: calc(11.5px * var(--fs));
   font-weight: 700;
-  box-shadow: 0 14px 30px -12px rgba(22, 163, 74, .75);
+  border: 1px solid var(--ui-line);
+  box-shadow: var(--shadow-card);
   opacity: 0;
   transform: translate(-50%, -16px) scale(.8);
   pointer-events: none;
@@ -2775,7 +2776,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .22);
+  background: #16a34a;
 }
 .ptr-pop-badge .ico { width: 13px; height: 13px; color: #fff; }
 .ptr-pop-text { white-space: nowrap; }
