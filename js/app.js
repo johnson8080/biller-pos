@@ -1141,7 +1141,8 @@ function runAction(btn) {
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
   else if (act === "refresh-data") {
     Promise.resolve(T.cloud?.refreshNow?.()).then((result) => {
-      T.toast(result?.ok ? "Refreshed from the cloud" : (result?.reason === "offline" ? "No connection" : "Could not refresh"), result?.ok ? "i-check" : "i-alert");
+      const live = T.cloud?.status?.().online === true;
+      T.toast(result?.ok ? "Refreshed from the cloud" : (live ? "Could not refresh" : "No connection"), result?.ok ? "i-check" : "i-alert");
       render();
     });
   }
@@ -1486,10 +1487,10 @@ async function testMpesaPush() {
 function updateSyncDot() {
   const brand = document.querySelector(".brand");
   if (!brand) return;
-  const cs = (typeof T !== "undefined" && T.cloud?.status?.()) || {};
-  const online = cs.online !== false && (typeof navigator === "undefined" || navigator.onLine !== false);
-  // Green ring = online, red (the default border colour) = offline.
-  brand.classList.toggle("sync-synced", online);
+  // `T` is not a module-level name in this file: the core lives on window.Till.
+  const cs = window.Till?.cloud?.status?.() || {};
+  // Green only once a real request to the network has succeeded.
+  brand.classList.toggle("sync-synced", cs.online === true);
 }
 
 // Keep the ring honest even when the Firebase SDK never loads.
@@ -1872,8 +1873,11 @@ function boot() {
   navTrail = [location.hash || "#/sell"];
   // When the cloud reports something new, the Account screen follows it.
   window.Till?.cloud?.onChange?.(() => {
+    updateSyncDot();
     if (window.Till?.ui?.route?.name === "account") render();
   });
+  // Start the connectivity probe even if the Firebase SDK never loads.
+  window.Till?.cloud?.init?.();
   initFirebase();
   render();
   // Plan the reminders for the monthly plan once the app is up.

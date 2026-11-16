@@ -1,5 +1,5 @@
 /* Till POS - offline shell cache */
-const VERSION = "till-v1.7.9";
+const VERSION = "till-v1.8.0";
 const SHELL = [
   "./",
   "./index.html",
@@ -46,7 +46,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   // Connectivity probe: always go to the network, never answer from cache.
-  if (url.pathname.endsWith("/__ping")) {
+  if (url.pathname.endsWith("/__ping") || url.pathname === "/generate_204") {
     event.respondWith(fetch(request, { cache: "no-store" }).catch(() => Response.error()));
     return;
   }

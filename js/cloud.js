@@ -41,33 +41,22 @@
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
-  let online = (typeof navigator !== "undefined") ? navigator.onLine !== false : true;
-  let probing = false;
+  let online = false; // proven by a real request, never guessed from navigator.onLine
+  let probePromise = null;
   let probeTimer = 0;
   const listeners = new Set();
 
-  /**
-   * navigator.onLine lies on phones (data off, Wi-Fi still associated), so the
-   * real answer comes from a request the service worker cannot answer from its
-   * cache: a URL that was never precached.
-   */
-  async function probe() {
-    if (typeof navigator !== "undefined" && navigator.onLine === false) {
-      setOnline(false);
-      return false;
-    }
-    if (probing) return online;
-    probing = true;
-    try {
-      await fetch(`./__ping?t=${Date.now()}`, { cache: "no-store" });
-      setOnline(true);
-      return true;
-    } catch {
-      setOnline(false);
-      return false;
-    } finally {
-      probing = false;
-    }
+  // A plain 204 from Google's CDN. It cannot be answered by the service
+  // worker or a local server, so it tells the truth: no data, no green ring.
+  const PROBE_URL = "https://www.gstatic.com/generate_204";
+
+  function probe() {
+    if (probePromise) return probePromise;
+    probePromise = fetch(`${PROBE_URL}?t=${Date.now()}`, { mode: "no-cors", cache: "no-store" })
+      .then(() => { setOnline(true); return true; })
+      .catch(() => { setOnline(false); return false; })
+      .finally(() => { probePromise = null; });
+    return probePromise;
   }
 
   function setOnline(next) {
@@ -163,14 +152,15 @@
     // Track connectivity first: the status ring must be honest even when the
     // Firebase SDK never loads.
     try {
-      window.addEventListener("online", () => { setOnline(true); probe(); });
+      window.addEventListener("online", () => { probe(); });
       window.addEventListener("offline", () => setOnline(false));
     } catch { /* ignore */ }
     // Phones keep claiming they are online after data is switched off, so
     // ask the network directly, and keep asking while the app is open.
     if (!probeTimer) {
-      probeTimer = setInterval(() => { probe().catch(() => {}); }, 8000);
-      probe().catch(() => {});
+      probeTimer = setInterval(() => { probe(); }, 8000);
+      try { document.addEventListener("visibilitychange", () => { if (!document.hidden) probe(); }); } catch { /* ignore */ }
+      probe();
     }
     try {
       if (!window.firebase?.firestore) return false;
@@ -271,6 +261,8 @@
         return true;
       } catch (error) {
         lastError = friendlyError(error);
+        const code = String(error?.code || "").toLowerCase();
+        if (code.includes("unavailable") || code.includes("network")) setOnline(false);
         setPhase("error", lastError);
         return false;
       }
@@ -290,7 +282,9 @@
       return { ok: false, applied: false, reason: "signed-out" };
     }
     try {
-      const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get();
+      // Always read from the server: a cached read would claim success with
+      // no connection, which is exactly what must never happen here.
+      const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
       const data = snap.exists ? snap.data() : null;
       if (!data || !data.state) {
         // Nothing in the cloud yet — send this device's copy up.
@@ -344,6 +338,10 @@
       return { ok: true, data };
     } catch (error) {
       lastError = friendlyError(error);
+      const code = String(error?.code || "").toLowerCase();
+      // A dead network shows up here as "unavailable" — trust it over the
+      // radio's opinion.
+      if (code.includes("unavailable") || code.includes("network")) setOnline(false);
       setPhase("error", lastError);
       return { ok: false, reason: error?.code || error?.message || "unknown" };
     }
