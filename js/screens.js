@@ -1504,7 +1504,9 @@
         code: request.code || "",
         shop: request.shop || request.email || "Shop",
         email: request.email || "",
-        status: request.status || "pending",
+        // A reverted payment counts as due again, so it lands in "To chase"
+        // instead of vanishing from the counts.
+        status: ["reverted", "declined"].includes(request.status) ? "due" : (request.status || "pending"),
         amount: request.amount || 0,
         currency: request.currency || "KES",
         reference: request.reference || "",

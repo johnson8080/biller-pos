@@ -438,6 +438,31 @@
       if (snap.exists && (snap.data() || {}).status === "confirmed") {
         return { ok: true, already: true };
       }
+      // When the shop never pressed Pay in the app, there is no request doc
+      // yet — build a full record from the shop's own presence record so the
+      // panel card keeps its name, code, email and reference.
+      if (!snap.exists) {
+        const account = accounts.find((item) => item.id === uid);
+        const accSub = account?.sub || {};
+        const newRequest = {
+          id: uid,
+          status: "confirmed",
+          confirmedAt: Date.now(),
+          code: account?.code || "",
+          shop: accSub.shop || account?.name || "",
+          email: account?.name || "",
+          amount: Number(accSub.amount) || 0,
+          currency: accSub.currency || "KES",
+          reference: accSub.reference || "",
+          mpesaCode: accSub.mpesaCode || "",
+          phone: accSub.phone || "",
+          at: Date.now()
+        };
+        await ref.set(newRequest);
+        paymentRequests = [newRequest, ...paymentRequests.filter((item) => item.id !== uid)];
+        notify();
+        return { ok: true };
+      }
       await ref.set({
         status: "confirmed",
         confirmedAt: Date.now()
@@ -477,13 +502,28 @@
       const snap = await ref.get();
       if (!snap.exists) {
         // No payment record yet — create one flagged as reverted so the
-        // shop's next sync rolls back to unpaid.
-        await ref.set({
+        // shop's next sync rolls back to unpaid. Fill in the shop's details
+        // from its presence record so the developer panel keeps showing
+        // its name, code, email and reference.
+        const account = accounts.find((item) => item.id === uid);
+        const accSub = account?.sub || {};
+        const newRequest = {
+          id: uid,
           status: "reverted",
           confirmedAt: 0,
-          revertedAt: Date.now()
-        });
-        paymentRequests = paymentRequests.map((item) => (item.id === uid ? { ...item, status: "reverted", confirmedAt: 0, revertedAt: Date.now() } : item));
+          revertedAt: Date.now(),
+          code: account?.code || "",
+          shop: accSub.shop || account?.name || "",
+          email: account?.name || "",
+          amount: Number(accSub.amount) || 0,
+          currency: accSub.currency || "KES",
+          reference: accSub.reference || "",
+          mpesaCode: accSub.mpesaCode || "",
+          phone: accSub.phone || "",
+          at: Date.now()
+        };
+        await ref.set(newRequest);
+        paymentRequests = [newRequest, ...paymentRequests.filter((item) => item.id !== uid)];
         notify();
         return { ok: true, created: true };
       }
@@ -656,7 +696,10 @@
             v: data.v || "",
             t: data.t?.toMillis?.() || 0,
             off: Boolean(data.off),
-            sub: data.sub || null
+            sub: data.sub || null,
+            code: data.code || "",
+            payment: data.payment || null,
+            request: data.request || null
           });
         });
         list.sort((a, b) => b.t - a.t);
