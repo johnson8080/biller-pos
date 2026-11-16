@@ -867,7 +867,7 @@ h1, h2, h3, h4, p { margin: 0; }
   justify-content: space-around;
   gap: 3px;
   background: var(--surface);
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(var(--ink-rgb), .45);
   border-radius: 12px;
   box-shadow: var(--shadow-float);
   z-index: 9;
