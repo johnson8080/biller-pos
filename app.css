@@ -1654,6 +1654,13 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 .settings-card h2, .about-card h2 { font-size: calc(14px * var(--fs)); font-weight: 700; letter-spacing: -.02em; }
 .card-sub { margin-top: 3px; font-size: calc(10.5px * var(--fs)); line-height: 1.4; color: var(--muted); }
+/* Audit rows: compact, each item one line with count + match marker */
+.audit-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--line); }
+.audit-row:last-child { border-bottom: 0; }
+.audit-mark { flex: none; }
+.audit-input { -moz-appearance: textfield; }
+.audit-input::-webkit-outer-spin-button,
+.audit-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .settings-actions { margin-top: 13px; display: grid; gap: 8px; }
 .about-card p { margin-top: 9px; font-size: calc(10.5px * var(--fs)); line-height: 1.5; color: var(--muted); text-align: center; }
 .about-top { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 0 4px; text-align: center; }

@@ -1191,23 +1191,19 @@ function runAction(btn) {
   }
   else if (act === "start-audit") {
     T.ui.auditInProgress = true;
-    T.ui.auditChecks = {};
-    (T.state.products || []).forEach((p) => { T.ui.auditChecks[p.id] = false; });
-    render();
-  }
-  else if (act === "toggle-audit-mark" && id) {
-    if (!T.ui.auditChecks) T.ui.auditChecks = {};
-    T.ui.auditChecks[id] = T.ui.auditChecks[id] === false ? true : false;
+    T.ui.auditActual = {};
+    (T.state.products || []).forEach((p) => { T.ui.auditActual[p.id] = p.stock; });
     render();
   }
   else if (act === "submit-audit") {
     const products = T.state.products || [];
-    const checks = T.ui.auditChecks || {};
+    const actual = T.ui.auditActual || {};
     let mismatches = 0;
     const items = products.map((p) => {
-      const match = checks[p.id] === true;
+      const cur = Number(actual[p.id] ?? p.stock);
+      const match = cur === p.stock;
       if (!match) mismatches++;
-      return { productId: p.id, name: p.name, recorded: p.stock, actual: p.stock, match };
+      return { productId: p.id, name: p.name, recorded: p.stock, actual: cur, match };
     });
     const passed = mismatches === 0;
     T.state.audits = T.state.audits || [];
@@ -1221,13 +1217,13 @@ function runAction(btn) {
     });
     T.save();
     T.ui.auditInProgress = false;
-    T.ui.auditChecks = {};
+    T.ui.auditActual = {};
     T.toast(passed ? "Audit passed" : `Audit failed — ${mismatches} mismatch${mismatches === 1 ? "" : "es"}`, passed ? "i-check" : "i-alert", passed ? "" : "bad");
     render();
   }
   else if (act === "cancel-audit") {
     T.ui.auditInProgress = false;
-    T.ui.auditChecks = {};
+    T.ui.auditActual = {};
     render();
   }
   else if (act === "export-csv-sales") { exportSalesCsv(); }
@@ -1683,7 +1679,8 @@ function render() {
   else if (screenName === "debt") html = route.param ? T.screens.customerDebt(route.param) : T.screens.debt();
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
-  else if (screenName === "audit") html = T.screens.audit();  else if (screenName === "more") html = T.screens.more();
+  else if (screenName === "audit") html = T.screens.audit();
+  else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
   else if (screenName === "mpesa") html = T.screens.mpesaSettings();
@@ -1763,6 +1760,29 @@ function render() {
         wireActions(list);
         wireNav(list);
       }
+    });
+  }
+
+  // Audit inputs: update the counted value and its match marker in place, so
+  // the number field keeps focus while the shopkeeper counts the shelf.
+  if (screenName === "audit") {
+    viewport.querySelectorAll(".audit-input").forEach((input) => {
+      input.addEventListener("input", (e) => {
+        const pid = e.target.dataset.id;
+        const product = T.findProduct(pid);
+        const cur = Math.max(0, Math.round(Number(e.target.value) || 0));
+        T.ui.auditActual = T.ui.auditActual || {};
+        T.ui.auditActual[pid] = cur;
+        const match = product ? cur === product.stock : false;
+        const mark = e.target.closest(".audit-row")?.querySelector(".audit-mark");
+        if (mark) {
+          mark.classList.toggle("audit-match", match);
+          mark.classList.toggle("audit-diff", !match);
+          mark.style.background = match ? "var(--lime-soft)" : "var(--surface-2)";
+          mark.style.color = match ? "var(--forest-ink)" : "var(--ink-2)";
+          mark.innerHTML = match ? T.screens.icon("i-check") : "";
+        }
+      });
     });
   }
 

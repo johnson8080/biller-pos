@@ -264,6 +264,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       pro: false,
       // Wastage records: what spoiled, broke or went missing, and why.
       wastage: [],
+      // Stock audits: recorded shelf counts vs what was actually counted.
+      audits: [],
       // Daily stock snapshots: the shelf counted at the start of a day and
       // the last level seen that day, keyed by YYYY-MM-DD.
       stockDays: {},
@@ -557,6 +559,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         latest: latest
       };
     }
+    const dayKeys = Object.keys(stockDays).sort();
+    for (const stale of dayKeys.slice(0, Math.max(0, dayKeys.length - 45))) delete stockDays[stale];
     const audits = (Array.isArray(data.audits) ? data.audits : [])
       .filter((a) => a && typeof a === "object")
       .map((a, index) => ({
@@ -574,8 +578,6 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         note: String(a.note || "").slice(0, 200)
       }))
       .slice(-50);
-    const dayKeys = Object.keys(stockDays).sort();
-    for (const stale of dayKeys.slice(0, Math.max(0, dayKeys.length - 45))) delete stockDays[stale];
     return {
       version: 1,
       store,
@@ -899,7 +901,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       editor: null,
       exitPromptOpen: false,
       saveTimer: null,
-      toastTimer: null
+      toastTimer: null,
+      // Audit session state: whether an audit is in progress and the counted
+      // actual quantity per product id, keyed by product id.
+      auditInProgress: false,
+      auditActual: {}
     }
   };
 
