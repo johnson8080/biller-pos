@@ -1669,7 +1669,7 @@ html[data-color-scheme="light"] .chip.is-active {
 .about-version { margin-top: 2px; font-size: calc(9.5px * var(--fs)); color: var(--muted); text-transform: uppercase; }
 
 /* Inventory ------------------------------------------------------- */
-.inv-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 8px; }
+.inv-stats { display: grid; grid-template-columns: minmax(0, 0.72fr) minmax(0, 0.72fr) minmax(0, 1.4fr) minmax(0, 1.4fr); gap: 5px; margin-bottom: 8px; }
 .inv-stat {
   min-width: 0;
   padding: 6px 6px;
