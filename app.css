@@ -710,8 +710,6 @@ h1, h2, h3, h4, p { margin: 0; }
 .screen-head h1 { margin-top: 3px; font-size: calc(22px * var(--fs)); line-height: 1.02; font-weight: 700; letter-spacing: -.045em; }
 /* Reports and Audit Report page headers always share one size. */
 #reports-title, #audit-title { font-size: calc(22px * var(--fs)); }
-/* Compact AUDIT REPORT navigation button: thin border, no shadow halo. */
-.audit-nav { border-width: 0.5px !important; box-shadow: none !important; padding: 3px 8px !important; font-size: calc(10px * var(--fs)) !important; }
 .screen-head.with-action { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .screen-head.with-action > div { min-width: 0; }
 .screen-head.with-action .btn { margin-top: 8px; flex: none; }

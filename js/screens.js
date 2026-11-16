@@ -554,9 +554,8 @@
 
     if (!txs.length) {
       return `<section class="screen" aria-labelledby="reports-title">
-        <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div class="screen-head">
           <h1 id="reports-title">REPORTS</h1>
-          <button class="btn btn-ghost audit-nav" data-nav="#/audit" style="flex:none">${icon("i-check")} AUDIT REPORT</button>
         </div>
         <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
         <div class="empty-state">
@@ -569,9 +568,8 @@
     }
 
     return `<section class="screen" aria-labelledby="reports-title">
-      <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div class="screen-head">
         <h1 id="reports-title">REPORTS</h1>
-        <button class="btn btn-ghost audit-nav" data-nav="#/audit" style="flex:none">${icon("i-check")} AUDIT REPORT</button>
       </div>
       <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
 
@@ -1794,6 +1792,15 @@
         <h1 id="more-title">SETTINGS</h1>
         <p class="sub">Everything in one place, grouped.</p>
       </div>
+
+      <button type="button" class="account-card support-card audit-settings-card" data-nav="#/audit" style="margin-bottom:10px">
+        <span class="data-icon">${icon("i-check")}</span>
+        <span class="account-card-copy">
+          <strong>AUDIT REPORT</strong>
+          <small>Count shelf stock and mark each item as matched</small>
+        </span>
+        <span class="chev">${icon("i-chevron")}</span>
+      </button>
 
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · ${store.currency} · tax ${store.taxRate}%`, shopBody)}
