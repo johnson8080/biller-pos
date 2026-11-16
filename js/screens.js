@@ -2038,9 +2038,11 @@
         const st = T.cloud?.status?.() || {};
         const online = st.online !== false && (typeof navigator === "undefined" || navigator.onLine !== false);
         const phase = String(st.phase || (st.mode === "cloud" ? "syncing" : "local"));
-        const statusText = st.mode === "local"
-          ? "Offline mode — data stays on this device."
-          : (phase === "synced" ? "Synced with the cloud" : (phase === "error" ? (st.error || "Could not reach the cloud") : "Syncing…"));
+        const statusText = !online
+          ? "Offline — changes save on this device"
+          : (st.mode === "local"
+            ? "Local only — sign in to sync"
+            : (phase === "synced" ? "Synced with the cloud" : (phase === "error" ? (st.error || "Could not reach the cloud") : "Syncing…")));
         return `<div class="settings-card">
           <h2>Sync &amp; offline</h2>
           <p class="card-sub">Your data is saved on this device and syncs when online.</p>

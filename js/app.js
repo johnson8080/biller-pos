@@ -34,8 +34,6 @@ function initFirebase(retries = 0) {
     window.firebaseAuth = window.firebase.auth();
     window.Till?.cloud?.init?.();
     setupAuthObserver();
-    // Keep the sync status dot fresh.
-    setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
   } catch (e) {
     console.warn("Firebase init error:", e);
     window.localOnlyMode = true;
@@ -1493,6 +1491,9 @@ function updateSyncDot() {
   // Green ring = online, red (the default border colour) = offline.
   brand.classList.toggle("sync-synced", online);
 }
+
+// Keep the ring honest even when the Firebase SDK never loads.
+setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
 
 function render() {
   const T = window.Till;

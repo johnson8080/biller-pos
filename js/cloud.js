@@ -42,7 +42,43 @@
   let phase = "signed-out";
   let lastSyncAt = 0;
   let online = (typeof navigator !== "undefined") ? navigator.onLine !== false : true;
+  let probing = false;
+  let probeTimer = 0;
   const listeners = new Set();
+
+  /**
+   * navigator.onLine lies on phones (data off, Wi-Fi still associated), so the
+   * real answer comes from a request the service worker cannot answer from its
+   * cache: a URL that was never precached.
+   */
+  async function probe() {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setOnline(false);
+      return false;
+    }
+    if (probing) return online;
+    probing = true;
+    try {
+      await fetch(`./__ping?t=${Date.now()}`, { cache: "no-store" });
+      setOnline(true);
+      return true;
+    } catch {
+      setOnline(false);
+      return false;
+    } finally {
+      probing = false;
+    }
+  }
+
+  function setOnline(next) {
+    if (next === online) return;
+    online = next;
+    // Back online: clear a stale "cannot reach the cloud" state.
+    if (next && phase === "error") setPhase(fs ? "syncing" : "local");
+    // Back online: pick up anything another device changed meanwhile.
+    if (next && user && fs) pull({ silent: true });
+    notify();
+  }
 
   /* ---------- Small helpers ---------- */
 
@@ -124,16 +160,23 @@
   /* ---------- Start up ---------- */
 
   function init() {
+    // Track connectivity first: the status ring must be honest even when the
+    // Firebase SDK never loads.
+    try {
+      window.addEventListener("online", () => { setOnline(true); probe(); });
+      window.addEventListener("offline", () => setOnline(false));
+    } catch { /* ignore */ }
+    // Phones keep claiming they are online after data is switched off, so
+    // ask the network directly, and keep asking while the app is open.
+    if (!probeTimer) {
+      probeTimer = setInterval(() => { probe().catch(() => {}); }, 8000);
+      probe().catch(() => {});
+    }
     try {
       if (!window.firebase?.firestore) return false;
       fs = window.firebase.firestore();
       try { fs.settings({ ignoreUndefinedProperties: true }); } catch { /* older SDK */ }
       try { fs.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch { /* private mode */ }
-      // Track connectivity so the app can react to going offline/online.
-      try {
-        window.addEventListener("online", () => { online = true; if (user && fs) pull({ silent: true }); notify(); });
-        window.addEventListener("offline", () => { online = false; notify(); });
-      } catch { /* ignore */ }
       setPhase(user ? "syncing" : "signed-out");
       return true;
     } catch (error) {
@@ -281,12 +324,12 @@
 
   /** Force a one-time read straight from the server — a real connectivity check. */
   async function refreshNow() {
-    if (!fs || !user) return { ok: false, reason: "signed-out" };
-    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    if (!(await probe())) {
       lastError = "No connection.";
       setPhase("error", lastError);
       return { ok: false, reason: "offline" };
     }
+    if (!fs || !user) return { ok: false, reason: "signed-out" };
     try {
       const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
       const data = snap.exists ? snap.data() : null;
