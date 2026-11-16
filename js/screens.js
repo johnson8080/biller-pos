@@ -23,18 +23,28 @@
 
   function stockNote(product) {
     const unit = product.unit || "pcs";
-    if (product.stock === 0) return `<span class="stock-note out"><span class="dot"></span>Sold out</span>`;
+    const stock = T.productStock(product);
+    if (stock === 0) return `<span class="stock-note out"><span class="dot"></span>Sold out</span>`;
     if (product.soldByMass) {
-      const label = T.massLabel(product.stock);
-      if (product.stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${esc(label)}</span>`;
+      const label = T.massLabel(stock);
+      if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${esc(label)}</span>`;
       return `<span class="stock-note">${esc(label)}</span>`;
     }
-    if (product.stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${product.stock} ${unit}</span>`;
-    return `<span class="stock-note">${product.stock} ${unit}</span>`;
+    const variantSuffix = (product.variants || []).length ? ` · ${product.variants.length} variants` : "";
+    if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${stock} ${unit}${variantSuffix}</span>`;
+    return `<span class="stock-note">${stock} ${unit}${variantSuffix}</span>`;
+  }
+
+  /** The price a product sells at: min variant price, or per kg for weighed. */
+  function priceTag(product) {
+    if (product.soldByMass) return `${money(product.price)}/kg`;
+    const variantPrice = (product.variants || []).reduce((min, v) => v.price && (!min || v.price < min) ? v.price : min, 0);
+    if (variantPrice) return `${money(variantPrice)}+`;
+    return money(product.price);
   }
 
   function qtyInCart(productId) {
-    return T.state.cart.items.find((item) => item.productId === productId)?.qty || 0;
+    return T.state.cart.items.reduce((sum, item) => item.productId === productId ? sum + item.qty : sum, 0);
   }
 
   /** How much of a weighed item is already in the sale, as a short label. */
@@ -165,7 +175,7 @@
 
   function productCard(product) {
     const qty = qtyInCart(product.id);
-    const out = product.stock === 0;
+    const out = T.productStock(product) === 0;
     const badge = qtyBadgeText(product, qty);
     const price = priceTag(product);
     return `<button class="product-card ${out ? "is-out" : ""}" data-act="add-to-cart" data-id="${esc(product.id)}"
@@ -180,11 +190,11 @@
   /** One item per row, for shops that read a long list better. */
   function productRow(product) {
     const qty = qtyInCart(product.id);
-    const out = product.stock === 0;
+    const out = T.productStock(product) === 0;
     const unit = product.unit || "pcs";
     const badge = qtyBadgeText(product, qty);
     const price = priceTag(product);
-    const stockText = out ? "Sold out" : product.soldByMass ? `${T.massLabel(product.stock)} in stock` : `${product.stock} ${esc(unit)} in stock`;
+    const stockText = out ? "Sold out" : product.soldByMass ? `${T.massLabel(T.productStock(product))} in stock` : `${T.productStock(product)} ${esc(unit)} in stock`;
     return `<button class="product-row ${out ? "is-out" : ""}" data-act="add-to-cart" data-id="${esc(product.id)}"
       aria-label="${out ? "Out of stock: " : "Add "}${esc(product.name)}, ${esc(price)}">
       <span class="product-row-tile">${productTile(product)}</span>
@@ -2336,38 +2346,42 @@
     const totals = T.cartTotals();
     const count = T.itemCount();
     const items = totals.lines.map((line) => {
-      const { product, qty, lineTotal, price, unitCost, lineCost } = line;
+      const { product, variant, qty, lineTotal, price, unitCost, lineCost } = line;
       const mass = product.soldByMass === true;
-      const atMax = qty >= product.stock;
-      const changed = price !== product.price;
+      const basePrice = variant ? variant.price : product.price;
+      const stock = variant ? variant.stock : product.stock;
+      const atMax = qty >= stock;
+      const changed = price !== basePrice;
       const lineProfit = lineTotal - lineCost;
       const qtyLabel = mass ? T.massLabel(qty) : String(qty);
+      const variantAttr = variant ? ` data-variant="${esc(variant.id)}"` : "";
+      const variantName = variant ? ` · ${esc(variant.label)}` : "";
+      const fullName = `${esc(product.name)}${variantName}`;
       return `<div class="cart-item">
-        <div class="cart-item-top">
-          ${productTile(product, "tile-sm")}
+        <div class="cart-item-top">${productTile(product, "tile-sm")}
           <div class="cart-item-copy">
-            <div class="cart-item-name">${esc(product.name)}${product.detail ? ` <span class="product-detail">${esc(product.detail)}</span>` : ""}</div>
-            ${product.stock <= product.lowStockAt ? `<div class="cart-item-stock">only ${mass ? esc(T.massLabel(product.stock)) : product.stock} left</div>` : ""}
+            <div class="cart-item-name">${fullName}${variant ? "" : (product.detail ? ` <span class="product-detail">${esc(product.detail)}</span>` : "")}</div>
+            ${stock <= product.lowStockAt ? `<div class="cart-item-stock">only ${mass ? esc(T.massLabel(stock)) : stock} left</div>` : ""}
           </div>
           <div class="cart-item-total">${money(lineTotal)}</div>
         </div>
         <div class="cart-item-bottom">
           <span class="cart-item-price-wrap">
             <input class="cart-item-price" type="number" min="0" step="0.01" inputmode="decimal"
-              data-price-input data-id="${esc(product.id)}" value="${(price / 100).toFixed(2)}"
-              aria-label="Price for each ${esc(product.name)}" ${locked ? "disabled" : ""}>
+              data-price-input data-id="${esc(product.id)}"${variantAttr} value="${(price / 100).toFixed(2)}"
+              aria-label="Price for each ${fullName}" ${locked ? "disabled" : ""}>
             <span class="cart-item-price-tag">${mass ? "/kg" : "each"}</span>
           </span>
-          ${changed ? `<button class="cart-item-reset" data-act="reset-line-price" data-id="${esc(product.id)}">set ${money(product.price)}</button>` : ""}
+          ${changed ? `<button class="cart-item-reset" data-act="reset-line-price" data-id="${esc(product.id)}"${variantAttr}>set ${money(basePrice)}</button>` : ""}
           <span class="cart-item-side">
             ${unitCost ? `<span class="cart-item-profit">Profit ${money(lineProfit)}</span>` : ""}
             ${atMax ? `<span class="item-stock">Max</span>` : ""}
           </span>
-          <span class="stepper" aria-label="Quantity for ${esc(product.name)}">
-            ${mass ? `<button class="step-btn weigh-edit" data-act="open-weigh" data-id="${esc(product.id)}" data-edit="1" aria-label="Reweigh ${esc(product.name)}" ${locked ? "disabled" : ""}>${icon("i-scale")}</button>` : ""}
-            <button class="step-btn minus ${!mass && qty === 1 ? "at-one" : ""}" data-act="dec-item" data-id="${esc(product.id)}" aria-label="${mass ? `Take off 100 g` : (qty === 1 ? "Remove" : "Decrease quantity")}" ${locked ? "disabled" : ""}>${icon(mass || qty > 1 ? "i-minus" : "i-trash")}</button>
+          <span class="stepper" aria-label="Quantity for ${fullName}">
+            ${mass ? `<button class="step-btn weigh-edit" data-act="open-weigh" data-id="${esc(product.id)}"${variantAttr} data-edit="1" aria-label="Reweigh ${fullName}" ${locked ? "disabled" : ""}>${icon("i-scale")}</button>` : ""}
+            <button class="step-btn minus ${!mass && qty === 1 ? "at-one" : ""}" data-act="dec-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? `Take off 100 g` : (qty === 1 ? "Remove" : "Decrease quantity")}" ${locked ? "disabled" : ""}>${icon(mass || qty > 1 ? "i-minus" : "i-trash")}</button>
             <span class="step-value">${esc(qtyLabel)}</span>
-            <button class="step-btn" data-act="inc-item" data-id="${esc(product.id)}" aria-label="${mass ? "Add 100 g" : "Increase quantity"}" ${atMax || locked ? "disabled" : ""}>${icon("i-plus")}</button>
+            <button class="step-btn" data-act="inc-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? "Add 100 g" : "Increase quantity"}" ${atMax || locked ? "disabled" : ""}>${icon("i-plus")}</button>
           </span>
         </div>
       </div>`;

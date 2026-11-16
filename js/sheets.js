@@ -270,6 +270,38 @@
     if (form) setFormError(form, message);
   }
 
+  /* ---------- Variant picker (products with sizes/variants) ---------- */
+
+  /**
+   * Open a compact choice of a product's variants: tap the size/type you
+   * want, and it drops into the cart. Out-of-stock variants are disabled.
+   */
+  function openVariantPicker(product, options = {}) {
+    if (!product || !(product.variants || []).length) return;
+    T.ui?.scanPaused === true; // no-op, kept explicit: scanner handles its own pause
+    const onClose = typeof options.onClose === "function" ? options.onClose : null;
+    open({
+      title: esc(product.name),
+      subtitle: esc(product.detail || "Choose a variant"),
+      iconName: "i-box",
+      onClose,
+      body: `<div class="variant-list">
+        ${product.variants.map((variant) => {
+          const out = variant.stock <= 0;
+          return `<button class="variant-pick-row" data-act="pick-variant" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" ${out ? "disabled" : ""}>
+            <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
+            <span class="variant-pick-copy">
+              <strong>${esc(variant.label)}</strong>
+              <small>${out ? "Sold out" : `${variant.stock} ${esc(product.unit || "pcs")} in stock`}</small>
+            </span>
+            <span class="variant-pick-price">${money(variant.price)}</span>
+          </button>`;
+        }).join("")}
+        <p class="field-help" style="margin-top:8px">Tap a size/variant. ${product.soldByMass ? "For weighed items, use the scale instead." : ""}</p>
+      </div>`
+    });
+  }
+
   /* ---------- Product editor ---------- */
 
   function emptyEditorValues() {
@@ -277,7 +309,7 @@
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "pcs",
-      soldByMass: false
+      soldByMass: false, packSize: "", variants: []
     };
   }
 
@@ -293,8 +325,37 @@
       barcode: product.barcode,
       category: product.category,
       unit: product.unit || "pcs",
-      soldByMass: product.soldByMass === true
+      soldByMass: product.soldByMass === true,
+      packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
+      variants: (product.variants || []).map((variant) => ({
+        id: variant.id,
+        label: variant.label,
+        price: (variant.price / 100).toFixed(2),
+        cost: variant.cost ? (variant.cost / 100).toFixed(2) : "",
+        stock: String(variant.stock),
+        barcode: variant.barcode || ""
+      }))
     };
+  }
+
+  /** One editable variant row: label, price, cost, stock and barcode. */
+  function renderVariantEditorRow(variant, index, category) {
+    const initials = T.initials(variant.label || "New");
+    return `<div class="variant-editor-row" data-index="${index}" data-variant-id="${esc(variant.id || "")}">
+      <span class="variant-editor-tile tone-${T.toneFor(category)}" aria-hidden="true">${esc(initials)}</span>
+      <div class="variant-editor-body">
+        <div class="variant-editor-top">
+          <input class="input variant-field variant-label" data-field="label" value="${esc(variant.label || "")}" placeholder="Label (e.g. 500 g)" autocomplete="off">
+          <button type="button" class="icon-btn danger variant-remove" aria-label="Remove variant">${icon("i-trash")}</button>
+        </div>
+        <div class="variant-editor-grid">
+          <input class="input variant-field variant-price" data-field="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.price || "")}" placeholder="Price" aria-label="Variant price">
+          <input class="input variant-field variant-cost" data-field="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.cost || "")}" placeholder="Cost" aria-label="Variant cost">
+          <input class="input variant-field variant-stock" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(variant.stock || "")}" placeholder="Stock" aria-label="Variant stock">
+        </div>
+        <input class="input variant-field variant-barcode" data-field="barcode" value="${esc(variant.barcode || "")}" placeholder="Barcode (optional)" inputmode="numeric" autocomplete="off" spellcheck="false">
+      </div>
+    </div>`;
   }
 
   function openProductEditor(id = null, { barcode = "", source = "inventory", addToCart = false } = {}) {
@@ -355,6 +416,24 @@
             ${COMMON_VARIANTS.map((variant) => `<button type="button" class="variant-chip ${values.detail === variant ? "is-active" : ""}" data-variant="${esc(variant)}">${esc(variant)}</button>`).join("")}
           </div>
           <p class="field-help">Tap a common size or unit, or type your own.</p>
+        </div>
+
+        <div class="field">
+          <label>Pack size <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <div class="variant-chips" role="group" aria-label="Pack multipliers">
+            ${[6, 12, 24, 30, 48].map((n) => `<button type="button" class="variant-chip pack-chip ${values.packSize === String(n) ? "is-active" : ""}" data-pack="${n}">${n}</button>`).join("")}
+          </div>
+          <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
+          <p class="field-help">For items you receive in boxes or dozens — stock-in will convert packs into pieces for you.</p>
+        </div>
+
+        <div class="field">
+          <label>Variants <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+          <div class="variant-editor" id="variant-editor-list">
+            ${(values.variants || []).map((variant, index) => renderVariantEditorRow(variant, index, values.category)).join("")}
+          </div>
+          <button type="button" class="btn btn-ghost btn-block" id="add-variant">${icon("i-plus")} Add variant</button>
+          <p class="field-help">Sold in sizes, packs or strengths (500g / 1kg, small / large). Each variant gets its own price, cost, stock and barcode — the till will ask which one you sold.</p>
         </div>
         <div class="field">
           <label>Sold by</label>
@@ -425,18 +504,58 @@
       if (meta) meta.textContent = `${category}${form.querySelector("#product-barcode")?.value ? ` · ${form.querySelector("#product-barcode").value}` : ""}`;
       // Keep the quick-pick chips in step with whatever is in the field.
       const detailValue = form.querySelector("#product-detail")?.value.trim() || "";
+      const packValue = form.querySelector("#product-pack-size")?.value.trim() || "";
       form.querySelectorAll(".variant-chip").forEach((chip) => {
-        chip.classList.toggle("is-active", chip.dataset.variant === detailValue);
+        if (chip.classList.contains("pack-chip")) chip.classList.toggle("is-active", chip.dataset.pack === packValue);
+        else chip.classList.toggle("is-active", chip.dataset.variant === detailValue);
+      });
+      // Variant tile initials update as the label is typed.
+      form.querySelectorAll(".variant-editor-row").forEach((row) => {
+        const tile = row.querySelector(".variant-editor-tile");
+        const label = row.querySelector('[data-field="label"]')?.value || "";
+        if (tile) tile.textContent = T.initials(label || "New");
       });
     });
 
     form?.addEventListener("click", (event) => {
+      // Common size chips set the Size field; pack chips fill pack size.
       const chip = event.target.closest(".variant-chip");
       if (chip) {
+        const pack = chip.dataset.pack;
+        if (pack !== undefined) {
+          const input = form.querySelector("#product-pack-size");
+          if (input) {
+            input.value = pack;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            form.querySelectorAll(".pack-chip").forEach((b) => b.classList.toggle("is-active", b.dataset.pack === pack));
+          }
+          return;
+        }
         const input = form.querySelector("#product-detail");
         if (!input) return;
         input.value = chip.dataset.variant;
         input.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+      // Add/remove variant rows.
+      if (event.target.closest("#add-variant")) {
+        const list = form.querySelector("#variant-editor-list");
+        if (!list) return;
+        const values = T.ui?.editor?.values;
+        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
+        const rowHtml = renderVariantEditorRow({ label: "", price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
+        list.insertAdjacentHTML("beforeend", rowHtml);
+        list.lastElementChild?.querySelector(".variant-label")?.focus({ preventScroll: true });
+        list.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+      const removeBtn = event.target.closest(".variant-remove");
+      if (removeBtn) {
+        const row = removeBtn.closest(".variant-editor-row");
+        if (row) {
+          row.remove();
+          form.querySelector("#variant-editor-list")?.dispatchEvent(new Event("input", { bubbles: true }));
+        }
         return;
       }
       // The Each / Weight switch: it flips the stock and unit fields in
@@ -478,22 +597,65 @@
         productEditorError("Give the product a name.");
         return;
       }
-      const price = T.parsePriceToCents(values.price);
-      if (!Number.isFinite(price) || price <= 0) {
-        productEditorError("Enter a price greater than zero.");
-        return;
-      }
+      const editor = T.ui.editor;
       const existing = editor.id ? T.findProduct(editor.id) : null;
       const mass = values.soldByMass === true;
+      const packSize = T.clampInt(values.packSize || "0", 0, 100000);
+      // Variants: each needs a label and a price greater than zero.
+      const previousVariants = new Map((existing?.variants || []).map((v) => [String(v.label).toLowerCase(), v]));
+      let variantError = "";
+      const variants = values.variants.map((v) => {
+        if (variantError) return null;
+        if (!v.label) { variantError = "Give every variant a label."; return null; }
+        const vPrice = T.parsePriceToCents(v.price);
+        if (!Number.isFinite(vPrice) || vPrice <= 0) { variantError = `Variant “${v.label}” needs a price greater than zero.`; return null; }
+        const vCost = String(v.cost || "").trim() === "" ? 0 : (T.parsePriceToCents(v.cost) || 0);
+        const vStock = T.clampInt(v.stock || "0", 0, 1000000);
+        const match = previousVariants.get(String(v.label).toLowerCase());
+        return {
+          id: match?.id || v.id || T.uid("v"),
+          label: v.label,
+          price: vPrice,
+          cost: vCost,
+          stock: vStock,
+          barcode: T.cleanBarcode(v.barcode)
+        };
+      }).filter(Boolean);
+      if (variantError) {
+        productEditorError(variantError);
+        return;
+      }
+      const hasVariants = variants.length > 0;
+      // Parent price/stock/cost become a summary of its variants so legacy
+      // displays and searches still work.
+      const summaryPrice = hasVariants ? Math.min(...variants.map((v) => v.price)) : null;
+      const summaryCost = hasVariants ? (() => {
+        const nonZero = variants.map((v) => v.cost).filter((c) => c > 0);
+        return nonZero.length ? Math.min(...nonZero) : 0;
+      })() : null;
+      const summaryStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
       // Weighed stock is kept in grams: what the shop types as 2.5 kg is
       // stored as 2500 g so all the math stays in whole numbers.
       const rawStock = Number(values.stock);
-      const stock = mass
-        ? Math.max(0, Math.min(1000000, Math.round((Number.isFinite(rawStock) ? rawStock : 0) * 1000)))
-        : T.clampInt(values.stock, 0, 999999);
+      const stock = hasVariants
+        ? summaryStock
+        : mass
+          ? Math.max(0, Math.min(1000000, Math.round((Number.isFinite(rawStock) ? rawStock : 0) * 1000)))
+          : T.clampInt(values.stock, 0, 999999);
       const lowStockAt = T.clampInt(values.lowStockAt, 0, 999999);
+      const price = hasVariants
+        ? summaryPrice
+        : (() => {
+            const p = T.parsePriceToCents(values.price);
+            if (!Number.isFinite(p) || p <= 0) { productEditorError("Enter a price greater than zero."); return null; }
+            return p;
+          })();
+      if (price === null) return;
       const costRaw = String(values.cost || "").trim();
-      const cost = costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
+      const cost = hasVariants
+        ? summaryCost
+        : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
+      const barcode = T.cleanBarcode(values.barcode);
 
       if (existing) {
         existing.name = values.name;
@@ -503,9 +665,11 @@
         existing.stock = stock;
         existing.lowStockAt = lowStockAt;
         existing.unit = mass ? "kg" : values.unit;
-        existing.barcode = T.cleanBarcode(values.barcode);
+        existing.barcode = barcode;
         existing.category = values.category;
         existing.soldByMass = mass;
+        existing.packSize = packSize;
+        existing.variants = variants;
       } else {
         const product = {
           id: T.uid(),
@@ -516,13 +680,16 @@
           stock,
           lowStockAt,
           unit: mass ? "kg" : values.unit,
-          barcode: T.cleanBarcode(values.barcode),
+          barcode,
           category: values.category,
-          soldByMass: mass
+          soldByMass: mass,
+          packSize,
+          variants
         };
         T.state.products.unshift(product);
         if (editor.addToCart) {
           if (mass) T.sheets?.openWeigh?.(product, { fromEditor: true });
+          else if ((product.variants || []).length) T.sheets?.openVariantPicker?.(product);
           else T.addToCart(product, 1);
         }
       }
@@ -540,6 +707,25 @@
     // The Each/Weight switch is not a form field, so it rides in from the
     // editor's own saved copy.
     const editorMass = T.ui?.editor?.values?.soldByMass === true;
+    // Variants live on their own rows — read them straight out of the DOM.
+    const variants = [];
+    for (const row of form.querySelectorAll(".variant-editor-row")) {
+      const label = String(row.querySelector('[data-field="label"]')?.value || "").trim();
+      const priceStr = String(row.querySelector('[data-field="price"]')?.value || "").trim();
+      const costStr = String(row.querySelector('[data-field="cost"]')?.value || "").trim();
+      const stockStr = String(row.querySelector('[data-field="stock"]')?.value || "").trim();
+      const barcode = String(row.querySelector('[data-field="barcode"]')?.value || "").trim();
+      const id = String(row.dataset.variantId || "").trim();
+      if (!label) continue; // empty row → skip
+      variants.push({
+        id: id || "",
+        label,
+        price: priceStr,
+        cost: costStr,
+        stock: stockStr,
+        barcode
+      });
+    }
     return {
       name: String(data.get("name") || "").trim(),
       detail: String(data.get("detail") || "").trim(),
@@ -548,9 +734,11 @@
       stock: String(data.get("stock") || "").trim(),
       lowStockAt: String(data.get("lowStockAt") || "5").trim(),
       barcode: String(data.get("barcode") || "").trim(),
+      packSize: String(data.get("packSize") || "").trim(),
       category: String(data.get("category") || T.categories()[0] || "General"),
       unit: String(data.get("unit") || "pcs").trim() || "pcs",
-      soldByMass: editorMass
+      soldByMass: editorMass,
+      variants
     };
   }
 
@@ -1613,6 +1801,8 @@
     const mass = product.soldByMass === true;
     const costValue = product.cost ? (product.cost / 100).toFixed(2) : "";
     const priceValue = product.price ? (product.price / 100).toFixed(2) : "";
+    const packSize = Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? product.packSize : "";
+    const variants = Array.isArray(product.variants) ? product.variants : [];
     open({
       title: mass ? "Add weight" : "Add stock",
       subtitle: `${product.name}${product.detail ? ` · ${product.detail}` : ""}`,
@@ -1623,7 +1813,31 @@
           <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(product.name))}</span>
           <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${mass ? esc(T.massLabel(product.stock)) : `${product.stock} ${esc(unit)}`} in stock now</small></div>
         </div>
-        <div class="field">
+        ${variants.length ? "" : mass ? "" : `<div class="field">
+          <label>Also track this in packs?</label>
+          <div class="pack-row">
+            <input class="input" id="stock-in-packs" inputmode="numeric" type="number" min="0" placeholder="Number of packs">
+            <span class="variant-x">×</span>
+            <input class="input" id="stock-in-pack-size" inputmode="numeric" type="number" min="0" placeholder="Pieces each" value="${esc(packSize)}">
+            <span class="variant-x">=</span>
+            <span class="variant-total" id="stock-in-pack-total">0</span>
+          </div>
+          <p class="field-help">e.g. 5 dozens × 12 pieces → 60 pieces. Tap <strong>Pack</strong> fill below.</p>
+          <button type="button" class="btn btn-ghost btn-sm" id="stock-in-pack-fill">${icon("i-box")} Fill from packs</button>
+        </div>`}
+        ${variants.length ? `<div class="field">
+          <label>How many of each variant did you receive?</label>
+          <div class="variant-restock-list">
+            ${variants.map((variant) => `<div class="variant-restock-row">
+              <span class="variant-restock-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
+              <span class="variant-restock-copy">
+                <strong>${esc(variant.label)}</strong>
+                <small>${variant.stock} ${esc(unit)} in stock · ${money(variant.price)}</small>
+              </span>
+              <input class="input variant-qty" data-variant-id="${esc(variant.id)}" inputmode="numeric" type="number" min="0" placeholder="0" aria-label="Pieces of ${esc(variant.label)} received">
+            </div>`).join("")}
+          </div>
+        </div>` : `<div class="field">
           <label for="stock-in-qty">${mass ? "How many kilograms did you receive?" : "How many did you receive?"}</label>
           <input class="input" id="stock-in-qty" name="qty" type="number" min="${mass ? "0.001" : "1"}" step="${mass ? "0.001" : "1"}" inputmode="${mass ? "decimal" : "numeric"}" value="${mass ? "1" : "1"}" required>
           <div class="variant-chips" role="group" aria-label="Common quantities">
@@ -1631,7 +1845,7 @@
               ? [0.5, 1, 5, 10, 25].map((n) => `<button type="button" class="variant-chip" data-qty="${n}">+${n} kg</button>`).join("")
               : [1, 6, 12, 24, 50].map((n) => `<button type="button" class="variant-chip" data-qty="${n}">+${n}</button>`).join("")}
           </div>
-        </div>
+        </div>`}
         <div class="field-row">
           <div class="field">
             <label for="stock-in-cost">Buying price</label>
@@ -1673,9 +1887,96 @@
       });
     });
 
+    // Packs → pieces: type "5 packs × 24 pieces" and the count lands in qty.
+    const packsInput = form.querySelector("#stock-in-packs");
+    const packSizeInput = form.querySelector("#stock-in-pack-size");
+    const packTotal = form.querySelector("#stock-in-pack-total");
+    const packFill = form.querySelector("#stock-in-pack-fill");
+    const packCount = () => {
+      const packs = Number(packsInput?.value || 0);
+      const size = Number(packSizeInput?.value || 0);
+      const whole = Number.isFinite(packs) && Number.isFinite(size) ? Math.floor(packs * size) : 0;
+      return Math.max(0, Math.min(1000000, whole));
+    };
+    const updatePackTotal = () => {
+      if (packTotal) packTotal.textContent = String(packCount());
+    };
+    packsInput?.addEventListener("input", updatePackTotal);
+    packSizeInput?.addEventListener("input", updatePackTotal);
+    packFill?.addEventListener("click", () => {
+      const input = form.querySelector("#stock-in-qty");
+      if (!input) return;
+      input.value = String(packCount());
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    updatePackTotal();
+
     form?.addEventListener("submit", (event) => {
       event.preventDefault();
       const data = new FormData(form);
+      const price = T.parsePriceToCents(data.get("price"));
+      const costRaw = String(data.get("cost") || "").trim();
+      const cost = costRaw === "" ? null : T.parsePriceToCents(costRaw);
+      const supplierId = String(data.get("supplier") || "");
+      const note = String(data.get("note") || "").trim();
+      const packSizeValue = Number(data.get("packSize") || packSizeInput?.value || 0);
+      const packSize = Number.isFinite(packSizeValue) && packSizeValue > 0 ? Math.round(packSizeValue) : null;
+      const commonCost = Number.isFinite(cost) ? cost : null;
+      const commonPrice = Number.isFinite(price) ? price : null;
+
+      if (variants.length) {
+        // Variant products: each variant gets its own restock line.
+        const lines = [];
+        for (const input of form.querySelectorAll("[data-variant-id]")) {
+          const variant = product.variants.find((v) => v.id === input.dataset.variantId);
+          const raw = Number(input.value || 0);
+          const qty = Number.isFinite(raw) ? Math.max(0, Math.min(1000000, Math.round(raw))) : 0;
+          if (!variant || qty <= 0) continue;
+          lines.push({ variantId: variant.id, qty, cost: commonCost, price: commonPrice, packSize });
+        }
+        if (!lines.length) {
+          setFormError(form, "Enter how many pieces of each variant you received.");
+          return;
+        }
+        // Price/cost is shared: apply it to the parent + every variant.
+        if (supplierId && (!Number.isFinite(cost) || cost <= 0)) {
+          setFormError(form, "Enter the buying price to record a supplier bill, or choose No supplier bill.");
+          return;
+        }
+        let totalQty = 0;
+        for (const line of lines) {
+          const result = T.receiveStock(id, line);
+          if (!result.ok) {
+            setFormError(form, result.error || "Could not add that stock.");
+            return;
+          }
+          totalQty += line.qty;
+        }
+        if (supplierId) {
+          const supplier = T.findSupplier(supplierId);
+          if (supplier && Number.isFinite(cost) && cost > 0) {
+            const items = lines.map((line) => ({ productId: product.id, name: product.name, unit: "pcs", qty: line.qty, cost }));
+            supplier.ledger = supplier.ledger || [];
+            supplier.ledger.unshift({
+              id: T.uid("se"),
+              type: "bill",
+              method: null,
+              amount: Math.round(cost || 0) * totalQty,
+              note: note || `Stock: ${product.name}`,
+              staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
+              items,
+              date: T.isoDay(),
+              createdAt: new Date().toISOString()
+            });
+            T.save();
+          }
+        }
+        close(true);
+        T.toast(`${totalQty} pcs across ${lines.length} variant${lines.length === 1 ? "" : "s"} added`, "i-check");
+        window.render?.();
+        return;
+      }
+
       // Weighed deliveries are typed in kilograms and stored in grams.
       const rawQty = Number(data.get("qty"));
       const qty = mass
@@ -1685,26 +1986,21 @@
         setFormError(form, mass ? "Enter how much you received." : "Enter how many you received.");
         return;
       }
-      const price = T.parsePriceToCents(data.get("price"));
       if (!Number.isFinite(price) || price <= 0) {
         setFormError(form, "Enter the price you sell it for.");
         return;
       }
-      const costRaw = String(data.get("cost") || "").trim();
-      const cost = costRaw === "" ? null : T.parsePriceToCents(costRaw);
-      const supplierId = String(data.get("supplier") || "");
       if (supplierId && (!Number.isFinite(cost) || cost <= 0)) {
         setFormError(form, "Enter the buying price to record a supplier bill, or choose No supplier bill.");
         return;
       }
       // The bill is the price per kilogram times the kilograms received.
       const billAmount = mass ? Math.round(cost * qty / 1000) : cost * qty;
-      const result = T.receiveStock(id, { qty, cost: Number.isFinite(cost) ? cost : null, price });
+      const result = T.receiveStock(id, { qty, cost: Number.isFinite(cost) ? cost : null, price, packSize });
       if (!result.ok) {
         setFormError(form, result.error || "Could not add that stock.");
         return;
       }
-      const note = String(data.get("note") || "").trim();
       const supplier = T.findSupplier(supplierId);
       if (supplier && Number.isFinite(cost) && cost > 0) {
         // Only a supplier the shopkeeper picked gets a bill. Guessing the
@@ -2318,6 +2614,7 @@
     openStaffPicker,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
+    openVariantPicker,
     setFormError
   };
 })();

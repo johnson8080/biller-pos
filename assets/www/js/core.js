@@ -374,6 +374,18 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     const products = (Array.isArray(data.products) ? data.products : []).filter((p) => p && typeof p === "object").map((p, index) => {
       const wanted = String(p.category || "").trim().toLowerCase();
       const match = categories.find((category) => category.toLowerCase() === wanted);
+      const variants = (Array.isArray(p.variants) ? p.variants : [])
+        .filter((v) => v && typeof v === "object")
+        .map((v, vi) => ({
+          id: String(v.id || `v_${index}_${vi}`).slice(0, 40),
+          label: String(v.label || v.name || "Variant").trim().slice(0, 40),
+          barcode: cleanBarcode(v.barcode),
+          price: clampInt(v.price, 0, 100000000),
+          cost: clampInt(v.cost, 0, 100000000),
+          stock: clampInt(v.stock, 0, 1000000)
+        }))
+        .filter((v) => v.label)
+        .slice(0, 30);
       return {
         id: p.id || `p_${index}`,
         name: String(p.name || "Untitled item"),
@@ -387,7 +399,12 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // Weighed items (fruit, ugali flour, meat): every quantity for this
         // product is grams, and the price is per kilogram.
         soldByMass: p.soldByMass === true,
-        category: match || categories[0]
+        category: match || categories[0],
+        variants,
+        // Pack size for products received in packs but sold piece by piece
+        // (eggs by the tray of 30, bread by the pallet/box): how many pieces
+        // one pack/box/dozen carries.
+        packSize: Number.isFinite(Number(p.packSize)) ? Math.max(0, Math.round(Number(p.packSize))) : 0
       };
     });
     const suppliers = (Array.isArray(data.suppliers) ? data.suppliers : []).filter((s) => s && typeof s === "object").map((s, index) => {
@@ -469,10 +486,18 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       .filter((item) => item && productIds.has(item.productId) && Number(item.qty) > 0)
       .map((item) => {
         const product = products.find((p) => p.id === item.productId);
-        // Weighed items carry grams; everything else carries whole units.
-        const max = product?.soldByMass ? Math.min(product.stock, 1000000) : Math.min(product.stock, 1000);
-        return { productId: item.productId, qty: Math.min(clampInt(item.qty, 1, max), product.stock) };
+        if (!product) return null;
+        // Variant stock clamps weighed/gram stock too, just to a bigger ceiling.
+        const variant = item.variantId ? (product.variants || []).find((v) => v.id === item.variantId) : null;
+        const stock = variant ? variant.stock : product.stock;
+        const max = product.soldByMass ? Math.min(stock, 1000000) : Math.min(stock, 1000);
+        return {
+          productId: item.productId,
+          variantId: variant ? variant.id : null,
+          qty: Math.min(clampInt(item.qty, 1, max), stock)
+        };
       })
+      .filter(Boolean)
       .filter((item) => item.qty > 0);
     cart.discount = cart.items.length && cart.discount && typeof cart.discount === "object" ? cart.discount : null;
     // Older carts and receipts can be missing fields the screens assume
@@ -480,6 +505,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     const transactions = (Array.isArray(data.transactions) ? data.transactions : []).filter((tx) => tx && typeof tx === "object").map((tx, index) => {
       const items = (Array.isArray(tx.items) ? tx.items : []).map((item) => ({
         productId: item.productId || "",
+        variantId: item.variantId ? String(item.variantId).slice(0, 40) : null,
         name: String(item.name || "Item"),
         detail: String(item.detail || ""),
         barcode: cleanBarcode(item.barcode),
@@ -918,6 +944,30 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   };
 
   T.findProduct = (id) => T.state.products.find((p) => p.id === id);
+  /** The variant of a product for a given variant id, or null. */
+  T.findVariant = (product, variantId) => {
+    if (!product || !variantId) return null;
+    return (product.variants || []).find((v) => v.id === variantId) || null;
+  };
+  /** The stock figure that matters for a sale line: variant first, then the product. */
+  T.lineStock = (product, variantId) => {
+    if (!product) return 0;
+    const variant = T.findVariant(product, variantId);
+    return variant ? variant.stock : product.stock;
+  };
+  /** Unit price for a sale line: variant price when the product has variants. */
+  T.linePrice = (product, variantId, fallback) => {
+    if (!product) return 0;
+    const variant = T.findVariant(product, variantId);
+    if (variant) return variant.price;
+    return fallback === undefined ? product.price : fallback;
+  };
+  /** Display label for a line: variant label, else product detail, else name. */
+  T.lineLabel = (product, variantId) => {
+    if (!product) return "";
+    const variant = T.findVariant(product, variantId);
+    return variant ? `${product.name} · ${variant.label}` : product.detail ? `${product.name} · ${product.detail}` : product.name;
+  };
   T.findSupplier = (id) => (T.state.suppliers || []).find((s) => s.id === id);
 
   /** Money owed to a supplier: stock bills minus payments already made. */
@@ -1015,12 +1065,27 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   /**
    * Put received stock on the shelf and record the buying and selling prices.
    */
-  T.receiveStock = (id, { qty = 0, cost = null, price = null } = {}) => {
+  T.receiveStock = (id, { qty = 0, cost = null, price = null, variantId = null, packSize = null } = {}) => {
     const product = T.findProduct(id);
     if (!product) return { ok: false, error: "That item is no longer in the catalog." };
     // Weighed items take grams; everything else takes whole units.
     const amount = clampInt(qty, 0, product.soldByMass ? 1000000 : 1000000);
     if (amount <= 0) return { ok: false, error: product.soldByMass ? "Enter how much you received." : "Enter how many you received." };
+    // A variant receive goes straight into that variant's own stock and
+    // prices — the parent stays as a summary of its variants.
+    if (variantId) {
+      const variant = T.findVariant(product, variantId);
+      if (!variant) return { ok: false, error: "That variant is no longer in the catalog." };
+      if (cost !== null && cost !== undefined && Number.isFinite(cost) && cost > 0) variant.cost = clampInt(cost, 0, 100000000);
+      if (price !== null && price !== undefined && Number.isFinite(price) && price > 0) variant.price = clampInt(price, 0, 100000000);
+      variant.stock = clampInt(variant.stock + amount, 0, 1000000);
+      product.stock = clampInt((product.variants || []).reduce((sum, v) => sum + (v.stock || 0), 0), 0, 1000000);
+      if (packSize !== null && packSize !== undefined && Number.isFinite(packSize) && packSize > 0) {
+        product.packSize = Math.min(100000, Math.round(packSize));
+      }
+      T.save();
+      return { ok: true, product, variant };
+    }
     if (cost !== null && cost !== undefined) {
       const value = clampInt(cost, 0, 100000000);
       if (value > 0) product.cost = value;
@@ -1028,6 +1093,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (price !== null && price !== undefined) {
       const value = clampInt(price, 0, 100000000);
       if (value > 0) product.price = value;
+    }
+    if (packSize !== null && packSize !== undefined && Number.isFinite(packSize) && packSize > 0) {
+      product.packSize = Math.min(100000, Math.round(packSize));
     }
     product.stock = clampInt(product.stock + amount, 0, 1000000);
     T.save();
@@ -1196,12 +1264,28 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (!key) return null;
     return T.state.products.find((p) => canonicalBarcode(p.barcode) === key) || null;
   };
+  /** Find the product, or the exact variant, for a scanned barcode. */
+  T.findByBarcodeInfo = (value) => {
+    const key = canonicalBarcode(value);
+    if (!key) return null;
+    for (const product of T.state.products) {
+      if (canonicalBarcode(product.barcode) === key) return { product, variant: null };
+      for (const variant of (product.variants || [])) {
+        if (canonicalBarcode(variant.barcode) === key) return { product, variant };
+      }
+    }
+    return null;
+  };
   T.cartLines = () => T.state.cart.items.map((item) => {
     const product = T.findProduct(item.productId);
     if (!product) return null;
-    // A price set at the till wins over the catalog price.
-    const price = item.price === undefined || item.price === null ? product.price : item.price;
-    const unitCost = item.cost === undefined || item.cost === null ? (product.cost || 0) : item.cost;
+    const variant = T.findVariant(product, item.variantId);
+    const price = item.price === undefined || item.price === null
+      ? (variant ? variant.price : product.price)
+      : item.price;
+    const unitCost = item.cost === undefined || item.cost === null
+      ? (variant ? variant.cost : (product.cost || 0))
+      : item.cost;
     const mass = product.soldByMass === true;
     // Weighed lines are grams and the price is per kilogram: 750 g of a
     // KES 200/kg item costs KES 150. Everything else multiplies out plainly.
@@ -1210,6 +1294,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return {
       ...item,
       product,
+      variant: variant || null,
+      variantLabel: variant ? variant.label : "",
+      stock: variant ? variant.stock : product.stock,
       price,
       unitCost,
       lineTotal,
@@ -1254,10 +1341,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
 
   /**
    * Set the price of a line in the open sale. Passing null puts the catalog
-   * price back.
+   * price back. Variants are matched alongside the product so two lines of
+   * the same product (500 ml / 1 L) edit independently.
    */
-  T.setCartPrice = (productId, cents) => {
-    const item = T.state.cart.items.find((entry) => entry.productId === productId);
+  T.setCartPrice = (productId, cents, variantId = null) => {
+    const item = T.state.cart.items.find((entry) => entry.productId === productId && String(entry.variantId || "") === String(variantId || ""));
     if (!item) return false;
     if (cents === null || cents === undefined) {
       delete item.price;
@@ -1317,11 +1405,28 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     const profit = revenue - cost;
     return { revenue, cost, profit, margin: revenue > 0 ? profit / revenue : 0 };
   };
-  T.lowStockCount = () => T.state.products.filter((p) => p.stock > 0 && p.stock <= p.lowStockAt).length;
-  T.outOfStockCount = () => T.state.products.filter((p) => p.stock === 0).length;
-  T.stockValue = () => T.state.products.reduce((sum, p) => sum + p.price * (p.soldByMass ? p.stock / 1000 : p.stock), 0);
+  T.lowStockCount = () => T.state.products.filter((p) => T.productStock(p) > 0 && T.productStock(p) <= p.lowStockAt).length;
+  T.outOfStockCount = () => T.state.products.filter((p) => T.productStock(p) === 0).length;
+  T.stockValue = () => T.state.products.reduce((sum, p) => sum + T.productValue(p), 0);
+  /** Total shelf stock across every variant (or the product itself). */
+  T.productStock = (product) => {
+    if (!product) return 0;
+    if (!product.variants?.length) return product.stock || 0;
+    return product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+  };
+  /** Shelf value at the listed selling price. Variants contribute their own. */
+  T.productValue = (product) => {
+    if (!product) return 0;
+    if (!product.variants?.length) {
+      return product.price * (product.soldByMass ? product.stock / 1000 : product.stock);
+    }
+    return product.variants.reduce((sum, v) => sum + v.price * (v.stock || 0), 0);
+  };
   /** What the stock on the shelf cost to buy. */
-  T.stockCost = () => T.state.products.reduce((sum, p) => sum + (p.cost || 0) * (p.soldByMass ? p.stock / 1000 : p.stock), 0);
+  T.stockCost = () => T.state.products.reduce((sum, p) => {
+    if (!p.variants?.length) return sum + (p.cost || 0) * (p.soldByMass ? p.stock / 1000 : p.stock);
+    return sum + p.variants.reduce((vSum, v) => vSum + (v.cost || 0) * (v.stock || 0), 0);
+  }, 0);
 
   /* ---------- Wastage ---------- */
 
@@ -1967,9 +2072,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     delete store.mpesa;
     const items = totals.lines.map((line) => ({
       productId: line.product.id,
-      name: line.product.name,
-      detail: line.product.detail,
-      barcode: line.product.barcode,
+      variantId: line.variant?.id || null,
+      name: line.variant ? `${line.product.name} · ${line.variant.label}` : line.product.name,
+      detail: line.variant ? line.variant.label : line.product.detail,
+      barcode: line.variant?.barcode || line.product.barcode,
       price: line.price,
       cost: line.unitCost,
       qty: line.qty,
@@ -2025,10 +2131,15 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
             : { method: "card", tendered: charged, change: 0, reference: reference || `POS-${receiptNo}` },
       store
     };
-    // The sold units leave the shelf.
+    // The sold units leave the shelf — variant stock decrements first.
     for (const line of totals.lines) {
       const product = T.findProduct(line.product.id);
       if (!product) continue;
+      if (line.variantId) {
+        const variant = T.findVariant(product, line.variantId);
+        if (variant) variant.stock = Math.max(0, variant.stock - line.qty);
+        continue;
+      }
       product.stock = Math.max(0, product.stock - line.qty);
     }
     T.state.transactions.unshift(tx);
@@ -2321,27 +2432,29 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
 
   /* ---------- Barcode handling (quick sell) ---------- */
 
-  /** Put one unit of a product in the sale. Returns true when it went in. */
-  T.addToCart = (product, qty = 1) => {
+  /** Put one unit of a product (or variant) in the sale. Returns true when it went in. */
+  T.addToCart = (product, qty = 1, variantId = null) => {
     if (!product) return false;
     const mass = product.soldByMass === true;
-    if (product.stock <= 0) {
-      T.toast(`${product.name} is out of stock`, "i-alert");
+    const variant = T.findVariant(product, variantId);
+    const stock = variant ? variant.stock : product.stock;
+    if (stock <= 0) {
+      T.toast(variant ? `${product.name} · ${variant.label} is out of stock` : `${product.name} is out of stock`, "i-alert");
       return false;
     }
-    const existing = T.state.cart.items.find((item) => item.productId === product.id);
+    const existing = T.state.cart.items.find((item) => item.productId === product.id && String(item.variantId || "") === String(variantId || ""));
     const wanted = (existing?.qty || 0) + qty;
-    const allowed = Math.min(wanted, product.stock);
+    const allowed = Math.min(wanted, stock);
     if (allowed <= 0) {
-      T.toast(`${product.name} is out of stock`, "i-alert");
+      T.toast(variant ? `${product.name} · ${variant.label} is out of stock` : `${product.name} is out of stock`, "i-alert");
       return false;
     }
     if (existing) existing.qty = allowed;
-    else T.state.cart.items.push({ productId: product.id, qty: allowed });
+    else T.state.cart.items.push({ productId: product.id, variantId: variant ? variant.id : null, qty: allowed });
     if (allowed < wanted) {
       T.toast(mass
-        ? `Only ${T.massLabel(product.stock)} of ${product.name} left in stock`
-        : `Only ${product.stock} ${product.name} left in stock`, "i-alert");
+        ? `Only ${T.massLabel(stock)} of ${product.name} left in stock`
+        : `Only ${stock} ${product.name}${variant ? ` · ${variant.label}` : ""} left in stock`, "i-alert");
     }
     T.save();
     return true;
@@ -2354,15 +2467,19 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
    */
   T.app = {
     handleBarcode(code, { source = "scan" } = {}) {
-      const product = T.findProductByBarcode(code);
-      if (!product) {
+      // A scan can match a variant barcode (or the parent's). Prefer the
+      // exact variant match — nothing to pick, straight into the sale.
+      const found = T.findByBarcodeInfo(code);
+      if (!found) {
         T.scanner?.pause?.();
         T.sheets?.openUnknown?.(code, {
           onClose: () => { T.scanner?.resume?.(); }
         });
         return { status: "unknown", product: null };
       }
-      if (product.stock <= 0) {
+      const { product, variant } = found;
+      const totalStock = T.productStock(product);
+      if (totalStock <= 0) {
         T.scanner?.pause?.();
         T.sheets?.openOutOfStock?.(product, {
           fromScan: true,
@@ -2380,7 +2497,15 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         });
         return { status: "weigh", product };
       }
-      const added = T.addToCart(product, 1);
+      // Parent barcode of a variant product — let the shopkeeper pick.
+      if (!variant && (product.variants || []).length) {
+        T.scanner?.pause?.();
+        T.sheets?.openVariantPicker?.(product, {
+          onClose: () => { T.scanner?.resume?.(); }
+        });
+        return { status: "pick-variant", product };
+      }
+      const added = T.addToCart(product, 1, variant?.id || null);
       if (!added) return { status: "failed", product };
       // Confirm at the top of the screen what just went into the cart.
       T.confirmAdded(product, 1);

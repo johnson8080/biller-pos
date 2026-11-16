@@ -862,35 +862,51 @@ function runAction(btn) {
       T.sheets?.openWeigh?.(product);
       return;
     }
+    // Variants choose before they join the sale (e.g. 500 ml vs 1 L).
+    if ((product?.variants || []).length) {
+      T.sheets?.openVariantPicker?.(product);
+      return;
+    }
     if (T.addToCart(product, 1)) render();
   }
-  else if (act === "open-weigh" && id) {
+  else if (act === "pick-variant" && id && btn.dataset.variant) {
     const product = T.findProduct(id);
-    if (product?.soldByMass) T.sheets?.openWeigh?.(product, { editLine: btn.dataset.edit === "1" });
+    const variant = product ? T.findVariant(product, btn.dataset.variant) : null;
+    if (!product || !variant) { T.toast("That variant is no longer available", "i-alert"); T.sheets?.close?.(true); return; }
+    if (T.addToCart(product, 1, variant.id)) T.toast(`${product.name} · ${variant.label} added`, "i-check");
+    T.sheets?.close?.(true);
+    window.render?.();
+  }
+  else if (act === "open-weigh" && id) {
+    const variantId = btn.dataset.variant || null;
+    const product = T.findProduct(id);
+    if (product?.soldByMass) T.sheets?.openWeigh?.(product, { editLine: btn.dataset.edit === "1", editVariant: variantId });
   }
   else if (act === "dec-item" && id) {
-    const item = T.state.cart.items.find(i => i.productId === id);
+    const variantId = btn.dataset.variant || null;
+    const item = T.state.cart.items.find(i => i.productId === id && String(i.variantId || "") === String(variantId || ""));
     if (!item) return;
     const product = T.state.products.find(p => p.id === id);
     if (product?.soldByMass) {
       // Weighed lines move in grams: 100 g at a time, gone at nothing.
       item.qty = Math.max(0, item.qty - 100);
-      if (item.qty <= 0) T.state.cart.items = T.state.cart.items.filter(i => i.productId !== id);
+      if (item.qty <= 0) T.state.cart.items = T.state.cart.items.filter(i => !(i.productId === id && String(i.variantId || "") === String(variantId || "")));
     } else {
       item.qty--;
-      if (item.qty <= 0) T.state.cart.items = T.state.cart.items.filter(i => i.productId !== id);
+      if (item.qty <= 0) T.state.cart.items = T.state.cart.items.filter(i => !(i.productId === id && String(i.variantId || "") === String(variantId || "")));
     }
     T.save();
     render();
   }
   else if (act === "inc-item" && id) {
+    const variantId = btn.dataset.variant || null;
     const product = T.state.products.find(p => p.id === id);
-    const item = T.state.cart.items.find(i => i.productId === id);
+    const item = T.state.cart.items.find(i => i.productId === id && String(i.variantId || "") === String(variantId || ""));
     if (!item || !product) return;
     if (product.soldByMass) {
       const wanted = item.qty + 100;
       if (wanted <= product.stock) { item.qty = wanted; T.save(); render(); }
-    } else if (item.qty < product.stock) {
+    } else if (item.qty < T.lineStock(product, variantId)) {
       item.qty++;
       T.save();
       render();
@@ -1296,7 +1312,7 @@ function runAction(btn) {
   else if (act === "export-csv-items") { exportItemsCsv(); }
   else if (act === "export-csv-wastage") { exportWastageCsv(); }
   else if (act === "reset-line-price" && id) {
-    T.setCartPrice?.(id, null);
+    T.setCartPrice?.(id, null, btn.dataset.variant || null);
     T.sheets?.close?.(true);
     T.toast("Back to the set price", "i-check");
     render();
@@ -2089,16 +2105,17 @@ document.addEventListener("change", (event) => {
     render();
     return;
   }
+  const variantId = input.dataset.variant || null;
   const id = input.dataset.id;
   const cents = T.parsePriceToCents(input.value);
-  const line = T.cartLines?.().find((entry) => entry.product.id === id);
+  const line = T.cartLines?.().find((entry) => entry.product.id === id && String(entry.variantId || "") === String(variantId || ""));
   if (!Number.isFinite(cents) || cents <= 0) {
     T.toast("Enter a price greater than zero", "i-alert");
     if (line) input.value = (line.price / 100).toFixed(2);
     return;
   }
   if (!line || cents === line.price) return;
-  T.setCartPrice(id, cents);
+  T.setCartPrice(id, cents, variantId);
   render();
 });
 

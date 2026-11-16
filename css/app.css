@@ -2540,6 +2540,44 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .variant-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .variant-chip { padding: 6px 9px; border-radius: 5px; border: 1px solid var(--ui-line); background: var(--surface); font-size: calc(10px * var(--fs)); font-weight: 600; color: var(--ink-2); }
 .variant-chip.is-active { background: var(--forest); border-color: var(--forest-ink); color: var(--lime); }
+
+/* Variant rows in the product editor -------------------------------------- */
+.variant-editor { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 10px; }
+.variant-editor-row { display: flex; gap: 9px; align-items: flex-start; padding: 8px; background: var(--surface); border: 1px solid var(--ui-line); border-radius: 7px; }
+.variant-editor-tile { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 7px; font-size: calc(11px * var(--fs)); font-weight: 800; letter-spacing: -.02em; color: var(--forest-ink); background: var(--lime-soft); }
+.variant-editor-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.variant-editor-top { display: flex; gap: 6px; align-items: center; }
+.variant-editor-top .input { flex: 1; min-width: 0; }
+.variant-editor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.variant-editor-grid .input { min-width: 0; padding-left: 8px; padding-right: 8px; }
+.variant-barcode, .variant-field[type="text"] { width: 100%; }
+.variant-field { min-width: 0; }
+
+/* Pack row in stock-in ---------------------------------------------------- */
+.pack-row { display: flex; gap: 5px; align-items: center; margin-top: 4px; }
+.pack-row .input { flex: 1; min-width: 0; text-align: center; }
+.variant-x { flex: none; color: var(--faint); font-weight: 800; }
+.variant-total { flex: none; min-width: 42px; text-align: center; font-weight: 800; color: var(--ink-2); font-size: calc(13px * var(--fs)); background: var(--surface-2); border-radius: 6px; padding: 8px 6px; }
+
+/* Per-variant restock rows ------------------------------------------------- */
+.variant-restock-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.variant-restock-row { display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 7px; background: var(--surface); border: 1px solid var(--ui-line); }
+.variant-restock-tile { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 6px; font-size: calc(10px * var(--fs)); font-weight: 800; color: var(--forest-ink); background: var(--lime-soft); }
+.variant-restock-copy { flex: 1; min-width: 0; }
+.variant-restock-copy strong { display: block; font-size: calc(11.5px * var(--fs)); font-weight: 650; }
+.variant-restock-copy small { display: block; font-size: calc(9px * var(--fs)); color: var(--muted); }
+.variant-qty { width: 78px; flex: none; text-align: center; }
+
+/* Variant picker (in the Sale area) --------------------------------------- */
+.variant-list { display: flex; flex-direction: column; gap: 6px; }
+.variant-pick-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border-radius: 7px; background: var(--surface); border: 1px solid var(--ui-line); transition: transform .12s ease; }
+.variant-pick-row:active { transform: scale(.98); }
+.variant-pick-row:disabled { opacity: .5; }
+.variant-pick-tile { flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 7px; font-size: calc(12px * var(--fs)); font-weight: 800; color: var(--forest-ink); background: var(--lime-soft); }
+.variant-pick-copy { flex: 1; min-width: 0; }
+.variant-pick-copy strong { display: block; font-size: calc(12px * var(--fs)); font-weight: 650; }
+.variant-pick-copy small { display: block; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
+.variant-pick-price { flex: none; font-weight: 750; font-size: calc(12.5px * var(--fs)); color: var(--ink); font-variant-numeric: tabular-nums; }
 .pay-method-picker { display: flex; gap: 5px; }
 .pay-method { flex: 1; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; border: 1px solid var(--ui-line); background: var(--surface); font-size: calc(11px * var(--fs)); font-weight: 650; color: var(--muted); }
 .pay-method.is-active { background: var(--lime-soft); border-color: rgba(var(--accent-rgb),.9); color: var(--forest-ink); }
