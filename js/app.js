@@ -1189,6 +1189,47 @@ function runAction(btn) {
     T.ui.sellerPeriod = value === "30" ? "30" : "7";
     render();
   }
+  else if (act === "start-audit") {
+    T.ui.auditInProgress = true;
+    T.ui.auditChecks = {};
+    (T.state.products || []).forEach((p) => { T.ui.auditChecks[p.id] = true; });
+    render();
+  }
+  else if (act === "toggle-audit-mark" && id) {
+    if (!T.ui.auditChecks) T.ui.auditChecks = {};
+    T.ui.auditChecks[id] = T.ui.auditChecks[id] === false ? true : false;
+    render();
+  }
+  else if (act === "submit-audit") {
+    const products = T.state.products || [];
+    const checks = T.ui.auditChecks || {};
+    let mismatches = 0;
+    const items = products.map((p) => {
+      const match = checks[p.id] !== false;
+      if (!match) mismatches++;
+      return { productId: p.id, name: p.name, recorded: p.stock, actual: p.stock, match };
+    });
+    const passed = mismatches === 0;
+    T.state.audits = T.state.audits || [];
+    T.state.audits.push({
+      id: "audit_" + Date.now(),
+      at: new Date().toISOString(),
+      passed,
+      mismatches,
+      items,
+      note: ""
+    });
+    T.save();
+    T.ui.auditInProgress = false;
+    T.ui.auditChecks = {};
+    T.toast(passed ? "Audit passed" : `Audit failed — ${mismatches} mismatch${mismatches === 1 ? "" : "es"}`, passed ? "i-check" : "i-alert", passed ? "" : "bad");
+    render();
+  }
+  else if (act === "cancel-audit") {
+    T.ui.auditInProgress = false;
+    T.ui.auditChecks = {};
+    render();
+  }
   else if (act === "export-csv-sales") { exportSalesCsv(); }
   else if (act === "export-csv-items") { exportItemsCsv(); }
   else if (act === "export-csv-wastage") { exportWastageCsv(); }
@@ -1625,7 +1666,7 @@ function render() {
   if (tabbarEl) {
     // The bottom tabs stay on the four main screens, and get out of the way
     // on the one-off flows (login, cart, payment, receipt, scanner).
-    const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "more"].includes(route.name) && !(route.name === "debt" && route.param);
+    const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
 
     tabbarEl.innerHTML = showTabs ? T.screens.tabbar(route) : "";
     tabbarEl.classList.toggle("is-hidden", !showTabs);
@@ -1642,7 +1683,7 @@ function render() {
   else if (screenName === "debt") html = route.param ? T.screens.customerDebt(route.param) : T.screens.debt();
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
-  else if (screenName === "more") html = T.screens.more();
+  else if (screenName === "audit") html = T.screens.audit();  else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
   else if (screenName === "mpesa") html = T.screens.mpesaSettings();

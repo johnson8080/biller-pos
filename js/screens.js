@@ -554,10 +554,11 @@
 
     if (!txs.length) {
       return `<section class="screen" aria-labelledby="reports-title">
-        <div class="screen-head">
+        <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <h1 id="reports-title">REPORTS</h1>
-          <p class="sub">Sales, profit, best sellers, and payment mix.</p>
+          <button class="btn btn-ghost" data-nav="#/audit" style="flex:none">${icon("i-check")} Audit</button>
         </div>
+        <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
         <div class="empty-state">
           <div class="empty-icon">${icon("i-chart")}</div>
           <h3>No sales to report yet</h3>
@@ -568,10 +569,11 @@
     }
 
     return `<section class="screen" aria-labelledby="reports-title">
-      <div class="screen-head">
+      <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
         <h1 id="reports-title">REPORTS</h1>
-        <p class="sub">Sales, profit, best sellers, and payment mix.</p>
+        <button class="btn btn-ghost" data-nav="#/audit" style="flex:none">${icon("i-check")} Audit</button>
       </div>
+      <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
 
       <div class="sales-hero">
         <p class="eyebrow">Today’s revenue</p>
@@ -707,6 +709,64 @@
           <button class="btn btn-ghost" data-act="export-csv-wastage">${icon("i-download")} Wastage</button>
         </div>
       </div>
+    </section>`;
+  }
+
+  /* ---------- Audit ---------- */
+  function audit() {
+    const products = T.state.products || [];
+    const history = T.state.audits || [];
+    const inProgress = T.ui.auditInProgress === true;
+    if (!inProgress) {
+      const histHtml = history.length
+        ? history.slice().reverse().map((a) => {
+            const when = new Date(a.at);
+            const stamp = isNaN(when.getTime()) ? a.at : `${when.toLocaleDateString()} ${when.toLocaleTimeString()}`;
+            const badge = a.passed
+              ? `<span style="color:#16a34a;font-weight:700">${icon("i-check")} Passed</span>`
+              : `<span style="color:#dc2626;font-weight:700">${icon("i-alert")} Failed (${a.mismatches} mismatch${a.mismatches === 1 ? "" : "es"})</span>`;
+            return `<div class="settings-card" style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <strong>${stamp}</strong>
+                ${badge}
+              </div>
+              <p class="report-note" style="margin:6px 0 0">${a.items.length} item${a.items.length === 1 ? "" : "s"} checked${a.note ? " · " + esc(a.note) : ""}</p>
+            </div>`;
+          }).join("")
+        : `<p class="report-note">No audits recorded yet.</p>`;
+      return `<section class="screen" aria-labelledby="audit-title">
+        <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <h1 id="audit-title">AUDIT</h1>
+          <button class="btn btn-ghost" data-nav="#/reports" style="flex:none">${icon("i-back")} Reports</button>
+        </div>
+        <p class="sub" style="margin-top:-4px">Count the stock on the shelf and confirm it matches the record.</p>
+        <button class="btn btn-primary btn-block" data-act="start-audit" style="margin:12px 0">${icon("i-check")} Start audit</button>
+        <div class="settings-card">
+          <div class="report-card-head"><h2>History</h2><span class="report-total">${history.length}</span></div>
+          ${histHtml}
+        </div>
+      </section>`;
+    }
+    const checks = T.ui.auditChecks || {};
+    const rows = products.map((p) => {
+      const on = checks[p.id] !== false;
+      const recorded = p.stock;
+      return `<div class="settings-card" style="margin-bottom:8px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+        <button class="audit-mark ${on ? "is-on" : ""}" data-act="toggle-audit-mark" data-id="${esc(p.id)}" style="flex:none;width:28px;height:28px;border-radius:6px;border:1px solid var(--ui-line);background:${on ? "var(--lime-soft)" : "var(--surface-2)"};color:${on ? "var(--forest-ink)" : "var(--faint)"};display:grid;place-items:center">${on ? icon("i-check") : ""}</button>
+        <div style="flex:1;min-width:0">
+          <strong style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</strong>
+          <span class="report-note" style="margin:0">Recorded: ${recorded} ${esc(p.unit)}</span>
+        </div>
+      </div>`;
+    }).join("");
+    return `<section class="screen" aria-labelledby="audit-title">
+      <div class="screen-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <h1 id="audit-title">AUDIT</h1>
+        <button class="btn btn-ghost" data-act="cancel-audit" style="flex:none">${icon("i-close")} Cancel</button>
+      </div>
+      <p class="sub" style="margin-top:-4px">Tap the marker when the shelf matches the record.</p>
+      <div style="margin:12px 0">${rows || `<p class="report-note">No products to audit.</p>`}</div>
+      <button class="btn btn-primary btn-block" data-act="submit-audit">${icon("i-check")} Finish audit</button>
     </section>`;
   }
 
@@ -2604,5 +2664,5 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, icon };
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, icon };
 })();

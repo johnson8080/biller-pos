@@ -557,6 +557,23 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         latest: latest
       };
     }
+    const audits = (Array.isArray(data.audits) ? data.audits : [])
+      .filter((a) => a && typeof a === "object")
+      .map((a, index) => ({
+        id: String(a.id || `audit_${index}`),
+        at: String(a.at || new Date().toISOString()),
+        passed: a.passed === true,
+        mismatches: Number.isFinite(Number(a.mismatches)) ? Math.max(0, Math.round(Number(a.mismatches))) : 0,
+        items: Array.isArray(a.items) ? a.items.slice(0, 500).map((it) => ({
+          productId: String(it?.productId || ""),
+          name: String(it?.name || ""),
+          recorded: Number.isFinite(Number(it?.recorded)) ? Math.max(0, Math.round(Number(it.recorded))) : 0,
+          actual: Number.isFinite(Number(it?.actual)) ? Math.max(0, Math.round(Number(it.actual))) : 0,
+          match: it?.match === true
+        })) : [],
+        note: String(a.note || "").slice(0, 200)
+      }))
+      .slice(-50);
     const dayKeys = Object.keys(stockDays).sort();
     for (const stale of dayKeys.slice(0, Math.max(0, dayKeys.length - 45))) delete stockDays[stale];
     return {
@@ -573,6 +590,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       pro: data.pro === true,
       wastage,
       stockDays,
+      audits,
       createdAt: data.createdAt || new Date().toISOString(),
       defaultsMigrated: true
     };
