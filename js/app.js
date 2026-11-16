@@ -1141,8 +1141,12 @@ function runAction(btn) {
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
   else if (act === "refresh-data") {
     Promise.resolve(T.cloud?.refreshNow?.()).then((result) => {
-      const live = T.cloud?.status?.().online === true;
-      T.toast(result?.ok ? "Refreshed from the cloud" : (live ? "Could not refresh" : "No connection"), result?.ok ? "i-check" : "i-alert");
+      if (result?.ok) {
+        T.toast("Refreshed from the cloud", "i-check");
+      } else {
+        const live = T.cloud?.status?.().online === true;
+        T.toast(live ? "Not refreshed — cloud unreachable" : "Not refreshed — no connection", "i-alert", "bad");
+      }
       render();
     });
   }

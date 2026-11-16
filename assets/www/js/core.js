@@ -2099,9 +2099,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return tx ? String(tx.staff || "").trim() : "";
   };
 
-  T.toast = (message, icon = "i-check") => {
+  T.toast = (message, icon = "i-check", tone = "") => {
     const el = document.getElementById("toast");
     if (!el) return;
+    el.classList.toggle("is-bad", tone === "bad");
     el.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${icon}"></use></svg><span>${esc(message)}</span>`;
     el.classList.add("show");
     clearTimeout(T.ui.toastTimer);
