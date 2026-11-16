@@ -1494,11 +1494,23 @@
     const isOnline = (at) => at && (Date.now() - at < 900000); // 15 min
 
     // One row per shop: the payment request first, then the plan state from
-    // the presence records.
+    // the presence records. The presence heartbeat carries the shop's live
+    // plan status (due / overdue / trial), so the panel always reflects the
+    // current state — even if the developer has to do nothing.
+    const norm = (s) => (["reverted", "declined"].includes(s) ? "due" : s);
+    const accountsById = new Map(accounts.map((a) => [a.id, a]));
+    const liveStatusFor = (id, fallback) => {
+      const account = accountsById.get(id);
+      if (!account) return norm(String(fallback || "pending"));
+      const asked = account.payment && account.payment.status === "pending";
+      const sub = account.sub || {};
+      return asked ? "pending" : norm(String(sub.status || fallback || "active"));
+    };
     const entries = [];
     const seenIds = new Set();
     requests.forEach((request) => {
       seenIds.add(request.id);
+      const liveStatus = liveStatusFor(request.id, request.status || "pending");
       entries.push({
         id: request.id,
         code: request.code || "",
@@ -1506,7 +1518,7 @@
         email: request.email || "",
         // A reverted payment counts as due again, so it lands in "To chase"
         // instead of vanishing from the counts.
-        status: ["reverted", "declined"].includes(request.status) ? "due" : (request.status || "pending"),
+        status: liveStatus,
         amount: request.amount || 0,
         currency: request.currency || "KES",
         reference: request.reference || "",
@@ -1514,7 +1526,7 @@
         phone: request.phone || "",
         paidAt: request.confirmedAt || 0,
         at: request.at || 0,
-        pending: request.status === "pending"
+        pending: liveStatus === "pending"
       });
     });
     accounts.forEach((account) => {
@@ -1529,7 +1541,7 @@
         code: account.code || "",
         shop: sub.shop || account.name,
         email: account.name || "",
-        status: asked ? "pending" : (sub.status || "active"),
+        status: asked ? "pending" : norm(String(sub.status || "active")),
         amount: sub.amount || 0,
         currency: sub.currency || "KES",
         reference: sub.reference || account.payment?.reference || "",
