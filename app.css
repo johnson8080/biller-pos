@@ -978,6 +978,8 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--surface);
   border: 1px solid var(--ui-line);
   border-left: 3px solid var(--forest);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -988,6 +990,8 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 #category-chips .chip.is-featured {
   border-left: 3px solid var(--forest);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 #category-chips .chip.is-featured:not(.is-active) {
   font-weight: 750;
@@ -1015,6 +1019,8 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--surface);
   border: 1px solid var(--ui-line);
   border-left: 3px solid var(--forest);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -1046,6 +1052,8 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--surface);
   border: 1px solid var(--ui-line);
   border-left: 3px solid var(--forest);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(10px * var(--fs));
   font-weight: 650;
@@ -1585,6 +1593,8 @@ html[data-color-scheme="light"] .chip.is-active {
   background: var(--surface);
   border: 1px solid var(--ui-line);
   border-left: 3px solid var(--forest);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   box-shadow: var(--shadow-card);
   font-size: calc(9px * var(--fs));
   font-weight: 650;

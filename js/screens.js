@@ -1670,8 +1670,8 @@
         </div>
         <div class="field" style="margin-top:10px">
           <label>Text size</label>
-          <div class="chip-row" role="group" aria-label="Text size">
-            ${["small", "medium", "large"].map((size) => `<button class="chip ${T.textSizeId() === size ? "is-active" : ""}" data-act="set-text-size" data-value="${size}">${size[0].toUpperCase() + size.slice(1)}</button>`).join("")}
+          <div class="segmented" role="group" aria-label="Text size">
+            ${["small", "medium", "large"].map((size) => `<button type="button" class="seg-btn ${T.textSizeId() === size ? "is-active" : ""}" data-act="set-text-size" data-value="${size}" aria-pressed="${T.textSizeId() === size}">${size[0].toUpperCase() + size.slice(1)}</button>`).join("")}
           </div>
         </div>
       </div>`;
