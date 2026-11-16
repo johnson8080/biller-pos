@@ -1146,8 +1146,8 @@ h1, h2, h3, h4, p { margin: 0; }
   flex: none;
   width: 1px;
   align-self: stretch;
-  margin: 2px 0;
-  background: var(--line);
+  margin: 4px 0;
+  background: var(--line-strong);
 }
 .sell-meta-item,
 .sell-staff,
@@ -1194,7 +1194,7 @@ h1, h2, h3, h4, p { margin: 0; }
   color: var(--ink-2);
   white-space: nowrap;
 }
-.sell-title-row { display: flex; gap: 6px; padding: 4px 0 2px; }
+.sell-title-row { display: flex; gap: 6px; padding: 6px 0 2px; }
 .sell-title-col {
   flex: 1;
   min-width: 0;
