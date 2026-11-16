@@ -1447,6 +1447,8 @@
         ${clockTampered ? "" : `<button class="btn btn-primary btn-block" data-act="pay-subscription">${icon("i-phone")} ${waiting ? "Payment details" : `Pay ${esc(amount)}`}</button>`}
         ${!clockTampered && fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
+        ${clockTampered || waiting ? "" : ""}
+        <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
       </div>
     </div>`;
   }

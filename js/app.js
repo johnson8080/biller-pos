@@ -1761,7 +1761,7 @@ function render() {
 
   // Plan gating: an unpaid shop sees only the "Your plan is due" page
   // everywhere, except the screens needed to pay, sync and sign out.
-  const LOCKED_SCREENS_EXCEPT = new Set(["auth", "more", "account"]);
+  const LOCKED_SCREENS_EXCEPT = new Set(["auth", "account"]);
   if (T.subscriptionLocked?.() && !LOCKED_SCREENS_EXCEPT.has(screenName)) {
     html = T.screens.lockedScreen();
   }
