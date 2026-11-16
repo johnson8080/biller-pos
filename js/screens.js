@@ -1491,6 +1491,14 @@
       if (minutes < 1440) return `${Math.floor(minutes / 60)} h ago`;
       return T.shortDateFmt.format(new Date(stamp));
     };
+    // The chase amount must reflect today's plan price, not the price stored
+    // in an old heartbeat or an old payment request. Historic confirmed
+    // amounts are kept as-is (that is what was actually collected).
+    const currentAmount = T.planSummary?.().amountCents || 80000;
+    const chaseAmount = (status, stored) => {
+      const chase = ["due", "overdue", "trial", "awaiting", "pending", "reverted", "declined"];
+      return chase.includes(String(status || "")) ? currentAmount : (Number(stored) || currentAmount);
+    };
 
     const isOnline = (at) => at && (Date.now() - at < 900000); // 15 min
 
@@ -1520,7 +1528,7 @@
         // A reverted payment counts as due again, so it lands in "To chase"
         // instead of vanishing from the counts.
         status: liveStatus,
-        amount: request.amount || 0,
+        amount: chaseAmount(liveStatus, request.amount),
         currency: request.currency || "KES",
         reference: request.reference || "",
         mpesaCode: request.mpesaCode || "",
@@ -1537,13 +1545,14 @@
       // A shop that says it has paid also shows here through its presence
       // record, so the request is visible even before the new rules are live.
       const asked = account.payment && account.payment.status === "pending";
+      const accountStatus = asked ? "pending" : norm(String(sub.status || "active"));
       entries.push({
         id: account.id,
         code: account.code || "",
         shop: sub.shop || account.name,
         email: account.name || "",
-        status: asked ? "pending" : norm(String(sub.status || "active")),
-        amount: sub.amount || 0,
+        status: accountStatus,
+        amount: chaseAmount(accountStatus, sub.amount),
         currency: sub.currency || "KES",
         reference: sub.reference || account.payment?.reference || "",
         mpesaCode: sub.mpesaCode || "",
