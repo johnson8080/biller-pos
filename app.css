@@ -859,6 +859,7 @@ h1, h2, h3, h4, p { margin: 0; }
 /* Tab bar --------------------------------------------------------- */
 .tabbar {
   flex: none;
+  margin: 0 8px calc(8px + var(--safe-bottom));
   height: calc(62px + var(--safe-bottom));
   padding: 5px 5px calc(5px + var(--safe-bottom));
   display: flex;
@@ -868,7 +869,7 @@ h1, h2, h3, h4, p { margin: 0; }
   background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: 12px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-float);
   z-index: 9;
 }
 .tabbar.is-hidden { display: none; }
@@ -883,7 +884,7 @@ h1, h2, h3, h4, p { margin: 0; }
   justify-content: center;
   gap: 1px;
   position: relative;
-  color: var(--muted);
+  color: var(--ink-2);
   background: rgba(var(--surface-rgb), .66);
   border: 1px solid rgba(var(--accent-rgb),.22);
   border-radius: 5px;
