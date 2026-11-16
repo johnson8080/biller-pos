@@ -902,10 +902,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       exitPromptOpen: false,
       saveTimer: null,
       toastTimer: null,
-      // Audit session state: whether an audit is in progress and the counted
-      // actual quantity per product id, keyed by product id.
+      // Audit session state: whether an audit is in progress and which items
+      // the shopkeeper has confirmed as matching, keyed by product id.
       auditInProgress: false,
-      auditActual: {}
+      auditChecks: {}
     }
   };
 

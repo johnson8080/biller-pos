@@ -708,6 +708,10 @@ h1, h2, h3, h4, p { margin: 0; }
 @keyframes screenIn { from { opacity: .25; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .screen-head { padding: 0 0 16px; }
 .screen-head h1 { margin-top: 3px; font-size: calc(22px * var(--fs)); line-height: 1.02; font-weight: 700; letter-spacing: -.045em; }
+/* Reports and Audit Report page headers always share one size. */
+#reports-title, #audit-title { font-size: calc(22px * var(--fs)); }
+/* Compact AUDIT REPORT navigation button: thin border, no shadow halo. */
+.audit-nav { border-width: 0.5px !important; box-shadow: none !important; padding: 3px 8px !important; font-size: calc(10px * var(--fs)) !important; }
 .screen-head.with-action { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .screen-head.with-action > div { min-width: 0; }
 .screen-head.with-action .btn { margin-top: 8px; flex: none; }
@@ -1654,13 +1658,10 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 .settings-card h2, .about-card h2 { font-size: calc(14px * var(--fs)); font-weight: 700; letter-spacing: -.02em; }
 .card-sub { margin-top: 3px; font-size: calc(10.5px * var(--fs)); line-height: 1.4; color: var(--muted); }
-/* Audit rows: compact, each item one line with count + match marker */
+/* Audit rows: compact, each item one line with a tap-to-mark marker */
 .audit-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--line); }
 .audit-row:last-child { border-bottom: 0; }
 .audit-mark { flex: none; }
-.audit-input { -moz-appearance: textfield; }
-.audit-input::-webkit-outer-spin-button,
-.audit-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .settings-actions { margin-top: 13px; display: grid; gap: 8px; }
 .about-card p { margin-top: 9px; font-size: calc(10.5px * var(--fs)); line-height: 1.5; color: var(--muted); text-align: center; }
 .about-top { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 0 4px; text-align: center; }
