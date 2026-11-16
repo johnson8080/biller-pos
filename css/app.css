@@ -1279,6 +1279,8 @@ h1, h2, h3, h4, p { margin: 0; }
   border-radius: 6px;
 }
 .sort-option.is-active { border-color: var(--forest-3); background: var(--lime-soft); }
+.sort-option:disabled { opacity: .55; cursor: not-allowed; }
+.sort-option.is-taken { border-style: dashed; }
 .sort-option-copy { flex: 1; min-width: 0; }
 .sort-option-copy strong { display: block; font-size: calc(12.5px * var(--fs)); font-weight: 650; }
 .sort-option-copy small { display: block; margin-top: 1px; font-size: calc(9.5px * var(--fs)); color: var(--muted); }
@@ -1335,6 +1337,18 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 .staff-chip-x .ico { width: 11px; height: 11px; stroke-width: 2.4; }
 .staff-chip-x:active { background: var(--line); }
+.staff-chip-free {
+  flex: none;
+  border: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--amber-bg);
+  color: var(--amber);
+  font: inherit;
+  font-size: calc(9.5px * var(--fs));
+  font-weight: 700;
+  cursor: pointer;
+}
 .staff-roster-empty { font-size: calc(11px * var(--fs)); color: var(--muted); }
 .staff-add-row {
   display: flex;

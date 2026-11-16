@@ -1826,12 +1826,15 @@
       subtitle: "This device only — the name goes on your receipts",
       iconName: "i-user",
       body: `<div class="staff-picker">
-        ${roster.map((name) => `
-          <button class="sort-option staff-pick ${name === current ? "is-active" : ""}" data-act="pick-staff" data-value="${esc(name)}" aria-pressed="${name === current}">
+        ${roster.map((name) => {
+          const taken = name !== current && Boolean(T.staffClaimedBy?.(name));
+          return `
+          <button class="sort-option staff-pick ${name === current ? "is-active" : ""} ${taken ? "is-taken" : ""}" data-act="pick-staff" data-value="${esc(name)}" aria-pressed="${name === current}" ${taken ? "disabled" : ""}>
             <span class="staff-pick-avatar" aria-hidden="true">${esc(String(name).slice(0, 1).toUpperCase())}</span>
-            <span class="sort-option-copy"><strong>${esc(name)}</strong><small>${name === current ? "Selling on this device" : "Tap to sell as " + esc(name) + " here"}</small></span>
+            <span class="sort-option-copy"><strong>${esc(name)}</strong><small>${name === current ? "Selling on this device" : taken ? "Selling on another device" : "Tap to sell as " + esc(name) + " here"}</small></span>
             ${name === current ? `<span class="sort-option-check">${icon("i-check")}</span>` : ""}
-          </button>`).join("")}
+          </button>`;
+        }).join("")}
       </div>`
     });
   }

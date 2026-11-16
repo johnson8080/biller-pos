@@ -604,6 +604,10 @@ function runAction(btn) {
     T.sheets?.openStaffPicker?.();
   }
   else if (act === "pick-staff" && value) {
+    if (T.staffClaimedBy?.(value)) {
+      T.toast(`${value} is already selling on another device`, "i-alert");
+      return;
+    }
     const name = T.setActiveStaff?.(value) || value;
     // Keep the store's legacy name in step, so Store & receipts shows the
     // same shopkeeper this device is selling as.
@@ -642,6 +646,7 @@ function runAction(btn) {
     applyStoreForm(T);
     T.state.store.staffList = (T.state.store.staffList || []).filter((n) => String(n).trim() !== value);
     if (String(T.state.store.staff || "").trim() === value) T.state.store.staff = "";
+    T.releaseStaff?.(value);
     // If this device was selling as the removed shopkeeper, the fallback
     // name takes over automatically.
     try {
@@ -652,6 +657,13 @@ function runAction(btn) {
     T.save();
     render();
     T.toast(`${value} removed`, "i-check");
+  }
+  else if (act === "release-staff" && value) {
+    applyStoreForm(T);
+    T.releaseStaff?.(value);
+    T.save();
+    render();
+    T.toast(`${value} freed from other device`, "i-check");
   }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {
@@ -1756,7 +1768,13 @@ function render() {
     // The shopkeeper select is the same choice the Sell tab makes: picking it
     // here changes who is selling on this device, and vice versa.
     document.getElementById("store-staff")?.addEventListener("change", (event) => {
-      const name = T.setActiveStaff?.(event.target.value) || event.target.value;
+      const value = event.target.value;
+      if (T.staffClaimedBy?.(value)) {
+        T.toast(`${value} is already selling on another device`, "i-alert");
+        render();
+        return;
+      }
+      const name = T.setActiveStaff?.(value) || value;
       T.state.store.staff = String(name || "").trim();
       T.save();
       render();
@@ -1914,6 +1932,9 @@ function boot() {
   // Start the connectivity probe even if the Firebase SDK never loads.
   window.Till?.cloud?.init?.();
   initFirebase();
+  // This device's shopkeeper announces itself to the other devices.
+  const _bootStaff = window.Till?.activeStaff?.();
+  if (_bootStaff) window.Till?.claimStaff?.(_bootStaff);
   render();
   // Plan the reminders for the monthly plan once the app is up.
   setTimeout(() => { window.Till?.notify?.syncPlan?.(); }, 2500);

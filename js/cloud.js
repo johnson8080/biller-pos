@@ -235,6 +235,9 @@
     clearTimeout(pushTimer);
     const run = async () => {
       try {
+        // Refresh this device's shopkeeper claim so it does not expire while
+        // the shop is open.
+        if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
         const snapshot = JSON.parse(JSON.stringify(T.state));
         const size = JSON.stringify(snapshot).length;
         if (size > 900000) {
@@ -330,6 +333,9 @@
       if (data && data.state) {
         const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
         applyRemote(data.state, remoteAt);
+       // Re-assert this device's claim: applying a remote copy replaced state,
+       // which may have dropped our own claim.
+       if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
       } else {
         await push({ immediate: true });
       }

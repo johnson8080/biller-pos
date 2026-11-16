@@ -1893,9 +1893,12 @@
         <div class="field">
           <label for="store-staff">Shopkeeper on this device</label>
           ${roster.length ? `<select class="select" id="store-staff" name="staff">
-            ${roster.map((name) => `<option value="${esc(name)}" ${String(active) === name ? "selected" : ""}>${esc(name)}</option>`).join("")}
+            ${roster.map((name) => {
+              const taken = name !== active && Boolean(T.staffClaimedBy?.(name));
+              return `<option value="${esc(name)}" ${String(active) === name ? "selected" : ""} ${taken ? "disabled" : ""}>${esc(name)}${taken ? " — selling on another device" : ""}</option>`;
+            }).join("")}
           </select>` : `<input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name" placeholder="Add a shopkeeper below first">`}
-          <p class="field-help">Same choice as the Sell tab — the name printed on this device's receipts.</p>
+          <p class="field-help">Same choice as the Sell tab — the name printed on this device's receipts. A name already selling on another till stays greyed out.</p>
         </div>
 
         <div class="section-head"><h2>Sales &amp; receipts</h2></div>
@@ -1924,13 +1927,17 @@
 
       <div class="settings-card">
         <h2>Shopkeepers</h2>
-        <p class="card-sub">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts.</p>
+        <p class="card-sub">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts. One shopkeeper sells on one device at a time.</p>
         <div class="staff-roster">
-          ${roster.length ? roster.map((name) => `
+          ${roster.length ? roster.map((name) => {
+            const taken = name !== active && Boolean(T.staffClaimedBy?.(name));
+            return `
             <span class="staff-chip">
               <span class="staff-chip-name">${esc(name)}</span>
+              ${taken ? `<button type="button" class="staff-chip-free" data-act="release-staff" data-value="${esc(name)}" aria-label="Free ${esc(name)} from the other device">Free</button>` : ""}
               <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
-            </span>`).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
+            </span>`;
+          }).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
         </div>
         <div class="staff-add-row">
           <input class="input" id="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name">

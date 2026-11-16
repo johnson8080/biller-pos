@@ -24,6 +24,12 @@ const firebaseConfig = {
   // account logged in on several devices should each be able to ring up
   // sales as a different shopkeeper.
   const STAFF_KEY = "biller.pos.staff";
+  // Which physical device holds a shopkeeper's claim, so the same name is not
+  // selling on two tills at once.
+  const DEVICE_KEY = "biller.pos.device";
+  // A claim older than this is treated as abandoned (phone closed, app
+  // cleared) and the name frees up. Live devices refresh it on every save.
+  const CLAIM_TTL = 12 * 60 * 60 * 1000;
   // Each account keeps its own till, so signing in as somebody else never
   // shows the previous shop.
   const SHOP_PREFIX = "biller.pos.shop.";
@@ -288,6 +294,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     store.staffList = Array.isArray(store.staffList)
       ? store.staffList.map((name) => String(name || "").trim()).filter(Boolean)
       : [];
+    store.staffClaims = store.staffClaims && typeof store.staffClaims === "object" ? store.staffClaims : {};
     // The permanent shop code, used to identify paid accounts.
     store.shopCode = String(store.shopCode || "").trim().slice(0, 24);
     // The monthly plan: keep only sane values, never trust a half-saved copy.
@@ -2008,6 +2015,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // The daily stock book rides along with every save: openings on the
     // first save of a day, the last level seen on every one.
     T.markStockDay();
+    // Heartbeat for the shopkeeper claim on this device.
+    const active = T.activeStaff();
+    if (active) T.claimStaff(active);
     try {
       persistState(stateOwner, { stamp });
       if (stamp) {
@@ -2068,6 +2078,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     try { pick = String(localStorage.getItem(STAFF_KEY) || "").trim(); } catch { /* ignore */ }
     if (pick && roster.includes(pick)) return pick;
     const legacy = String(T.state.store.staff || "").trim();
+    // A name already selling on another till is off-limits even as a fallback.
+    const free = roster.filter((name) => !T.staffClaimedBy(name));
+    if (free.length) return free[0];
     if (legacy && (!roster.length || roster.includes(legacy))) return legacy;
     return roster[0] || legacy || "";
   };
@@ -2078,14 +2091,73 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
   };
 
+  // This install's own id. Stored on the device, never synced.
+  T.deviceId = () => {
+    try {
+      let id = String(localStorage.getItem(DEVICE_KEY) || "").trim();
+      if (!id) {
+        id = window.crypto?.randomUUID?.() || `dev-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        localStorage.setItem(DEVICE_KEY, id);
+      }
+      return id;
+    } catch { return "unknown-device"; }
+  };
+
+  // Who is selling where: { "Mary": { id: deviceId, at: timestamp } }. Lives in
+  // the shop state so every device sees the same claims.
+  T.staffClaims = () => {
+    const claims = T.state?.store?.staffClaims;
+    return claims && typeof claims === "object" ? claims : {};
+  };
+
+  // The claim another device holds on this shopkeeper, or null when free.
+  T.staffClaimedBy = (name) => {
+    const key = String(name || "").trim().toLowerCase();
+    if (!key) return null;
+    const mine = T.deviceId();
+    for (const [staff, claim] of Object.entries(T.staffClaims())) {
+      if (String(staff).trim().toLowerCase() !== key) continue;
+      if (!claim || !claim.id || claim.id === mine) return null;
+      if (Date.now() - (Number(claim.at) || 0) > CLAIM_TTL) return null;
+      return claim;
+    }
+    return null;
+  };
+
+  // Claim (or re-claim) a shopkeeper for this device. One name per device.
+  T.claimStaff = (name) => {
+    const pick = String(name || "").trim();
+    const mine = T.deviceId();
+    const claims = { ...T.staffClaims() };
+    for (const [staff, claim] of Object.entries(claims)) {
+      if (claim?.id === mine) delete claims[staff];
+    }
+    if (pick) claims[pick] = { id: mine, at: Date.now() };
+    T.state.store.staffClaims = claims;
+  };
+
+  // Drop every device's claim on a name (shopkeeper removed, or freed by hand).
+  T.releaseStaff = (name) => {
+    const key = String(name || "").trim().toLowerCase();
+    if (!key) return;
+    const claims = { ...T.staffClaims() };
+    for (const staff of Object.keys(claims)) {
+      if (String(staff).trim().toLowerCase() === key) delete claims[staff];
+    }
+    T.state.store.staffClaims = claims;
+  };
+
   // Choose the shopkeeper for this device. Every receipt rung up here
-  // carries this name until someone picks a different one.
+  // carries this name until someone picks a different one. A name already
+  // selling on another device is refused, so two tills cannot share it.
   T.setActiveStaff = (name) => {
     const pick = String(name || "").trim();
+    if (pick && T.staffClaimedBy(pick)) return T.activeStaff();
     try {
       if (pick) localStorage.setItem(STAFF_KEY, pick);
       else localStorage.removeItem(STAFF_KEY);
     } catch { /* ignore */ }
+    T.claimStaff(pick);
     return T.activeStaff();
   };
 
