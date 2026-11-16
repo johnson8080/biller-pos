@@ -1554,7 +1554,15 @@
     });
 
     const filteredEntries = entries;
-    filteredEntries.sort((a, b) => (b.pending ? 1 : 0) - (a.pending ? 1 : 0) || (b.at || 0) - (a.at || 0));
+    const devEmails = T.DEV_EMAILS || [];
+    const isDevEntry = (e) => devEmails.includes(String(e?.email || "").trim().toLowerCase());
+    // My own shop is pinned to the top of the list, always. Everyone else is
+    // sorted: waiting first, then by most recent activity.
+    filteredEntries.sort((a, b) =>
+      (isDevEntry(b) ? 1 : 0) - (isDevEntry(a) ? 1 : 0) ||
+      (b.pending ? 1 : 0) - (a.pending ? 1 : 0) ||
+      (b.at || 0) - (a.at || 0)
+    );
     
     // An M-Pesa code belongs to exactly one real transaction. If two shops
     // send the same code, at least one payment is being claimed twice.
@@ -1580,7 +1588,6 @@
     // never settled their plan (status is due/overdue), are heartbeating
     // right now AND actually ringing sales — likely free-riding.
     const DAY_MS = 24 * 60 * 60 * 1000;
-    const devEmails = T.DEV_EMAILS || [];
     const cheaters = accounts
       .filter((a) => a.sub)
       .filter((a) => !devEmails.includes(String(a.name || "").trim().toLowerCase()))
@@ -1619,6 +1626,7 @@
         <h1 id="plans-title">Subscriptions</h1>
         <p class="sub">Every shop, its code, and what has been paid.</p>
       </div>
+      ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
         <div class="plan-stat"><span class="label">Paid</span><strong>${paidCount}</strong></div>
@@ -1630,7 +1638,6 @@
         <strong>${esc(T.money(monthly))}</strong>
       </div>
       ${rows.length ? `<div class="plan-list">${rows.join("")}</div>` : `<p class="report-empty">No shops yet. They show up here as soon as they sign in.</p>`}
-      ${authCard}
       <p class="field-small" style="margin-top:12px">A shop that says it has paid appears at the top as "Waiting". Tap Confirm and their app unlocks by itself.</p>
     </section>`;
   }

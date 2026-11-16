@@ -558,7 +558,7 @@ html[data-color-scheme="dark"] .seg-btn.is-active { background: var(--line-stron
 .plan-row-code { font-weight: 700; letter-spacing: .03em; color: var(--ink-2); }
 .plan-row-actions { margin-top: 6px; display: flex; gap: 6px; }
 .plan-row-actions .btn { min-height: 30px; padding: 0 9px; font-size: calc(9.5px * var(--fs)); gap: 4px; border-radius: 6px; }
-.auth-card { margin-top: 12px; }
+.auth-card { margin-bottom: 12px; }
 .auth-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 0.5px solid var(--line); }
 .auth-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .auth-row-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
