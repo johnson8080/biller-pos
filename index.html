@@ -36,7 +36,7 @@
     }
   } catch (e) {}
 </script>
-<link rel="stylesheet" href="app.css?v=2.1.6">
+<link rel="stylesheet" href="app.css?v=2.1.7">
 </head>
 <body>
 
@@ -100,6 +100,10 @@
     <main class="viewport" id="viewport" tabindex="-1"></main>
     <div class="dock-slot" id="dock"></div>
     <div id="ad-banner" class="ad-banner" aria-hidden="true"></div>
+    <div class="offline-banner" id="offline-banner" role="status" hidden>
+      <svg class="ico ico-sm" aria-hidden="true"><use href="#i-alert"></use></svg>
+      <span class="offline-banner-text">Offline — data stays on this phone. <a class="offline-banner-link" href="#/auth">Sign in</a> to sync.</span>
+    </div>
     <nav class="tabbar" id="tabbar" aria-label="Main navigation"></nav>
 
     <div id="layers" class="layers"></div>
@@ -121,21 +125,21 @@
 
 <!-- Bump ASSET_VERSION whenever app.css / js/*.js change, so browsers and
      the installed PWA never keep serving a stale copy of the login screen. -->
-<script>window.ASSET_VERSION = "2.1.6";</script>
-<script src="assets/vendor/zxing.min.js?v=2.1.6" defer></script>
-<script src="js/daraja.js?v=2.1.6" defer></script>
-<script src="js/core.js?v=2.1.6" defer></script>
-<script src="js/cloud.js?v=2.1.6" defer></script>
-<script src="js/notify.js?v=2.1.6" defer></script>
-<script src="js/mpesa.js?v=2.1.6" defer></script>
-<script src="js/screens.js?v=2.1.6" defer></script>
-<script src="js/sheets.js?v=2.1.6" defer></script>
-<script src="js/scanner.js?v=2.1.6" defer></script>
-<script src="js/auth.js?v=2.1.6" defer></script>
+<script>window.ASSET_VERSION = "2.1.7";</script>
+<script src="assets/vendor/zxing.min.js?v=2.1.7" defer></script>
+<script src="js/daraja.js?v=2.1.7" defer></script>
+<script src="js/core.js?v=2.1.7" defer></script>
+<script src="js/cloud.js?v=2.1.7" defer></script>
+<script src="js/notify.js?v=2.1.7" defer></script>
+<script src="js/mpesa.js?v=2.1.7" defer></script>
+<script src="js/screens.js?v=2.1.7" defer></script>
+<script src="js/sheets.js?v=2.1.7" defer></script>
+<script src="js/scanner.js?v=2.1.7" defer></script>
+<script src="js/auth.js?v=2.1.7" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js" defer></script>
-<script src="js/app.js?v=2.1.6" defer></script>
+<script src="js/app.js?v=2.1.7" defer></script>
 <script>
   /* Pull-to-refresh — Material-style circular indicator below the hero.
      Pull: the spinner scales in and rotates with the drag while the page

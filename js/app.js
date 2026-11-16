@@ -17,12 +17,11 @@ function initFirebase(retries = 0) {
   if (typeof window.firebase === "undefined") {
     if (retries > 120) {
       console.warn("Firebase SDK failed to load (offline or blocked). Running in local-only mode.");
-      // The shop still has to be able to sell without a connection, so the
-      // login gate is skipped and the app opens straight onto Sell.
+      // The shop still has to be able to sell without a connection. The
+      // auth gate shows an explicit offline screen instead of silently
+      // pretending the user has an account.
       window.localOnlyMode = true;
-      if (!location.hash || location.hash === "#/auth") {
-        history.replaceState(null, "", "#/sell");
-      }
+      startOfflineRetry();
       render();
       return;
     }
@@ -33,13 +32,13 @@ function initFirebase(retries = 0) {
     window.firebase.initializeApp(firebaseConfig);
     window.firebaseAuth = window.firebase.auth();
     window.Till?.cloud?.init?.();
+    // The SDK is up: this device is no longer local-only.
+    window.localOnlyMode = false;
     setupAuthObserver();
   } catch (e) {
     console.warn("Firebase init error:", e);
     window.localOnlyMode = true;
-    if (!location.hash || location.hash === "#/auth") {
-      history.replaceState(null, "", "#/sell");
-    }
+    startOfflineRetry();
     render();
   }
 }
@@ -80,6 +79,26 @@ function setupAuthObserver() {
 }
 
 // --- Render ---
+
+// Keep asking in the background whether the Firebase SDK became available
+// (CDN unblocked later, connection restored, Firebase comes back), so a device
+// that started offline is re-connected to sign-in without an app restart.
+let offlineRetryTimer = null;
+function startOfflineRetry() {
+  if (offlineRetryTimer) return;
+  offlineRetryTimer = setInterval(() => {
+    if (typeof window.firebase === "undefined") return;
+    clearInterval(offlineRetryTimer);
+    offlineRetryTimer = null;
+    initFirebase();
+  }, 15000);
+}
+
+/** Show/hide the persistent offline banner to match local-only state. */
+function updateOfflineBanner() {
+  const el = document.getElementById("offline-banner");
+  if (el) el.hidden = window.localOnlyMode !== true;
+}
 
 /**
  * The screens the shopkeeper stepped through, oldest first, with the screen
@@ -1063,6 +1082,19 @@ function runAction(btn) {
     T.sheets?.close?.(true);
     go("#/auth");
   }
+  else if (act === "continue-offline") {
+    // The user chose the offline shop on purpose: this phone keeps the
+    // local copy, and the persistent banner on screen keeps saying so.
+    window.localOnlyMode = true;
+    goHome();
+    render();
+  }
+  else if (act === "retry-connection") {
+    // Re-probe the CDN; if Firebase becomes available the retry path in
+    // initFirebase will switch the device back to signed-in mode.
+    window.localOnlyMode = false;
+    location.reload();
+  }
   else if (act === "sign-out") {
     // Sign out of Firebase for real, otherwise the auth observer would
     // silently sign the user straight back in.
@@ -1594,6 +1626,8 @@ function render() {
     console.warn("Biller core not ready yet");
     return;
   }
+
+  updateOfflineBanner();
 
   const viewport = document.getElementById("viewport");
   const appbarEl = document.getElementById("appbar");

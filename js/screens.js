@@ -2159,6 +2159,31 @@
 
   function auth() {
     const session = T.getSession();
+    // The Firebase SDK never loaded (blocked network / no signal on this
+    // device). Be explicit about it instead of silently letting the user in
+    // — that is what made new signups vanish without a trace.
+    if (window.localOnlyMode) {
+      return `<section class="screen login-screen" id="login-screen" aria-labelledby="login-title">
+        <div class="login-brand">
+          <span class="login-mark">${icon("i-store")}</span>
+          <h1 id="login-title">Biller POS</h1>
+          <p class="eyebrow">Point of sale, in one hand</p>
+        </div>
+
+        <div class="login-card">
+          <div class="login-alert offline-card" role="alert">
+            ${icon("i-alert", "ico ico-sm")}
+            <span id="login-alert-text"><strong>You are offline.</strong> The sign-in service can’t be reached from this device, so accounts can’t be created right now.</span>
+          </div>
+          <p class="offline-copy">Your shop keeps working offline. Anything you do is saved on this phone and will sync once you are online and sign in.</p>
+          <div class="offline-actions">
+            <button class="btn btn-primary btn-block" data-act="continue-offline">${icon("i-arrow")} Continue without an account</button>
+            <button class="btn btn-quiet btn-block" data-act="retry-connection">${icon("i-refresh")} Try again</button>
+          </div>
+          <p class="field-help" style="margin-top:10px;text-align:center">Continuing offline means this shop stays on this device only. Sign in later to sync it to your account.</p>
+        </div>
+      </section>`;
+    }
     return `<section class="screen login-screen" id="login-screen" data-mode="signin" aria-labelledby="login-title">
       <div class="login-brand">
         <span class="login-mark">${icon("i-store")}</span>
