@@ -1449,6 +1449,7 @@
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
         ${clockTampered || waiting ? "" : ""}
         <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
+        <button class="btn btn-ghost btn-block" data-act="sign-out" style="opacity:.85">${icon("i-user")} Sign out</button>
       </div>
     </div>`;
   }

@@ -532,7 +532,7 @@ function runAction(btn) {
     const LOCK_ALLOW = new Set([
       "pay-subscription", "subscription-sent", "cloud-sync", "refresh-data",
       "open-subscription", "open-date-settings", "open-developer-chat",
-      "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection"
+      "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection", "sign-out"
     ]);
     if (!LOCK_ALLOW.has(act)) {
       T.toast("Your plan needs paying first", "i-alert");
