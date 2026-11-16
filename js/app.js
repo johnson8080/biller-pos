@@ -1489,15 +1489,9 @@ function updateSyncDot() {
   const brand = document.querySelector(".brand");
   if (!brand) return;
   const cs = (typeof T !== "undefined" && T.cloud?.status?.()) || {};
-  brand.classList.remove("sync-synced", "sync-connecting");
-  const offline = cs.online === false || (typeof navigator !== "undefined" && navigator.onLine === false);
-  if (cs.mode === "local" || cs.phase === "error" || offline) {
-    // stays red (default border color)
-  } else if (cs.phase === "synced") {
-    brand.classList.add("sync-synced");
-  } else {
-    brand.classList.add("sync-connecting");
-  }
+  const online = cs.online !== false && (typeof navigator === "undefined" || navigator.onLine !== false);
+  // Green ring = online, red (the default border colour) = offline.
+  brand.classList.toggle("sync-synced", online);
 }
 
 function render() {

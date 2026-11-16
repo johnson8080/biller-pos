@@ -1969,16 +1969,6 @@
     const cloud = T.cloud?.status?.();
     if (!T.isDeveloperAccount()) return "";
     const accounts = T.cloud?.accounts?.() || [];
-    const online = accounts.filter((account) => T.cloud.isOnline(account));
-    const seen = (stamp) => {
-      if (!stamp) return "not seen yet";
-      const minutes = Math.floor((Date.now() - stamp) / 60000);
-      if (minutes < 1) return "just now";
-      if (minutes < 60) return `${minutes} min ago`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours} h ago`;
-      return T.shortDateFmt.format(new Date(stamp));
-    };
     const planRows = accounts.map((account) => {
       const sub = account.sub;
       if (!sub) return "";
@@ -1998,32 +1988,11 @@
         <span class="dev-state ${tone}">${esc(label)}</span>
       </div>`;
     }).join("");
-    const rows = accounts.map((account) => {
-      const live = T.cloud.isOnline(account);
-      return `<div class="dev-account">
-        <span class="dev-dot ${live ? "is-online" : ""}" aria-hidden="true"></span>
-        <span class="dev-copy"><strong>${esc(account.name)}</strong><small>${account.v ? `v${esc(account.v)}` : "version unknown"} · ${esc(seen(account.t))}</small></span>
-        <span class="dev-state ${live ? "is-online" : ""}">${live ? "Online" : "Offline"}</span>
-      </div>`;
-    }).join("");
     return `<div class="settings-card dev-panel">
-      <div class="report-card-head">
-        <h2>Signed-in accounts</h2>
-        <span class="report-total">${online.length} online</span>
-      </div>
-      <p class="card-sub">Only you can see this. Every account that has signed in, and which ones are online right now.</p>
       ${cloud.accountsError ? `<p class="dev-error">Cannot read other accounts (${esc(cloud.accountsError)}). Check the Firestore rules for the presence collection.</p>` : ""}
-      <div class="dev-account-list">
-        <div class="dev-account">
-          <span class="dev-dot is-online" aria-hidden="true"></span>
-          <span class="dev-copy"><strong>This device</strong><small>${esc(cloud.email || "signed in")}</small></span>
-          <span class="dev-state is-online">Online</span>
-        </div>
-        ${rows || (cloud.accountsError ? "" : `<p class="report-empty">No other account has signed in yet.</p>`)}
-      </div>
-      ${planRows ? `<div class="section-head" style="margin-top:14px"><h2>Monthly plans</h2></div>
+      ${planRows ? `<div class="section-head"><h2>Monthly plans</h2></div>
       <p class="card-sub">Each shop's plan state. A shop marked "Awaiting" has sent the money and is waiting for you to confirm it.</p>
-      <div class="dev-account-list">${planRows}</div>` : ""}
+      <div class="dev-account-list">${planRows}</div>` : `<p class="report-empty">No shop has a plan yet.</p>`}
     </div>`;
   }
 
