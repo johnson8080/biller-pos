@@ -65,9 +65,19 @@
       const unit = product.packLabel || product.soldBy || "packet";
       return `${money(product.price * product.packSize)}/${unit}`;
     }
-    if (product.sellParent) return `${money(product.price)}+`;
-    const variantPrice = (product.variants || []).reduce((min, v) => v.price && (!min || v.price < min) ? v.price : min, 0);
-    if (variantPrice) return `${money(variantPrice)}+`;
+    const prices = [];
+    if (product.sellParent) prices.push(product.price);
+    for (const variant of product.variants || []) prices.push(variant.price);
+    if (prices.length > 1) {
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      if (min !== max) {
+        const symbol = T.currencySymbol ? T.currencySymbol() : "KES";
+        return `${symbol}${Math.round(min / 100)}\u2013${Math.round(max / 100)}`;
+      }
+      return money(min);
+    }
+    if (prices.length === 1) return money(prices[0]);
     return money(product.price);
   }
 
