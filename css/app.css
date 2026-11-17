@@ -2250,7 +2250,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .cart-item-top .tile-sm { width: 26px; height: 26px; border-radius: 5px; font-size: calc(8.5px * var(--fs)); }
 .cart-item-copy { flex: 1; min-width: 0; }
 .cart-item-name { font-size: calc(12px * var(--fs)); font-weight: 650; line-height: 1.2; }
-.cart-item-name .product-detail { display: inline; margin-left: 3px; font-size: calc(9.5px * var(--fs)); color: var(--muted); font-weight: 500; }
+.cart-item-name .product-detail { display: inline; margin-left: 2px; font-size: calc(10.5px * var(--fs)); font-weight: 650; color: inherit; font-variant-numeric: tabular-nums; }
 .cart-item-stock { margin-top: 2px; font-size: calc(9px * var(--fs)); font-weight: 600; color: var(--amber); }
 .cart-item-price-wrap { display: inline-flex; align-items: center; gap: 4px; }
 .cart-item-price {
