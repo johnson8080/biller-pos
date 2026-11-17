@@ -514,9 +514,8 @@
             <span class="tile tile-md tone-${T.toneFor(values.category)}" id="product-preview-tile" aria-hidden="true">${esc(T.initials(values.name || "New"))}</span>
             <div class="product-preview-text"><div class="name" id="product-preview-name">${esc(values.name || "New product")}</div><div class="meta" id="product-preview-meta">${esc(values.category)}${values.barcode ? ` · ${esc(values.barcode)}` : ""}</div></div>
           </div>
-          <div class="field">
-            <label for="product-name">Product name</label>
-            <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="e.g. Oat Milk" required autocomplete="off">
+          <div class="field product-name-field">
+            <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="Product name" required autocomplete="off" aria-label="Product name">
           </div>
         </div>
 
@@ -573,7 +572,7 @@
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
-        <div class="field-row three">
+        <div class="field-row three prices">
           <div class="field">
             <label for="product-cost">Buying price</label>
             <div class="input-affix"><input class="input" id="product-cost" name="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(values.cost)}" placeholder="0.00"><span class="affix">${esc(T.currencySymbol())}</span></div>
