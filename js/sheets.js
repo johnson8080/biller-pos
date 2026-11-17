@@ -1229,12 +1229,35 @@
         ${options}
       </select>
       <div class="stock-line-newfields" hidden>
-        <input class="input stock-line-name" type="text" placeholder="New product name" aria-label="New product name" autocomplete="off" spellcheck="false">
-        <div class="stock-line-newrow">
-          <select class="select stock-line-category" aria-label="Category">
-            ${T.categories().map((category) => `<option value="${esc(category)}">${esc(category)}</option>`).join("")}
-          </select>
-          <div class="input-affix"><input class="input stock-line-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Selling price" aria-label="Selling price"><span class="affix">${esc(T.currencySymbol())}</span></div>
+        <div class="vrow-field">
+          <span class="vrow-cap">New product name</span>
+          <input class="input stock-line-name" type="text" placeholder="e.g. Oat Milk" aria-label="New product name" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="stock-line-grid">
+          <div class="vrow-field">
+            <span class="vrow-cap">Category</span>
+            <select class="select stock-line-category" aria-label="Category">
+              ${T.categories().map((category) => `<option value="${esc(category)}">${esc(category)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="vrow-field">
+            <span class="vrow-cap">Unit</span>
+            <select class="select stock-line-unit" aria-label="Unit">
+              <option value="">N/A</option>
+              <option value="kg">Kilograms</option>
+              <option value="g">Grams</option>
+              <option value="L">Litres</option>
+              <option value="ml">Millilitres</option>
+            </select>
+          </div>
+          <div class="vrow-field">
+            <span class="vrow-cap">Amount per unit</span>
+            <div class="input-affix"><input class="input stock-line-unitsize" type="number" min="0" step="0.001" inputmode="decimal" placeholder="e.g. 500" aria-label="Amount per unit"><span class="affix stock-line-affix">ml</span></div>
+          </div>
+        </div>
+        <div class="vrow-field">
+          <span class="vrow-cap">Selling price</span>
+          <div class="input-affix"><input class="input stock-line-price" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" aria-label="Selling price"><span class="affix">${esc(T.currencySymbol())}</span></div>
         </div>
       </div>
       <div class="stock-line-fields">
@@ -1281,9 +1304,12 @@
         if (productId === "__new__") {
           const name = String(row.querySelector(".stock-line-name")?.value || "").trim();
           const category = String(row.querySelector(".stock-line-category")?.value || "") || T.categories()[0] || "General";
+          const unit = String(row.querySelector(".stock-line-unit")?.value || "").trim();
+          const unitSizeNum = Number(String(row.querySelector(".stock-line-unitsize")?.value ?? "").trim());
+          const unitSize = unit && Number.isFinite(unitSizeNum) && unitSizeNum > 0 ? Math.round(unitSizeNum * 1000) / 1000 : 0;
           const priceRaw = row.querySelector(".stock-line-price")?.value;
           const price = String(priceRaw ?? "").trim() === "" ? 0 : (T.parsePriceToCents(priceRaw) || 0);
-          return { newItem: true, name, category, price, qty, cost };
+          return { newItem: true, name, category, unit, unitSize, price, qty, cost };
         }
         return { productId, qty, cost };
       })
@@ -1307,7 +1333,14 @@
     };
 
     container.addEventListener("input", refresh);
-    container.addEventListener("change", refresh);
+    container.addEventListener("change", (event) => {
+      const unitSelect = event.target?.closest?.(".stock-line-unit");
+      if (unitSelect) {
+        const affix = unitSelect.closest(".stock-line-newfields")?.querySelector(".stock-line-affix");
+        if (affix) affix.textContent = unitSelect.value || "ml";
+      }
+      refresh();
+    });
     container.addEventListener("click", (event) => {
       const remove = event.target.closest("[data-remove-line]");
       if (!remove) return;
@@ -1376,78 +1409,38 @@
       body: `<form id="supplier-payment-form" novalidate>
         ${supplierPayTarget(supplier)}
         ${supplierOpenBillsField(supplier)}
-        <!-- Amount Section Card -->
-        <div class="supplier-pay-card">
-          <div class="card-header">
-            <span class="card-header title">Amount paid</span>
+        <div class="field">
+          <label for="supplier-payment-amount">Amount paid</label>
+          <div class="input-affix">
+            <input class="input" id="supplier-payment-amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required data-amount-target>
+            <span class="affix">${esc(T.currencySymbol())}</span>
           </div>
-          <div class="card-body">
-            <div class="supplier-pay-section">
-              <label class="section-title"><span class="icon">&#xf013;</span>Amount</label>
-              <div class="field">
-                <label for="supplier-payment-amount">Amount paid</label>
-                <div class="input-affix">
-                  <input class="input supplier-pay-amount-input" id="supplier-payment-amount" name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required data-amount-target>
-                  <span class="affix">${esc(T.currencySymbol())}</span>
-                </div>
-                <p class="field-help">Settles the oldest unpaid bill first, or pays for stock you are taking right now.</p>
-              </div>
-            </div>
+          <p class="field-help">Settles the oldest unpaid bill first, or pays for stock you are taking right now.</p>
+        </div>
+        <div class="field">
+          <label for="supplier-pay-method">Payment method</label>
+          <div class="pay-method-picker" id="supplier-pay-method">
+            <button type="button" class="pay-method is-active" data-method="cash" aria-pressed="true">${icon("i-cash")} Cash</button>
+            <button type="button" class="pay-method" data-method="mpesa" aria-pressed="false">${icon("i-phone")} M-Pesa</button>
           </div>
         </div>
-        <!-- Payment Method Section Card -->
-        <div class="supplier-pay-card">
-          <div class="card-header">
-            <span class="card-header title">Payment method</span>
+        ${stockLinesField({
+          title: "Stock received with this payment",
+          help: "Optional. Items taken now are added to your inventory. New items get recorded like a new product — give the name, selling price, and the unit size if it has one."
+        })}
+        <div class="field-row">
+          <div class="field">
+            <label for="supplier-payment-date">Date</label>
+            <input class="input" id="supplier-payment-date" name="date" type="date" value="${T.isoDay()}">
           </div>
-          <div class="card-body">
-            <div class="supplier-pay-section">
-              <label class="section-title"><span class="icon">&#xf099;</span>Method</label>
-              <div class="pay-method-picker" id="supplier-pay-method">
-                <button type="button" class="pay-method is-active" data-method="cash" aria-pressed="true">${icon("i-cash")} Cash</button>
-                <button type="button" class="pay-method" data-method="mpesa" aria-pressed="false">${icon("i-phone")} M-Pesa</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Stock Section Card -->
-        <div class="supplier-pay-card">
-          <div class="card-header">
-            <span class="card-header title">Stock received</span>
-          </div>
-          <div class="card-body">
-            ${stockLinesField({
-              title: "Stock received with this payment",
-              help: "Optional. Items taken now are added to your inventory and counted in this payment."
-            })}
-          </div>
-        </div>
-        <!-- Date/Note Section Card -->
-        <div class="supplier-pay-card">
-          <div class="card-header">
-            <span class="card-header title">Details</span>
-            <span class="card-header subtitle">Date and reference</span>
-          </div>
-          <div class="card-body">
-            <div class="supplier-pay-section" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <div>
-                <label class="section-title"><span class="icon">&#xf073;</span>Date</label>
-                <div class="field">
-                  <input class="input" id="supplier-payment-date" name="date" type="date" value="${T.isoDay()}">
-                </div>
-              </div>
-              <div>
-                <label class="section-title"><span class="icon">&#xf0e7;</span>Note</label>
-                <div class="field">
-                  <input class="input" id="supplier-payment-note" name="note" placeholder="e.g. M-Pesa code QGH7X8Y2Z1" maxlength="120">
-                </div>
-              </div>
-            </div>
+          <div class="field">
+            <label for="supplier-payment-note">Note</label>
+            <input class="input" id="supplier-payment-note" name="note" placeholder="e.g. M-Pesa code QGH7X8Y2Z1" maxlength="120">
           </div>
         </div>
         <div class="form-error" role="alert"></div>
         <div class="sheet-actions">
-          <button class="btn btn-primary btn-block supplier-pay-submit" type="submit">Record payment ${icon("i-check")}</button>
+          <button class="btn btn-primary btn-block" type="submit">Record payment ${icon("i-check")}</button>
         </div>
       </form>`
     });

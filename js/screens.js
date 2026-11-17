@@ -856,8 +856,6 @@
       const price = priceTag(p);
       const stockText = out ? "Sold out" : p.soldByMass ? `${T.massLabel(T.productStock(p))} in stock` : `${T.productStock(p)} ${esc(unit)} in stock`;
       const detailLine = [variantStockLine(p), [T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" · ")].filter(Boolean)[0] || "";
-      const stockLabel = p.soldByMass ? T.massLabel(p.stock) : String(p.stock);
-      const stockCls = p.stock === 0 ? "is-out" : p.stock <= p.lowStockAt ? "is-low" : "";
       return `<div class="inv-row">
         <button class="product-row ${out ? "is-out" : ""}" data-act="edit-product" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
           <span class="product-row-tile">${productTile(p)}</span>
@@ -867,11 +865,6 @@
           </span>
           <span class="product-row-price">${esc(price)}</span>
         </button>
-        <span class="stepper compact" aria-label="Stock for ${esc(p.name)}">
-          <button class="step-btn" data-act="stock-dec" data-id="${esc(p.id)}" aria-label="Decrease stock" ${p.stock === 0 ? "disabled" : ""}>${icon("i-minus")}</button>
-          <span class="step-value ${stockCls}">${esc(stockLabel)}</span>
-          <button class="step-btn" data-act="add-stock" data-id="${esc(p.id)}" aria-label="Add stock for ${esc(p.name)}">${icon("i-plus")}</button>
-        </span>
       </div>`;
     }).join("")}</div>`;
   }

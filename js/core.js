@@ -1061,7 +1061,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
           cost: clampInt(line.cost, 0, 100000000),
           stock: qty,
           lowStockAt: 5,
-          unit: "pcs",
+          unit: String(line.unit || "").trim(),
+          unitSize: Number.isFinite(Number(line.unitSize)) && Number(line.unitSize) > 0 ? Number(line.unitSize) : 0,
           barcode: "",
           category: String(line.category || "") || T.categories()[0] || "General",
           soldByMass: false
