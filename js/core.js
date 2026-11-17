@@ -2550,7 +2550,14 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         });
         return { status: "weigh", product };
       }
-      // Parent barcode of a variant product — let the shopkeeper pick.
+      // Parent barcode of a variant product — one variant: it IS the item,
+      // add it straight away. More than one: let the shopkeeper pick.
+      if (!variant && (product.variants || []).length === 1) {
+        const addedSingle = T.addToCart(product, 1, product.variants[0].id);
+        if (addedSingle) T.confirmAdded(product, 1);
+        T.sheets?.refreshQuickScan?.();
+        return { status: "added", product, variant: product.variants[0] };
+      }
       if (!variant && (product.variants || []).length) {
         T.scanner?.pause?.();
         T.sheets?.openVariantPicker?.(product, {
