@@ -517,11 +517,19 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="product-barcode">Barcode</label>
-          <div class="barcode-field">
-            <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type" autocomplete="off" spellcheck="false">
-            <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
+        <div class="field-row">
+          <div class="field">
+            <label for="product-category">Category</label>
+            <select class="select" id="product-category" name="category">
+              ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="product-barcode">Barcode</label>
+            <div class="barcode-field">
+              <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type" autocomplete="off" spellcheck="false">
+              <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
+            </div>
           </div>
         </div>
 
@@ -535,14 +543,14 @@
           </div>
           <div class="field">
             <label for="product-unit">Unit</label>
-            <select class="select" id="product-unit" name="unit" aria-label="Official product unit">
+            <select class="select${currentUnit ? " pair-a" : ""}" id="product-unit" name="unit" aria-label="Official product unit">
               <option value="">N/A</option>
               ${unitOptions.map(([value,label]) => `<option value="${esc(value)}" ${currentUnit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
           <div class="field">
             <label for="product-type">Product type</label>
-            <select class="select" id="product-type" name="productType" aria-label="The bundle the item comes in">
+            <select class="select${currentType ? " pair-b" : ""}" id="product-type" name="productType" aria-label="The bundle the item comes in">
               <option value="">N/A</option>
               ${["Packet","Box","Dozen","Crate"].map((label) => {
                 const value = label.toLowerCase();
@@ -555,7 +563,7 @@
         <div class="field" id="unit-size-row"${currentUnit ? "" : ' style="display:none"'}>
           <label for="product-unit-size">Amount per unit</label>
           <div class="input-affix">
-            <input class="input" id="product-unit-size" name="unitSize" type="number" min="0" step="0.001" inputmode="decimal" value="${esc(values.unitSize ?? "")}" placeholder="e.g. 500">
+            <input class="input${currentUnit ? " pair-a" : ""}" id="product-unit-size" name="unitSize" type="number" min="0" step="0.001" inputmode="decimal" value="${esc(values.unitSize ?? "")}" placeholder="e.g. 500">
             <span class="affix" id="unit-size-affix">${esc(unitSymbol(currentUnit))}</span>
           </div>
           <p class="field-help" id="unit-size-hint" style="margin-top:6px">${esc(unitHint(currentUnit, values.unitSize))}</p>
@@ -564,7 +572,7 @@
         <div class="field" id="pack-size-row"${currentType ? "" : ' style="display:none"'}>
           <label for="product-pack-size" id="pack-size-label">${currentType ? `Pieces per ${esc(currentType)}` : "Pieces per bundle"}</label>
           <div class="input-affix">
-            <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize ?? "")}" placeholder="e.g. 12">
+            <input class="input${currentType ? " pair-b" : ""}" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize ?? "")}" placeholder="e.g. 12">
             <span class="affix">pieces</span>
           </div>
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
@@ -587,15 +595,10 @@
 
         <div class="field-row">
           <div class="field">
-            <label for="product-category">Category</label>
-            <select class="select" id="product-category" name="category">
-              ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field">
             <label for="product-low">Low-stock alert</label>
             <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
           </div>
+          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">Alert when stock drops to this</span></div>
         </div>
 
 <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
@@ -689,6 +692,8 @@
         const hint = form.querySelector("#unit-size-hint");
         const sizeInput = form.querySelector("#product-unit-size");
         if (row) row.style.display = t.value ? "" : "none";
+        t.classList.toggle("pair-a", Boolean(t.value));
+        sizeInput?.classList.toggle("pair-a", Boolean(t.value));
         if (affix) affix.textContent = unitSymbol(t.value);
         if (hint) hint.textContent = unitHint(t.value, sizeInput?.value || "");
         if (t.value && sizeInput) sizeInput.focus({ preventScroll: true });
@@ -701,6 +706,8 @@
         const type = String(t.value || "").toLowerCase();
         const bundle = isBundleType(type);
         if (row) row.style.display = bundle ? "" : "none";
+        t.classList.toggle("pair-b", bundle);
+        packInput?.classList.toggle("pair-b", bundle);
         if (label) label.textContent = bundle ? `Pieces per ${type}` : "Pieces per bundle";
         if (hint) hint.textContent = packHint(type, packInput?.value || "");
         if (bundle && packInput) packInput.focus({ preventScroll: true });

@@ -2544,6 +2544,11 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .field-row.three .input-affix .input { padding-left: 8px; }
 .field-row.three .input-affix .affix { padding: 0 8px; font-size: calc(11px * var(--fs)); }
 .field-row.three .field label { font-size: calc(8px * var(--fs)); letter-spacing: .055em; margin-bottom: 4px; }
+.pair-a { border-color: var(--forest) !important; background: var(--blue-bg) !important; box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), .4) !important; }
+.pair-b { border-color: var(--lime-ink) !important; background: var(--lime-soft) !important; box-shadow: 0 0 0 1.5px rgba(4, 120, 87, .4) !important; }
+.pair-a:focus, .pair-b:focus { outline: none; }
+.input-affix:has(.pair-a) .affix { color: var(--forest); }
+.input-affix:has(.pair-b) .affix { color: var(--lime-ink); }
 .confirm-copy { font-size: calc(12.5px * var(--fs)); line-height: 1.5; color: var(--ink-2); }
 .delete-product { margin-top: 8px; }
 .discount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
