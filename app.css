@@ -1457,6 +1457,7 @@ html[data-color-scheme="light"] .chip.is-active {
   background: var(--surface-2);
   color: var(--ink-2);
 }
+.tile-md { width: 46px; height: 46px; border-radius: 9px; font-size: calc(13.5px * var(--fs)); }
 .tile-sm { width: 34px; height: 34px; border-radius: 6px; font-size: calc(10.5px * var(--fs)); }
 .tile-lg { width: 52px; height: 52px; border-radius: 9px; font-size: calc(16px * var(--fs)); }
 .tone-coffee { background: #f0e2d0; color: #86552a; }
@@ -2529,9 +2530,15 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .code-pill .ico { width: 20px; height: 20px; color: var(--forest-3); }
 .manual-form { display: flex; flex-direction: column; gap: 9px; }
 .manual-hint { margin-top: 9px; font-size: calc(9.5px * var(--fs)); line-height: 1.45; color: var(--muted); text-align: center; }
-.product-preview { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 7px; background: var(--surface-2); border: 1px solid rgba(var(--accent-rgb),.2); }
-.product-preview .name { font-size: calc(13px * var(--fs)); font-weight: 650; }
-.product-preview .meta { margin-top: 2px; font-size: calc(9.5px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; }
+.product-head-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 0; }
+.product-preview-inline { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 46px; height: 100%; }
+.product-preview-text { min-width: 0; }
+.product-preview-text .name { font-size: calc(12px * var(--fs)); font-weight: 800; letter-spacing: -.01em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-preview-text .meta { margin-top: 1px; font-size: calc(9px * var(--fs)); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.field-row.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.field-row.three .select, .field-row.three .input { min-height: 42px; padding-left: 8px; padding-right: 8px; font-size: calc(12px * var(--fs)); }
+.field-row.three .input-affix .input { padding-left: 8px; }
+.field-row.three .input-affix .affix { padding: 0 8px; font-size: calc(11px * var(--fs)); }
 .confirm-copy { font-size: calc(12.5px * var(--fs)); line-height: 1.5; color: var(--ink-2); }
 .delete-product { margin-top: 8px; }
 .discount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }

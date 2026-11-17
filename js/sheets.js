@@ -465,17 +465,17 @@
       const typedNum = Number(typedStr);
       if (!bundle) {
         if (unit && sizeNum !== null) {
-          return { label: `In stock (pieces of ${sizeNum} ${unitSymbol(unit)})`, hint: `The number you type is the stock — pieces of ${sizeNum} ${unitSymbol(unit)} each.` };
+          return { label: `In stock (${sizeNum} ${unitSymbol(unit)} ea.)`, hint: `Pieces of ${sizeNum} ${unitSymbol(unit)} each` };
         }
-        return { label: "In stock", hint: "The number you type is the stock." };
+        return { label: "In stock", hint: "Stock typed directly" };
       }
       const label = `In stock (${plural}${unitPart})`;
       let hint;
-      if (typedStr === "" || !Number.isFinite(typedNum)) hint = "The number you type is how many bundles you have.";
+      if (typedStr === "" || !Number.isFinite(typedNum)) hint = "Typed in bundles";
       else if (Number.isFinite(packDigit) && packDigit > 0) {
         const total = Math.round(typedNum * packDigit * 1000) / 1000;
-        hint = `${typedStr} ${plural} × ${packDigit} = ${total} pieces${unitPart ? ` of ${sizeNum} ${unitSymbol(unit)} each` : ""}.`;
-      } else hint = "Type pieces per bundle above to see the total pieces.";
+        hint = `${typedStr} × ${packDigit} = ${total} pieces`;
+      } else hint = "Select pieces per bundle above";
       return { label, hint };
     };
     const initialStock = stockField(currentType, values.packSize, currentUnit, values.unitSize, values.stock);
@@ -498,7 +498,7 @@
       const sellParentOn = formEl.querySelector("#variant-sell-parent")?.checked === true;
       const variantRows = formEl.querySelectorAll(".vrow").length;
       if (label) label.textContent = sellParentOn && variantRows ? "In stock (plain item)" : state.label;
-      if (hint && sellParentOn && variantRows) hint.textContent = "Variants keep their own stock — this is the plain item's.";
+      if (hint && sellParentOn && variantRows) hint.textContent = "Plain item's own stock";
       else if (hint) hint.textContent = state.hint;
       if (input) { input.step = bundle ? "0.001" : "1"; input.inputMode = bundle ? "decimal" : "numeric"; }
     };
@@ -509,17 +509,10 @@
       iconName: editing ? "i-pencil" : "i-box",
       focus: focusName ? "#product-name" : "",
       body: `<form id="product-form" novalidate>
-        <div class="product-preview">
-          <span class="tile tile-lg tone-${T.toneFor(values.category)}" id="product-preview-tile" aria-hidden="true">${esc(T.initials(values.name || "New"))}</span>
-          <div><div class="name" id="product-preview-name">${esc(values.name || "New product")}</div><div class="meta" id="product-preview-meta">${esc(values.category)}${values.barcode ? ` · ${esc(values.barcode)}` : ""}</div></div>
-        </div>
-        <div class="field-row" style="margin-top:0">
-          <div class="field">
-            <label for="product-barcode">Barcode</label>
-            <div class="barcode-field">
-              <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type" autocomplete="off" spellcheck="false">
-              <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
-            </div>
+        <div class="field-row product-head-row" style="margin-top:0">
+          <div class="product-preview-inline">
+            <span class="tile tile-md tone-${T.toneFor(values.category)}" id="product-preview-tile" aria-hidden="true">${esc(T.initials(values.name || "New"))}</span>
+            <div class="product-preview-text"><div class="name" id="product-preview-name">${esc(values.name || "New product")}</div><div class="meta" id="product-preview-meta">${esc(values.category)}${values.barcode ? ` · ${esc(values.barcode)}` : ""}</div></div>
           </div>
           <div class="field">
             <label for="product-name">Product name</label>
@@ -527,7 +520,15 @@
           </div>
         </div>
 
-        <div class="field-row">
+        <div class="field">
+          <label for="product-barcode">Barcode</label>
+          <div class="barcode-field">
+            <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type" autocomplete="off" spellcheck="false">
+            <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
+          </div>
+        </div>
+
+        <div class="field-row three">
           <div class="field">
             <label for="product-size">Size</label>
             <select class="select" id="product-size" aria-label="Pick a size">
@@ -542,6 +543,16 @@
               ${unitOptions.map(([value,label]) => `<option value="${esc(value)}" ${currentUnit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
+          <div class="field">
+            <label for="product-type">Product type</label>
+            <select class="select" id="product-type" name="productType" aria-label="The bundle the item comes in">
+              <option value="">N/A</option>
+              ${["Packet","Box","Dozen","Crate"].map((label) => {
+                const value = label.toLowerCase();
+                return `<option value="${value}" ${String(values.soldBy) === value ? "selected" : ""}>${label}</option>`;
+              }).join("")}
+            </select>
+          </div>
         </div>
 
         <div class="field" id="unit-size-row"${currentUnit ? "" : ' style="display:none"'}>
@@ -553,20 +564,6 @@
           <p class="field-help" id="unit-size-hint" style="margin-top:6px">${esc(unitHint(currentUnit, values.unitSize))}</p>
         </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label for="product-type">Product type</label>
-            <select class="select" id="product-type" name="productType" aria-label="The bundle the item comes in">
-              <option value="">N/A</option>
-              ${["Packet","Box","Dozen","Crate"].map((label) => {
-                const value = label.toLowerCase();
-                return `<option value="${value}" ${String(values.soldBy) === value ? "selected" : ""}>${label}</option>`;
-              }).join("")}
-            </select>
-          </div>
-          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">The bundle the item comes in</span></div>
-        </div>
-
         <div class="field" id="pack-size-row"${currentType ? "" : ' style="display:none"'}>
           <label for="product-pack-size" id="pack-size-label">${currentType ? `Pieces per ${esc(currentType)}` : "Pieces per bundle"}</label>
           <div class="input-affix">
@@ -576,9 +573,7 @@
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
-        
-
-        <div class="field-row">
+        <div class="field-row three">
           <div class="field">
             <label for="product-cost">Buying price</label>
             <div class="input-affix"><input class="input" id="product-cost" name="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(values.cost)}" placeholder="0.00"><span class="affix">${esc(T.currencySymbol())}</span></div>
@@ -587,25 +582,24 @@
             <label for="product-price">Selling price</label>
             <div class="input-affix"><input class="input" id="product-price" name="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(values.price)}" placeholder="0.00" required><span class="affix">${esc(T.currencySymbol())}</span></div>
           </div>
+          <div class="field">
+            <label for="product-stock" id="product-stock-label">${esc(initialPlain ? "In stock (plain item)" : initialStock.label)}</label>
+            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" required>
+            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialPlain ? "Plain item's own stock" : initialStock.hint)}</p>
+          </div>
         </div>
 
         <div class="field-row">
           <div class="field">
-            <label for="product-stock" id="product-stock-label">${esc(initialPlain ? "In stock (plain item)" : initialStock.label)}</label>
-            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" required>
-            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialPlain ? "Variants keep their own stock — this is the plain item's." : initialStock.hint)}</p>
+            <label for="product-category">Category</label>
+            <select class="select" id="product-category" name="category">
+              ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
+            </select>
           </div>
           <div class="field">
             <label for="product-low">Low-stock alert</label>
             <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
           </div>
-        </div>
-
-        <div class="field">
-          <label for="product-category">Category</label>
-          <select class="select" id="product-category" name="category">
-            ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
-          </select>
         </div>
 
 <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
