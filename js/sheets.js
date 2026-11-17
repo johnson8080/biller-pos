@@ -1818,11 +1818,18 @@
           <div class="pack-row">
             <input class="input" id="stock-in-packs" inputmode="numeric" type="number" min="0" placeholder="Number of packs">
             <span class="variant-x">×</span>
-            <input class="input" id="stock-in-pack-size" inputmode="numeric" type="number" min="0" placeholder="Pieces each" value="${esc(packSize)}">
+            <input class="input" id="stock-in-pack-size" inputmode="numeric" type="number" min="1" placeholder="Pieces each" value="${esc(packSize)}">
             <span class="variant-x">=</span>
             <span class="variant-total" id="stock-in-pack-total">0</span>
           </div>
-          <p class="field-help">e.g. 5 dozens × 12 pieces → 60 pieces. Tap <strong>Pack</strong> fill below.</p>
+          <div class="segmented-row">
+            <span class="field-help" style="margin:0">Prices below are per:</span>
+            <div class="segmented compact" id="stock-in-price-mode" role="group" aria-label="Prices per piece or per pack">
+              <button type="button" class="seg-btn is-active" data-mode="piece">Piece</button>
+              <button type="button" class="seg-btn" data-mode="pack">Pack</button>
+            </div>
+          </div>
+          <p class="field-help">Buying &amp; selling prices are converted to per-piece automatically when you pick "Pack" (e.g. cost 100 / sell 120 per pack of 10 → 10 / 12 each).</p>
           <button type="button" class="btn btn-ghost btn-sm" id="stock-in-pack-fill">${icon("i-box")} Fill from packs</button>
         </div>`}
         ${variants.length ? `<div class="field">
@@ -1892,6 +1899,28 @@
     const packSizeInput = form.querySelector("#stock-in-pack-size");
     const packTotal = form.querySelector("#stock-in-pack-total");
     const packFill = form.querySelector("#stock-in-pack-fill");
+    const packModeSeg = form.querySelector("#stock-in-price-mode");
+    const priceMode = () => packModeSeg?.querySelector(".seg-btn.is-active")?.dataset?.mode || "piece";
+    const updatePackHint = () => {
+      if (priceMode() === "pack") {
+        const costLabel = form.querySelector('label[for="stock-in-cost"]');
+        const priceLabel = form.querySelector('label[for="stock-in-price"]');
+        if (costLabel) costLabel.textContent = "Buying price (per pack)";
+        if (priceLabel) priceLabel.textContent = "Selling price (per pack)";
+      } else {
+        const costLabel = form.querySelector('label[for="stock-in-cost"]');
+        const priceLabel = form.querySelector('label[for="stock-in-price"]');
+        if (costLabel) costLabel.textContent = "Buying price";
+        if (priceLabel) priceLabel.textContent = "Selling price";
+      }
+    };
+    packModeSeg?.addEventListener("click", (event) => {
+      const btn = event.target.closest(".seg-btn");
+      if (!btn) return;
+      packModeSeg.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+      updatePackHint();
+    });
+    updatePackHint();
     const packCount = () => {
       const packs = Number(packsInput?.value || 0);
       const size = Number(packSizeInput?.value || 0);
@@ -1921,8 +1950,15 @@
       const note = String(data.get("note") || "").trim();
       const packSizeValue = Number(data.get("packSize") || packSizeInput?.value || 0);
       const packSize = Number.isFinite(packSizeValue) && packSizeValue > 0 ? Math.round(packSizeValue) : null;
-      const commonCost = Number.isFinite(cost) ? cost : null;
-      const commonPrice = Number.isFinite(price) ? price : null;
+      const packMode = priceMode();
+      // If the shopkeeper said prices are per pack, divide by pieces per pack
+      // so every price stored on the product is per piece.
+      const perPackToPiece = (value) =>
+        packMode === "pack" && packSize && value !== null && value !== undefined && Number.isFinite(value)
+          ? Math.max(0, Math.round(Number(value) / packSize))
+          : value;
+      const commonCost = Number.isFinite(cost) ? perPackToPiece(cost) : null;
+      const commonPrice = Number.isFinite(price) ? perPackToPiece(price) : null;
 
       if (variants.length) {
         // Variant products: each variant gets its own restock line.
@@ -1955,13 +1991,13 @@
         if (supplierId) {
           const supplier = T.findSupplier(supplierId);
           if (supplier && Number.isFinite(cost) && cost > 0) {
-            const items = lines.map((line) => ({ productId: product.id, name: product.name, unit: "pcs", qty: line.qty, cost }));
+            const items = lines.map((line) => ({ productId: product.id, name: product.name, unit: "pcs", qty: line.qty, cost: commonCost }));
             supplier.ledger = supplier.ledger || [];
             supplier.ledger.unshift({
               id: T.uid("se"),
               type: "bill",
               method: null,
-              amount: Math.round(cost || 0) * totalQty,
+              amount: Math.round(commonCost || 0) * totalQty,
               note: note || `Stock: ${product.name}`,
               staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
               items,
@@ -1986,23 +2022,25 @@
         setFormError(form, mass ? "Enter how much you received." : "Enter how many you received.");
         return;
       }
-      if (!Number.isFinite(price) || price <= 0) {
+      if (commonPrice === null || commonPrice <= 0) {
         setFormError(form, "Enter the price you sell it for.");
         return;
       }
-      if (supplierId && (!Number.isFinite(cost) || cost <= 0)) {
+      const priceValue = commonPrice;
+      const costValue = commonCost;
+      if (supplierId && (!Number.isFinite(costValue) || costValue <= 0)) {
         setFormError(form, "Enter the buying price to record a supplier bill, or choose No supplier bill.");
         return;
       }
       // The bill is the price per kilogram times the kilograms received.
-      const billAmount = mass ? Math.round(cost * qty / 1000) : cost * qty;
-      const result = T.receiveStock(id, { qty, cost: Number.isFinite(cost) ? cost : null, price, packSize });
+      const billAmount = mass ? Math.round(costValue * qty / 1000) : costValue * qty;
+      const result = T.receiveStock(id, { qty, cost: Number.isFinite(costValue) ? costValue : null, price: priceValue, packSize });
       if (!result.ok) {
         setFormError(form, result.error || "Could not add that stock.");
         return;
       }
       const supplier = T.findSupplier(supplierId);
-      if (supplier && Number.isFinite(cost) && cost > 0) {
+      if (supplier && Number.isFinite(costValue) && costValue > 0) {
         // Only a supplier the shopkeeper picked gets a bill. Guessing the
         // first supplier silently corrupted somebody else's account.
         supplier.ledger = supplier.ledger || [];
@@ -2013,7 +2051,7 @@
           amount: billAmount,
           note: note || `Stock: ${product.name}`,
           staff: (T.activeStaff ? T.activeStaff() : "") || T.state.store.staff || null,
-          items: [{ productId: product.id, name: product.name, unit, qty, cost }],
+          items: [{ productId: product.id, name: product.name, unit, qty, cost: costValue }],
           date: T.isoDay(),
           createdAt: new Date().toISOString()
         });
