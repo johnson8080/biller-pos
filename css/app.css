@@ -14,7 +14,7 @@
   --line: #d3e4fe;
   --line-strong: #b7c4ff;
   --ui-line: rgba(29, 78, 216, .6);
-  --ui-radius: 12px;
+  --ui-radius: 7px;
   --forest: #1d4ed8;
   --forest-2: #0037b0;
   --forest-3: #001551;
@@ -1096,7 +1096,7 @@ h1, h2, h3, h4, p { margin: 0; }
   flex: none;
   min-height: 38px;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: 7px;
   border: 1px solid var(--ui-line);
   background: var(--surface);
   color: var(--ink-2);
@@ -1115,7 +1115,7 @@ h1, h2, h3, h4, p { margin: 0; }
   min-height: 48px;
   padding: 0 13px;
   margin: 12px 0 4px;
-  border-radius: 9px;
+  border-radius: 7px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
   box-shadow: var(--shadow-card);
@@ -2493,7 +2493,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   max-height: min(88%, 760px);
   display: flex;
   flex-direction: column;
-  border-radius: 14px 14px 0 0;
+  border-radius: 9px 9px 0 0;
   background: var(--surface);
   border: 1px solid var(--ui-line);
   border-bottom: 0;
