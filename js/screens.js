@@ -350,8 +350,8 @@
           ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : `<span class="sell-meta-item">—</span>`}
         </div>
         <div class="sell-title-row">
-          <button class="sell-title-col" data-nav="#/stock" aria-label="Stock price ${money(retail)}, open inventory">
-            <span class="sell-title-label">Stock price <span style="text-transform:none">[${esc(currencySymbol())}]</span></span>
+          <button class="sell-title-col" data-nav="#/stock" aria-label="RETAIL VALUE ${money(retail)}, open inventory">
+            <span class="sell-title-label">RETAIL VALUE <span style="text-transform:none">[${esc(currencySymbol())}]</span></span>
             <span class="sell-title-value">${esc(amountOnly(money(retail)))}</span>
           </button>
           <button class="sell-title-col" data-nav="#/debt" aria-label="Customer debt ${money(customerDebt)}, open customer debt">
@@ -920,7 +920,7 @@
         <div class="inv-stat"><span class="label">Products</span><strong>${T.state.products.length}</strong></div>
         <div class="inv-stat ${low ? "warn" : ""}"><span class="label">Low stock</span><strong>${low}</strong></div>
         <div class="inv-stat"><span class="label">Retail value <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockValue()))}</strong></div>
-        <div class="inv-stat"><span class="label">Stock at cost <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockCost()))}</strong></div>
+        <div class="inv-stat"><span class="label">STOCK VALUE <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockCost()))}</strong></div>
       </div>
       ${stockToolsCard({ wastage: monthWastage, wastageCost: monthWastageCost, latestDay, olderDays: Math.max(0, allDays.length - 1) })}
       ${out ? `<div class="inventory-alert">${icon("i-alert")}<span><strong>${out} ${out === 1 ? "item is" : "items are"} out of stock.</strong> They’re shown first below.</span></div>` : ""}
@@ -1663,7 +1663,10 @@
     const pendingCount = filteredEntries.filter((row) => row.pending).length;
     const paidCount = filteredEntries.filter((row) => row.status === "active" || row.status === "confirmed").length;
     const dueCount = filteredEntries.filter((row) => row.status === "due" || row.status === "overdue").length;
-    const monthly = filteredEntries.filter((row) => row.status === "active" || row.status === "confirmed").reduce((sum, row) => sum + (row.amount || 0), 0);
+    // The developer's own account never counts toward the monthly recurring total.
+    const monthly = filteredEntries
+      .filter((row) => (row.status === "active" || row.status === "confirmed") && !isDevEntry(row))
+      .reduce((sum, row) => sum + (row.amount || 0), 0);
 
     // Payment authentication: shops that signed up more than 30 days ago,
     // never settled their plan (status is due/overdue), are heartbeating

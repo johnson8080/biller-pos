@@ -229,7 +229,6 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       awaiting: false,
       reference: "",
       lastConfirmedAt: 0,
-      maxSeenTimestamp: 0,
       payments: [],
       // The M-Pesa code the shop last sent to the developer, plus the codes
       // sent before it. Used to warn when the same code is sent twice.
@@ -333,7 +332,6 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       awaiting: savedSub.awaiting === true,
       reference: String(savedSub.reference || "").slice(0, 24),
       lastConfirmedAt: Number.isFinite(Number(savedSub.lastConfirmedAt)) ? Number(savedSub.lastConfirmedAt) : 0,
-      maxSeenTimestamp: Number.isFinite(Number(savedSub.maxSeenTimestamp)) ? Number(savedSub.maxSeenTimestamp) : 0,
       revertedAt: Number.isFinite(Number(savedSub.revertedAt)) ? Number(savedSub.revertedAt) : 0,
       revertedReason: String(savedSub.revertedReason || "").slice(0, 120),
       payments: Array.isArray(savedSub.payments)
@@ -1882,6 +1880,34 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
 
   const dayMs = 24 * 60 * 60 * 1000;
 
+  // Internet-derived clock skew (ms): phone time minus the real time from the
+  // internet. Only set after a successful fetch; the locked screen can then
+  // judge tampering honestly instead of a device-only high-water mark that
+  // false-locked shops whose clocks jumped legitimately.
+  let internetSkewMs = null;
+  let internetCheckedAt = 0;
+
+  /**
+   * Ask the network for real time (Africa/Nairobi time, UTC+3, the app's
+   * home timezone). Best-effort: when offline or the source is down we keep
+   * `internetCheckedAt` at zero so the tampered branch never fires.
+   */
+  T.checkInternetClock = async () => {
+    if (typeof fetch !== "function") return false;
+    try {
+      const response = await fetch("https://worldtimeapi.org/api/timezone/Africa/Nairobi", { cache: "no-store" });
+      if (!response.ok) return false;
+      const data = await response.json();
+      const remote = Number(data?.unixtime) * 1000;
+      if (!Number.isFinite(remote) || remote <= 0) return false;
+      internetSkewMs = Date.now() - remote;
+      internetCheckedAt = Date.now();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   /** Trial, active, due, overdue or waiting for confirmation. */
   T.subscriptionStatus = () => {
     const sub = T.subscription();
@@ -1890,28 +1916,19 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // The developer manages the plans, so the plan never restricts this account.
     if (T.isDeveloperAccount()) return "active";
     if (sub.awaiting) return "awaiting";
-    const now = Date.now();
-    const maxSeen = Number(sub.maxSeenTimestamp || 0);
+    // Tampered only with internet evidence: phone ahead of real time by 15+ minutes.
+    // Never locks when offline or unverified.
     const toleranceMs = 15 * 60 * 1000;
-    // Clock rollback check
-    if (maxSeen > 0 && now < maxSeen - toleranceMs) return "clock_tampered";
-    if (sub.startedAt && now < new Date(sub.startedAt).getTime() - toleranceMs) return "clock_tampered";
+    if (internetCheckedAt && internetSkewMs !== null && internetSkewMs > toleranceMs) return "clock_tampered";
 
-    if (sub.awaiting) return "awaiting";
     if (!sub.startedAt) {
-      T.state.store.subscription = { ...sub, startedAt: new Date().toISOString(), maxSeenTimestamp: now, reference: T.subscriptionReference() };
+      T.state.store.subscription = { ...sub, startedAt: new Date().toISOString(), reference: T.subscriptionReference() };
       T.save({ quiet: true });
       if (plan.trialDays > 0) return "trial";
       return "due";
     }
 
-    // Update maxSeen
-    if (now > maxSeen) {
-      if (!T.state.store.subscription) T.state.store.subscription = { ...sub };
-      T.state.store.subscription.maxSeenTimestamp = now;
-      sub.maxSeenTimestamp = now;
-    }
-
+    const now = Date.now();
     const started = new Date(sub.startedAt).getTime();
     if (!sub.paidUntil && plan.trialDays > 0 && Number.isFinite(started) && now - started < plan.trialDays * dayMs) return "trial";
     if (!sub.paidUntil) return "due";

@@ -1048,12 +1048,8 @@ function runAction(btn) {
     }
   }
   else if (act === "exit-app") {
-    const cap = window.Capacitor;
-    if (cap?.Plugins?.App?.exitApp) {
-      cap.Plugins.App.exitApp();
-    } else {
-      alert("Please close the app and set your device date to Automatic.");
-    }
+    T.sheets?.close?.(true);
+    requestExit();
   }
   else if (act === "pay-subscription") { T.sheets?.openSubscriptionPayment?.(); }
   else if (act === "subscription-sent") {
@@ -2150,6 +2146,10 @@ function boot() {
   });
   // Start the connectivity probe even if the Firebase SDK never loads.
   window.Till?.cloud?.init?.();
+  // Ask the internet what time it actually is (Africa/Nairobi, EAT). The
+  // subscription tamper check uses this instead of the device clock, which a
+  // cheater can roll back freely.
+  window.Till?.checkInternetClock?.();
   initFirebase();
   // This device's shopkeeper announces itself to the other devices.
   const _bootStaff = window.Till?.activeStaff?.();
