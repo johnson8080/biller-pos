@@ -139,46 +139,6 @@
     });
 
     const form = document.getElementById("manual-form");
-    // Dropdown selects: keep form state in sync on change — selection runs
-    // top to bottom: size/variant fills the detail field, sold-by flips mode,
-    // add-variant inserts a variant row.
-    form?.addEventListener("change", (event) => {
-      const t = event.target;
-      const sizeSelect = form.querySelector("#product-size");
-      const variantSelect = form.querySelector("#product-variant");
-      const soldBySelect = form.querySelector("#product-soldby");
-      const addVariantSelect = form.querySelector("#product-add-variant");
-      // Size or variant dropdown filled → fill the detail field.
-      if (t === sizeSelect || t === variantSelect) {
-        const detail = form.querySelector("#product-detail");
-        if (detail && t.value) {
-          detail.value = t.value;
-          detail.dispatchEvent(new Event("input", { bubbles: true }));
-          // Keep the other dropdown in sync if same label
-          if (t === sizeSelect && variantSelect && variantSelect.value !== t.value) variantSelect.value = t.value;
-          if (t === variantSelect && sizeSelect && sizeSelect.value !== t.value) sizeSelect.value = t.value;
-        }
-        return;
-      }
-      // Sold by dropdown change → switch mode.
-      if (t === soldBySelect && t.tagName?.toLowerCase() === "select") {
-        applySoldBy(form, t.value);
-        return;
-      }
-      // Add variant dropdown change → insert a variant row, then reset select.
-      if (t === addVariantSelect && t.value) {
-        const list = form.querySelector("#variant-editor-list");
-        if (!list) return;
-        const values = T.ui?.editor?.values;
-        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
-        const rowHtml = renderVariantEditorRow({ label: t.value, price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
-        list.insertAdjacentHTML("beforeend", rowHtml);
-        list.lastElementChild?.querySelector(".variant-price")?.focus({ preventScroll: true });
-        list.dispatchEvent(new Event("input", { bubbles: true }));
-        t.selectedIndex = 0;
-        return;
-      }
-    });
 
         form?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -510,10 +470,6 @@
         </div>
         <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["pack","dozen","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces${values.packSize ? ` (1 ${values.soldBy} = ${values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
 
-        <div class="field">
-          <label for="product-name">Product name</label>
-          <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="e.g. Oat Milk" required autocomplete="off">
-        </div>
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail)}">
 
         <div class="field" id="product-pack-size-row" style="${["pack","dozen","crate"].includes(values.soldBy) ? "" : "display:none"}">
@@ -620,7 +576,43 @@
       if (soldByHelp) soldByHelp.textContent = wantMass ? "For items the shop weighs: flour, produce, meat." : wantBundle ? `Bundled stock — the till asks how many pieces${editor.values.packSize ? ` (1 ${nextSoldBy} = ${editor.values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold).";
     }
 
-        form?.addEventListener("input", () => {
+        // Dropdown selects: selection runs top to bottom — size/variant fill the
+    // detail field, sold-by flips mode, add-variant inserts a variant row.
+    form?.addEventListener("change", (event) => {
+      const t = event.target;
+      const sizeSelect = form.querySelector("#product-size");
+      const variantSelect = form.querySelector("#product-variant");
+      const soldBySelect = form.querySelector("#product-soldby");
+      const addVariantSelect = form.querySelector("#product-add-variant");
+      if (t === sizeSelect || t === variantSelect) {
+        const detail = form.querySelector("#product-detail");
+        if (detail && t.value) {
+          detail.value = t.value;
+          detail.dispatchEvent(new Event("input", { bubbles: true }));
+          if (t === sizeSelect && variantSelect && variantSelect.value !== t.value) variantSelect.value = t.value;
+          if (t === variantSelect && sizeSelect && sizeSelect.value !== t.value) sizeSelect.value = t.value;
+        }
+        return;
+      }
+      if (t === soldBySelect && t.tagName?.toLowerCase() === "select") {
+        applySoldBy(form, t.value);
+        return;
+      }
+      if (t === addVariantSelect && t.value) {
+        const list = form.querySelector("#variant-editor-list");
+        if (!list) return;
+        const values = T.ui?.editor?.values;
+        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
+        const rowHtml = renderVariantEditorRow({ label: t.value, price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
+        list.insertAdjacentHTML("beforeend", rowHtml);
+        list.lastElementChild?.querySelector(".variant-price")?.focus({ preventScroll: true });
+        list.dispatchEvent(new Event("input", { bubbles: true }));
+        t.selectedIndex = 0;
+        return;
+      }
+    });
+
+    form?.addEventListener("input", () => {
       // Keep the saved copy in step with the form, so nothing the shopkeeper
       // has already typed is ever lost.
       const editor = T.ui.editor;
