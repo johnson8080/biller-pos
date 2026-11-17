@@ -594,42 +594,42 @@
           </div>
         </div>
 
-        <div class="field-row variant-stock-row">
-          <div class="field variants-field">
-            <span class="field-label">Variants</span>
-          <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
-          <summary class="vsummary">
-            <span class="vtitle">
-              <span class="vtitle-ico">${icon("i-tag")}</span>
-              <span class="vsummary-text" id="variant-summary">${values.variants.length ? `${values.variants.length} variant${values.variants.length === 1 ? "" : "s"} · ${values.variants.map((v) => v.label).filter(Boolean).slice(0, 3).join(", ")}${values.variants.length > 3 ? "…" : ""}` : "Optional — none yet"}</span>
-            </span>
-            <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
-          </summary>
-          <div class="vbody">
-            <div class="vquick" id="variant-quick-add">
-              <select class="select" id="product-add-variant" aria-label="Quick add variant">
-                <option value="">Quick add variant…</option>
-                ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
-              </select>
-              <button type="button" class="vchip vchip-custom" data-vchip="__blank">Custom&hellip;</button>
-            </div>
-            <div class="vlist" id="variant-editor-list">
-              ${values.variants.map((variant) => renderVariantEditorRow(variant)).join("")}
-            </div>
-            <div class="vempty" id="variant-empty"${values.variants.length ? ' style="display:none"' : ""}>
-              ${icon("i-tag")}
-              <span>No variants yet.<br>Tap a quick-add chip above to create the first one.</span>
-            </div>
-            <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
+        <div class="field-row three variant-add-row">
+          <div class="field">
+            <label for="product-add-variant">Variant</label>
+            <select class="select" id="product-add-variant" aria-label="Quick add variant">
+              <option value="">Quick add…</option>
+              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
+            </select>
           </div>
-        </details>
+          <div class="field">
+            <label for="variant-custom-btn">Custom</label>
+            <button type="button" class="btn btn-ghost variant-custom" id="variant-custom-btn">Custom&hellip;</button>
           </div>
-
           <div class="field">
             <label for="product-low">Low-stock alert</label>
             <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
           </div>
         </div>
+        <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
+          <summary class="vsummary">
+            <span class="vtitle">
+              <span class="vtitle-ico">${icon("i-tag")}</span>
+              <span class="vsummary-text" id="variant-summary">${values.variants.length ? `${values.variants.length} variant${values.variants.length === 1 ? "" : "s"} · ${values.variants.map((v) => v.label).filter(Boolean).slice(0, 3).join(", ")}${values.variants.length > 3 ? "…" : ""}` : "Variants — none yet"}</span>
+            </span>
+            <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
+          </summary>
+          <div class="vbody">
+            <div class="vlist" id="variant-editor-list">
+              ${values.variants.map((variant) => renderVariantEditorRow(variant)).join("")}
+            </div>
+            <div class="vempty" id="variant-empty"${values.variants.length ? ' style="display:none"' : ""}>
+              ${icon("i-tag")}
+              <span>No variants yet.<br>Pick a quick size above or tap Custom&hellip;.</span>
+            </div>
+            <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
+          </div>
+        </details>
 
 
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail || "")}">
@@ -737,16 +737,15 @@
       refreshStockField();
     });
 
-    // Quick-add chips and trash buttons for variants.
+    // Custom variant row from the Custom button.
     form?.addEventListener("click", (event) => {
-      const chip = event.target?.closest?.(".vchip");
-      if (chip) {
+      const customBtn = event.target?.closest?.("#variant-custom-btn");
+      if (customBtn) {
         event.preventDefault();
         const list = form.querySelector("#variant-editor-list");
-        const isBlank = chip.dataset.vchip === "__blank";
         if (list) {
-          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: isBlank ? "" : String(chip.dataset.vchip || ""), price: "", cost: "", stock: "", barcode: "" }));
-          list.lastElementChild?.querySelector(isBlank ? ".vrow-label" : '[data-field="price"]')?.focus({ preventScroll: true });
+          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: "", price: "", cost: "", stock: "", barcode: "" }));
+          list.lastElementChild?.querySelector(".vrow-label")?.focus({ preventScroll: true });
           list.dispatchEvent(new Event("input", { bubbles: true }));
         }
         updateVariantCount();
