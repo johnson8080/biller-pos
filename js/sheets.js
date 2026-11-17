@@ -593,14 +593,7 @@
           </div>
         </div>
 
-        <div class="field-row">
-          <div class="field">
-            <label for="product-low">Low-stock alert</label>
-            <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
-          </div>
-          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">Alert when stock drops to this</span></div>
-        </div>
-
+        <div class="field-row variant-stock-row">
 <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
           <summary class="vsummary">
             <span class="vtitle">
@@ -630,6 +623,13 @@
             <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
           </div>
         </details>
+
+          <div class="field">
+            <label for="product-low">Low-stock alert</label>
+            <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
+          </div>
+        </div>
+
 
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail || "")}">
 
