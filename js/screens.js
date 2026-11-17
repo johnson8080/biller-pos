@@ -918,7 +918,7 @@
     const latestWhen = latestDay ? T.dayLabel(`${latestDay.date}T00:00:00`) : "";
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
-    return `<div class="settings-card stock-side">
+    return `<div class="flat-panel stock-side">
       <div class="stock-side-grid">
         <div class="stock-side-col">
           <span class="stock-side-label">${icon("i-alert")} Wastage</span>

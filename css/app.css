@@ -1622,9 +1622,9 @@ html[data-color-scheme="light"] .chip.is-active {
 .chart-bar { display: block; width: 100%; max-width: 22px; border-radius: 4px 4px 2px 2px; background: var(--paper-deep); }
 .chart-col.is-today .chart-bar { background: var(--forest); }
 .chart-day { font-size: calc(8px * var(--fs)); font-weight: 650; color: var(--muted); text-transform: uppercase; }
-.report-list { display: flex; flex-direction: column; }
-.report-row { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.report-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.report-list { display: flex; flex-direction: column; gap: 6px; }
+.report-row { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid var(--ui-line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow-card); }
+.report-row:last-child { padding-bottom: 9px; }
 .report-rank { width: 21px; height: 21px; flex: none; display: grid; place-items: center; border-radius: 5px; background: var(--lime-soft); color: var(--forest-ink); font-size: calc(9.5px * var(--fs)); font-weight: 750; }
 .report-row-copy { flex: 1; min-width: 0; }
 .report-row-copy strong { display: block; font-size: calc(12px * var(--fs)); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1721,9 +1721,10 @@ html[data-color-scheme="light"] .chip.is-active {
 .inv-stat strong { display: block; margin-top: 2px; font-size: calc(11.5px * var(--fs)); font-weight: 750; letter-spacing: -.03em; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .inv-stat.warn { background: var(--amber-bg); border-color: rgba(var(--amber-rgb),.28); }
 .inv-stat.warn strong { color: var(--amber); }
-/* Wastage + daily stock book as one compact card, pinned under the retail
+/* Wastage + daily stock book as one flat card, pinned under the retail
    value stat so they never sink below a long inventory list. */
-.stock-side { padding: 8px 9px; margin-bottom: 8px; }
+.flat-panel { padding: 9px 10px; border: 1px solid var(--ui-line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow-card); margin: 9px 0; }
+.stock-side { margin: 0 0 8px; }
 .stock-side-grid {
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
