@@ -352,7 +352,7 @@
   function emptyEditorValues() {
     const categories = T.categories();
     return {
-      name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
+      name: "", detail: "", price: "", cost: "", stock: "", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "", unitSize: "",
       soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each",
       sellParent: false
@@ -493,13 +493,11 @@
         formEl.querySelector("#product-stock")?.value || ""
       );
       const label = formEl.querySelector("#product-stock-label");
-      const hint = formEl.querySelector("#product-stock-hint");
       const input = formEl.querySelector("#product-stock");
       const sellParentOn = formEl.querySelector("#variant-sell-parent")?.checked === true;
       const variantRows = formEl.querySelectorAll(".vrow").length;
       if (label) label.textContent = sellParentOn && variantRows ? "In stock (plain item)" : state.label;
-      if (hint && sellParentOn && variantRows) hint.textContent = "Plain item's own stock";
-      else if (hint) hint.textContent = state.hint;
+      if (input) input.placeholder = sellParentOn && variantRows ? "Plain item's own stock" : state.hint;
       if (input) { input.step = bundle ? "0.001" : "1"; input.inputMode = bundle ? "decimal" : "numeric"; }
     };
     const unitOptions = currentUnit && !OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS] : OFFICIAL_UNITS;
@@ -583,8 +581,7 @@
           </div>
           <div class="field">
             <label for="product-stock" id="product-stock-label">${esc(initialPlain ? "In stock (plain item)" : initialStock.label)}</label>
-            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" required>
-            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialPlain ? "Plain item's own stock" : initialStock.hint)}</p>
+            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" placeholder="${esc(initialPlain ? "Plain item's own stock" : initialStock.hint)}" required>
           </div>
         </div>
 
