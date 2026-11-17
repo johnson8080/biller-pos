@@ -290,13 +290,38 @@
     const onClose = typeof options.onClose === "function" ? options.onClose : null;
     const packSize = Math.max(0, Math.round(Number(product.packSize) || 0));
     const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
+    // When the plain item is sellable alongside the variants, it gets its own
+    // pick row at the top at the parent price against the parent stock.
+    const plainBlock = product.sellParent ? (() => {
+      const plainOut = (product.stock || 0) <= 0;
+      const plainPack = packSize > 0
+        ? `<button class="variant-pick-chip is-pack" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-packs="1" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">1 pack</span><small>${packSize} pcs</small></button>`
+        : `<button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="12" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 12</span><small>pcs</small></button>`;
+      return `<div class="variant-pick ${plainOut ? "is-out" : ""}">
+        <div class="variant-pick-head">
+          <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(product.name))}</span>
+          <span class="variant-pick-copy">
+            <strong>${esc(product.name)}</strong>
+            <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`} · ${money(product.price)} each</small>
+          </span>
+          <span class="variant-pick-price">${money(product.price)}</span>
+        </div>
+        <div class="variant-pick-grid">
+          <button class="variant-pick-chip is-primary" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="1" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">Add 1</span><small>pc</small></button>
+          <button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="2" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 2</span><small>pcs</small></button>
+          <button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="6" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 6</span><small>pcs</small></button>
+          ${plainPack}
+        </div>
+      </div>`;
+    })() : "";
     open({
       title: esc(product.name),
-      subtitle: esc(product.detail || "Choose a variant and quantity"),
+      subtitle: esc(product.detail || (product.sellParent ? "Choose the item or a variant" : "Choose a variant and quantity")),
       iconName: "i-box",
       onClose,
       size: "compact",
       body: `<div class="variant-list">
+        ${plainBlock}
         ${product.variants.map((variant) => {
           const out = variant.stock <= 0;
           const packButton = packSize > 0
@@ -333,7 +358,8 @@
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "", unitSize: "",
-      soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each"
+      soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each",
+      sellParent: false
     };
   }
 
@@ -355,6 +381,7 @@
       unit: product.unit == null ? "pcs" : String(product.unit),
       unitSize: product.unitSize ? String(product.unitSize) : "",
       soldByMass: product.soldByMass === true,
+      sellParent: product.sellParent === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
       packMode: product.packMode === "pack" ? "pack" : "piece",
       soldBy: ["each", "mass", "dozen", "packet", "box", "crate"].includes(String(product.soldBy)) ? String(product.soldBy) : (product.soldByMass === true ? "mass" : (Number(product.packSize) > 0 ? "packet" : "each")),
@@ -456,6 +483,7 @@
       return { label, hint };
     };
     const initialStock = stockField(currentType, values.packSize, currentUnit, values.unitSize, values.stock);
+    const initialPlain = values.sellParent === true && values.variants.length > 0;
     const refreshStockField = () => {
       const formEl = document.getElementById("product-form");
       if (!formEl) return;
@@ -471,8 +499,11 @@
       const label = formEl.querySelector("#product-stock-label");
       const hint = formEl.querySelector("#product-stock-hint");
       const input = formEl.querySelector("#product-stock");
-      if (label) label.textContent = state.label;
-      if (hint) hint.textContent = state.hint;
+      const sellParentOn = formEl.querySelector("#variant-sell-parent")?.checked === true;
+      const variantRows = formEl.querySelectorAll(".vrow").length;
+      if (label) label.textContent = sellParentOn && variantRows ? "In stock (plain item)" : state.label;
+      if (hint && sellParentOn && variantRows) hint.textContent = "Variants keep their own stock — this is the plain item's.";
+      else if (hint) hint.textContent = state.hint;
       if (input) { input.step = bundle ? "0.001" : "1"; input.inputMode = bundle ? "decimal" : "numeric"; }
     };
     const unitOptions = currentUnit && !OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS] : OFFICIAL_UNITS;
@@ -558,6 +589,11 @@
             <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
           </summary>
           <div class="vbody">
+            <label class="vtoggle" for="variant-sell-parent">
+              <input type="checkbox" id="variant-sell-parent" ${values.sellParent ? "checked" : ""} aria-label="Also sell the plain item">
+              <span class="vtoggle-switch" aria-hidden="true"></span>
+              <span class="vtoggle-copy"><strong>Also sell the plain item</strong><small>Adds a “${esc(values.name || "Plain item")}” line at the parent price to the picker, deducting from the parent stock.</small></span>
+            </label>
             <div class="vchips" id="variant-quick-add">
               <p class="vchips-cap">Quick add</p>
               ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
@@ -587,9 +623,9 @@
 
         <div class="field-row">
           <div class="field">
-            <label for="product-stock" id="product-stock-label">${esc(initialStock.label)}</label>
+            <label for="product-stock" id="product-stock-label">${esc(initialPlain ? "In stock (plain item)" : initialStock.label)}</label>
             <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" required>
-            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialStock.hint)}</p>
+            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialPlain ? "Variants keep their own stock — this is the plain item's." : initialStock.hint)}</p>
           </div>
           <div class="field">
             <label for="product-low">Low-stock alert</label>
@@ -754,8 +790,10 @@
         return;
       }
       const hasVariants = variants.length > 0;
-      // Parent price/stock/cost become a summary of its variants so legacy
-      // displays and searches still work.
+      // When the plain item is sellable alongside the variants, its typed
+      // price/cost/stock stay authoritative; otherwise the parent slots are a
+      // summary of the variants so legacy displays and searches still work.
+      const sellParent = hasVariants && values.sellParent === true;
       const summaryPrice = hasVariants ? Math.min(...variants.map((v) => v.price)) : null;
       const summaryCost = hasVariants ? (() => {
         const nonZero = variants.map((v) => v.cost).filter((c) => c > 0);
@@ -767,7 +805,7 @@
       // Bundle stock is typed in bundles: 2 packets of 10 → 20 pieces.
       const rawStock = Number(values.stock);
       const bundleStockMode = ["packet","box","dozen","crate"].includes(values.soldBy) && packSize > 0;
-      const stock = hasVariants
+      const stock = (hasVariants && !sellParent)
         ? summaryStock
         : mass
           ? Math.max(0, Math.min(1000000, Math.round((Number.isFinite(rawStock) ? rawStock : 0) * 1000)))
@@ -775,24 +813,33 @@
             ? T.clampInt(String(Math.round((Number.isFinite(rawStock) ? rawStock : 0) * packSize)), 0, 999999)
             : T.clampInt(values.stock, 0, 999999);
       const lowStockAt = T.clampInt(values.lowStockAt, 0, 999999);
-      const price = hasVariants
-        ? summaryPrice
-        : (() => {
+      const price = sellParent
+        ? (() => {
+            const p = T.parsePriceToCents(values.price);
+            if (Number.isFinite(p) && p > 0) return p;
+            if (summaryPrice !== null && summaryPrice > 0) return summaryPrice;
+            productEditorError("Enter a price greater than zero."); return null;
+          })()
+        : hasVariants
+          ? summaryPrice
+          : (() => {
             const p = T.parsePriceToCents(values.price);
             if (!Number.isFinite(p) || p <= 0) { productEditorError("Enter a price greater than zero."); return null; }
             return p;
           })();
       if (price === null) return;
       const costRaw = String(values.cost || "").trim();
-      const cost = hasVariants
-        ? summaryCost
-        : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
+      const cost = sellParent
+        ? (costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0))
+        : hasVariants
+          ? summaryCost
+          : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
       const barcode = T.cleanBarcode(values.barcode);
       // "500 ml" / "1 kg" — how much one item holds, in its unit.
       const unitSizeNum = Number(String(values.unitSize ?? "").trim());
       const unitSize = Number.isFinite(unitSizeNum) && unitSizeNum > 0 ? Math.round(unitSizeNum * 1000) / 1000 : 0;
       // Pack mode: if the shopkeeper typed prices per pack, convert to per piece.
-      const perPackSimple = values.packMode === "pack" && packSize > 0 && !hasVariants;
+      const perPackSimple = values.packMode === "pack" && packSize > 0 && !hasVariants && !sellParent;
       const unitPrice = perPackSimple ? Math.max(1, Math.round(price / packSize)) : price;
       const unitCost = perPackSimple ? Math.max(0, Math.round(cost / packSize)) : cost;
 
@@ -813,6 +860,7 @@
         existing.packLabel = ["dozen","packet","box","crate"].includes(values.soldBy) ? values.soldBy : "";
         existing.packMode = values.packMode;
         existing.variants = variants;
+        existing.sellParent = sellParent;
       } else {
         const product = {
           id: T.uid(),
@@ -830,6 +878,7 @@
           packSize,
           packLabel: values.packLabel || (["dozen","packet","box","crate"].includes(values.soldBy) ? values.soldBy : ""),
           variants,
+          sellParent,
           packMode: values.packMode
         };
         T.state.products.unshift(product);
@@ -872,6 +921,7 @@
       unitSize: String(data.get("unitSize") || "").trim(),
       soldByMass: soldBy === "mass",
       soldBy,
+      sellParent: Boolean(form.querySelector("#variant-sell-parent")?.checked),
       // Variants live on their own rows — read them straight out of the DOM.
       variants: (() => {
         const rows = [];

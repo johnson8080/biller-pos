@@ -890,6 +890,17 @@ function runAction(btn) {
     if (ok) T.toast(`${product.name} · ${variant.label} — ${pieces} ${unit} added`, "i-check");
     resetSellSearch();
   }
+  else if (act === "pick-parent-qty" && id) {
+    const product = T.findProduct(id);
+    if (!product || product.sellParent !== true) return;
+    const unit = T.stockCountUnit(product);
+    const pieces = btn.dataset.packs
+      ? Math.max(1, Math.round((Number(btn.dataset.packs) || 1) * (Number(product.packSize) || 1)))
+      : Math.max(1, Number(btn.dataset.qty) || 1);
+    const ok = T.addToCart(product, pieces);
+    if (ok) T.toast(`${product.name} — ${pieces} ${unit} added`, "i-check");
+    resetSellSearch();
+  }
   else if (act === "pick-variant" && id && btn.dataset.variant) {
     const product = T.findProduct(id);
     const variant = product ? T.findVariant(product, btn.dataset.variant) : null;

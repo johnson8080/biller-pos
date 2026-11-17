@@ -433,6 +433,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // Pack size for products received in packs but sold piece by piece
         // (eggs by the tray of 30, bread by the pallet/box): how many pieces
         // one pack/box/dozen carries.
+        // When on, the parent line is sellable in the picker with its own
+        // price and stock, alongside the variants.
+        sellParent: p.sellParent === true,
         packSize: Number.isFinite(Number(p.packSize)) ? Math.max(0, Math.round(Number(p.packSize))) : 0
       };
     });
@@ -1465,7 +1468,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   T.productStock = (product) => {
     if (!product) return 0;
     if (!product.variants?.length) return product.stock || 0;
-    return product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    const variantSum = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    // Plain line sellable alongside the variants keeps its own stock on the
+    // parent slot; everything else is variants-only.
+    return product.sellParent ? (product.stock || 0) + variantSum : variantSum;
   };
   /** Shelf value at the listed selling price. Variants contribute their own. */
   T.productValue = (product) => {
@@ -1473,8 +1479,16 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (!product.variants?.length) {
       return product.price * (product.soldByMass ? product.stock / 1000 : product.stock);
     }
-    return product.variants.reduce((sum, v) => sum + v.price * (v.stock || 0), 0);
+    const variantValue = product.variants.reduce((sum, v) => sum + v.price * (v.stock || 0), 0);
+    // The plain line contributes its own price and stock when it's sellable.
+    return product.sellParent ? product.price * (product.stock || 0) + variantValue : variantValue;
   };
+  /** What the stock on the shelf cost to buy. */
+  T.stockCost = () => T.state.products.reduce((sum, p) => {
+    if (!p.variants?.length) return sum + (p.cost || 0) * (p.soldByMass ? p.stock / 1000 : p.stock);
+    const variantCost = p.variants.reduce((vSum, v) => vSum + v.cost * (v.stock || 0), 0);
+    return sum + (p.sellParent ? (p.cost || 0) * (p.stock || 0) : 0) + variantCost;
+  }, 0);
   /** What the stock on the shelf cost to buy. */
   T.stockCost = () => T.state.products.reduce((sum, p) => {
     if (!p.variants?.length) return sum + (p.cost || 0) * (p.soldByMass ? p.stock / 1000 : p.stock);

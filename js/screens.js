@@ -49,6 +49,7 @@
       const unit = product.packLabel || product.soldBy || "packet";
       return `${money(product.price * product.packSize)}/${unit}`;
     }
+    if (product.sellParent) return `${money(product.price)}+`;
     const variantPrice = (product.variants || []).reduce((min, v) => v.price && (!min || v.price < min) ? v.price : min, 0);
     if (variantPrice) return `${money(variantPrice)}+`;
     return money(product.price);
@@ -62,11 +63,6 @@
   function qtyBadgeText(product, qty) {
     if (!qty) return "";
     return product.soldByMass ? T.massLabel(qty) : String(qty);
-  }
-
-  /** The price a product sells at, with "per kg" on weighed items. */
-  function priceTag(product) {
-    return product.soldByMass ? `${money(product.price)}/kg` : money(product.price);
   }
 
   /* ---------- App chrome ---------- */
