@@ -47,16 +47,17 @@
     return active;
   }
 
-  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true }) {
+  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true, size = "default" }) {
     const root = layers();
     if (!root) return;
     close(true);
     lastFocus = document.activeElement;
     active = true;
     onCloseCallback = onClose;
+    const sizeClass = size === "compact" ? "sheet-compact" : "";
     root.innerHTML = `
       <div class="scrim" data-act="close-sheet"></div>
-      <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
+      <section class="sheet ${sizeClass}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
         <div class="sheet-grabber" aria-hidden="true"></div>
         ${head ? `<div class="sheet-head">
           <div>
@@ -138,7 +139,48 @@
     });
 
     const form = document.getElementById("manual-form");
-    form?.addEventListener("submit", (event) => {
+    // Dropdown selects: keep form state in sync on change — selection runs
+    // top to bottom: size/variant fills the detail field, sold-by flips mode,
+    // add-variant inserts a variant row.
+    form?.addEventListener("change", (event) => {
+      const t = event.target;
+      const sizeSelect = form.querySelector("#product-size");
+      const variantSelect = form.querySelector("#product-variant");
+      const soldBySelect = form.querySelector("#product-soldby");
+      const addVariantSelect = form.querySelector("#product-add-variant");
+      // Size or variant dropdown filled → fill the detail field.
+      if (t === sizeSelect || t === variantSelect) {
+        const detail = form.querySelector("#product-detail");
+        if (detail && t.value) {
+          detail.value = t.value;
+          detail.dispatchEvent(new Event("input", { bubbles: true }));
+          // Keep the other dropdown in sync if same label
+          if (t === sizeSelect && variantSelect && variantSelect.value !== t.value) variantSelect.value = t.value;
+          if (t === variantSelect && sizeSelect && sizeSelect.value !== t.value) sizeSelect.value = t.value;
+        }
+        return;
+      }
+      // Sold by dropdown change → switch mode.
+      if (t === soldBySelect && t.tagName?.toLowerCase() === "select") {
+        applySoldBy(form, t.value);
+        return;
+      }
+      // Add variant dropdown change → insert a variant row, then reset select.
+      if (t === addVariantSelect && t.value) {
+        const list = form.querySelector("#variant-editor-list");
+        if (!list) return;
+        const values = T.ui?.editor?.values;
+        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
+        const rowHtml = renderVariantEditorRow({ label: t.value, price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
+        list.insertAdjacentHTML("beforeend", rowHtml);
+        list.lastElementChild?.querySelector(".variant-price")?.focus({ preventScroll: true });
+        list.dispatchEvent(new Event("input", { bubbles: true }));
+        t.selectedIndex = 0;
+        return;
+      }
+    });
+
+        form?.addEventListener("submit", (event) => {
       event.preventDefault();
       const code = String(new FormData(form).get("code") || "").trim();
       if (!code) {
@@ -291,6 +333,7 @@
       subtitle: esc(product.detail || "Choose a variant and quantity"),
       iconName: "i-box",
       onClose,
+      size: "compact",
       body: `<div class="variant-list">
         ${product.variants.map((variant) => {
           const out = variant.stock <= 0;
@@ -407,37 +450,71 @@
           <span class="tile tile-lg tone-${T.toneFor(values.category)}" id="product-preview-tile" aria-hidden="true">${esc(T.initials(values.name || "New"))}</span>
           <div><div class="name" id="product-preview-name">${esc(values.name || "New product")}</div><div class="meta" id="product-preview-meta">${esc(values.category)}${values.barcode ? ` · ${esc(values.barcode)}` : ""}</div></div>
         </div>
-        <div class="field">
-          <label for="product-barcode">Barcode</label>
-          <div class="barcode-field">
-            <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type a barcode" autocomplete="off" spellcheck="false">
-            <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
-          </div>
-          <div class="scan-bar" id="mini-scan" hidden>
-            <div class="scan-bar-head">
-              <span class="scan-bar-title">${icon("i-scan")} Scan the barcode</span>
-              <button class="scan-bar-close" type="button" data-act="close-mini-scan" aria-label="Close the camera">${icon("i-close")}</button>
-            </div>
-            <div class="scan-bar-stage">
-              <video id="mini-scan-video" playsinline muted autoplay aria-label="Camera preview"></video>
-              <span class="scan-bar-reticle" aria-hidden="true"></span>
-              <span class="scan-bar-status" id="mini-scan-status">Starting the camera…</span>
+        <div class="field-row" style="margin-top:0">
+          <div class="field">
+            <label for="product-barcode">Barcode</label>
+            <div class="barcode-field">
+              <input class="input" id="product-barcode" name="barcode" value="${esc(values.barcode)}" placeholder="Scan or type" autocomplete="off" spellcheck="false">
+              <button class="barcode-scan" type="button" data-act="scan-barcode-field" aria-label="Scan barcode with camera">${icon("i-scan")}</button>
             </div>
           </div>
-          <p class="field-help">EAN-13, EAN-8, UPC-A, UPC-E, Code 128, and Code 39. Leave blank if the item has no barcode.</p>
+          <div class="field">
+            <label for="product-name">Product name</label>
+            <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="e.g. Oat Milk" required autocomplete="off">
+          </div>
         </div>
+        <div class="scan-bar" id="mini-scan" hidden>
+          <div class="scan-bar-head">
+            <span class="scan-bar-title">${icon("i-scan")} Scan the barcode</span>
+            <button class="scan-bar-close" type="button" data-act="close-mini-scan" aria-label="Close the camera">${icon("i-close")}</button>
+          </div>
+          <div class="scan-bar-stage">
+            <video id="mini-scan-video" playsinline muted autoplay aria-label="Camera preview"></video>
+            <span class="scan-bar-reticle" aria-hidden="true"></span>
+            <span class="scan-bar-status" id="mini-scan-status">Starting the camera…</span>
+          </div>
+        </div>
+        <p class="field-help" style="margin-top:8px">EAN-13, EAN-8, UPC-A, UPC-E, Code 128, and Code 39. Leave blank if the item has no barcode.</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="product-size">Size</label>
+            <select class="select" id="product-size" aria-label="Pick a common size">
+              <option value="">—</option>
+              ${["Small","Medium","Large","250 g","500 g","750 g","1 kg","2 kg","500 ml","750 ml","1 L","2 L","Pack","Piece","Dozen"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="product-variant">Variant</label>
+            <select class="select" id="product-variant" aria-label="Pick a common variant">
+              <option value="">—</option>
+              ${["250 ml","500 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Pack","Piece","Dozen"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="product-soldby">Sold by</label>
+            <select class="select" id="product-soldby" name="soldBy" aria-label="How the item is counted at the till">
+              ${[["each","Each"],["mass","Weight (kg)"],["pack","Pack"],["dozen","Dozen"],["crate","Crate"]].map(([value,label]) => `<option value="${value}" ${values.soldBy === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="product-add-variant">Add variant</label>
+            <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
+              <option value="">— pick to add —</option>
+              ${["250 ml","500 ml","1 L","500 g","1 kg","Small","Medium","Large"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["pack","dozen","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces${values.packSize ? ` (1 ${values.soldBy} = ${values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
+
         <div class="field">
           <label for="product-name">Product name</label>
           <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="e.g. Oat Milk" required autocomplete="off">
         </div>
-        <div class="field">
-          <label for="product-detail">Size or variant <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
-          <input class="input" id="product-detail" name="detail" value="${esc(values.detail)}" placeholder="e.g. 1 L" autocomplete="off">
-          <div class="variant-chips" role="group" aria-label="Common sizes and units">
-            ${COMMON_VARIANTS.map((variant) => `<button type="button" class="variant-chip ${values.detail === variant ? "is-active" : ""}" data-variant="${esc(variant)}">${esc(variant)}</button>`).join("")}
-          </div>
-          <p class="field-help">Tap a common size or unit, or type your own.</p>
-        </div>
+        <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail)}">
 
         <div class="field" id="product-pack-size-row" style="${["pack","dozen","crate"].includes(values.soldBy) ? "" : "display:none"}">
           <label for="product-pack-size">Pieces per ${values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack"} <span class="muted" style="text-transform:none;letter-spacing:0">(bundle size)</span></label>
@@ -461,20 +538,9 @@
           <div class="variant-editor" id="variant-editor-list">
             ${(values.variants || []).map((variant, index) => renderVariantEditorRow(variant, index, values.category)).join("")}
           </div>
-          <button type="button" class="btn btn-ghost btn-block" id="add-variant">${icon("i-plus")} Add variant</button>
-          <p class="field-help">Sold in sizes, packs or strengths (500g / 1kg, small / large). Each variant gets its own price, cost, stock and barcode — the till will ask which one you sold.</p>
+          <p class="field-help">Sold in sizes, packs or strengths (500g / 1kg, small / large). Each variant gets its own price, cost, stock and barcode — the till will ask which one you sold. Pick one from the Add variant dropdown above to add it.</p>
         </div>
-        <div class="field">
-          <label>Sold by</label>
-          <div class="segmented seg-five" id="product-soldby" role="group" aria-label="How the item is counted at the till">
-            <button type="button" class="seg-btn ${values.soldBy === "each" ? "is-active" : ""}" data-soldby="each" aria-pressed="${values.soldBy === "each"}">Each</button>
-            <button type="button" class="seg-btn ${values.soldBy === "mass" ? "is-active" : ""}" data-soldby="mass" aria-pressed="${values.soldBy === "mass"}">${icon("i-scale")} Weight</button>
-            <button type="button" class="seg-btn ${values.soldBy === "pack" ? "is-active" : ""}" data-soldby="pack" aria-pressed="${values.soldBy === "pack"}">Pack</button>
-            <button type="button" class="seg-btn ${values.soldBy === "dozen" ? "is-active" : ""}" data-soldby="dozen" aria-pressed="${values.soldBy === "dozen"}">Dozen</button>
-            <button type="button" class="seg-btn ${values.soldBy === "crate" ? "is-active" : ""}" data-soldby="crate" aria-pressed="${values.soldBy === "crate"}">Crate</button>
-          </div>
-          <p class="field-help" id="product-soldby-help">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["pack","dozen","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces${values.packSize ? ` (1 ${values.soldBy} = ${values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
-        </div>
+
         <div class="field-row">
           <div class="field">
             <label for="product-cost">Buying price</label>
@@ -521,7 +587,40 @@
     });
 
     const form = document.getElementById("product-form");
-    form?.addEventListener("input", () => {
+    // Switch the "Sold by" mode. Shared by the inline select and the legacy
+    // segmented buttons: flipping the mode invisibly keeps grid/unit fields in
+    // sync so the shopkeeper never loses what they already typed.
+    function applySoldBy(form, nextSoldBy) {
+      const editor = T.ui.editor;
+      if (!editor || editor.values.soldBy === nextSoldBy) return;
+      editor.values.soldBy = nextSoldBy;
+      const wantMass = nextSoldBy === "mass";
+      const wantBundle = ["pack", "dozen", "crate"].includes(nextSoldBy);
+      editor.values.packMode = wantMass || wantBundle ? editor.values.packMode : "piece";
+      const stockInput = form.querySelector("#product-stock");
+      const stockLabel = form.querySelector("#product-stock-label");
+      const unitSelect = form.querySelector("#product-unit");
+      const costHelp = form.querySelector("#product-cost-help");
+      const priceHelp = form.querySelector("#product-price-help");
+      const soldByHelp = form.querySelector("#product-soldby-help");
+      const packInputBlock = form.querySelector("#product-pack-size-row");
+      if (stockInput) {
+        stockInput.step = wantMass ? "0.001" : "1";
+        stockInput.inputMode = wantMass ? "decimal" : "numeric";
+      }
+      if (stockLabel) stockLabel.textContent = wantMass ? "In stock (kg)" : "In stock";
+      if (unitSelect) {
+        unitSelect.disabled = wantMass || wantBundle;
+        if (wantMass) unitSelect.value = "kg";
+        if (wantBundle) unitSelect.value = "pcs";
+      }
+      if (costHelp) costHelp.textContent = wantMass ? "What you pay per kilogram." : wantBundle ? "What you pay for each piece (or each pack at pack price)." : "What you pay for each one.";
+      if (priceHelp) priceHelp.textContent = wantMass ? "What the customer pays per kilogram." : wantBundle ? "What the customer pays (per piece or per pack)." : "What the customer pays.";
+      if (packInputBlock) packInputBlock.style.display = wantBundle ? "" : "none";
+      if (soldByHelp) soldByHelp.textContent = wantMass ? "For items the shop weighs: flour, produce, meat." : wantBundle ? `Bundled stock — the till asks how many pieces${editor.values.packSize ? ` (1 ${nextSoldBy} = ${editor.values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold).";
+    }
+
+        form?.addEventListener("input", () => {
       // Keep the saved copy in step with the form, so nothing the shopkeeper
       // has already typed is ever lost.
       const editor = T.ui.editor;
@@ -616,43 +715,10 @@
         }
         return;
       }
-      // The Sold-by buttons flop the shared stock/unit fields in place, so
-      // nothing the shopkeeper typed is lost.
-      const soldByBtn = event.target.closest("#product-soldby .seg-btn");
-      if (soldByBtn) {
-        const nextSoldBy = soldByBtn.dataset.soldby || "each";
-        const editor = T.ui.editor;
-        if (!editor || editor.values.soldBy === nextSoldBy) return;
-        editor.values.soldBy = nextSoldBy;
-        const wantMass = nextSoldBy === "mass";
-        const wantBundle = ["pack", "dozen", "crate"].includes(nextSoldBy);
-        editor.values.packMode = wantMass || wantBundle ? editor.values.packMode : "piece";
-        const stockInput = form.querySelector("#product-stock");
-        const stockLabel = form.querySelector("#product-stock-label");
-        const unitSelect = form.querySelector("#product-unit");
-        const costHelp = form.querySelector("#product-cost-help");
-        const priceHelp = form.querySelector("#product-price-help");
-        const soldByHelp = form.querySelector("#product-soldby-help");
-        const packInputBlock = form.querySelector("#product-pack-size-row");
-        form.querySelectorAll("#product-soldby .seg-btn").forEach((btn) => {
-          const on = btn.dataset.soldby === nextSoldBy;
-          btn.classList.toggle("is-active", on);
-          btn.setAttribute("aria-pressed", String(on));
-        });
-        if (stockInput) {
-          stockInput.step = wantMass ? "0.001" : "1";
-          stockInput.inputMode = wantMass ? "decimal" : "numeric";
-        }
-        if (stockLabel) stockLabel.textContent = wantMass ? "In stock (kg)" : "In stock";
-        if (unitSelect) {
-          unitSelect.disabled = wantMass || wantBundle;
-          if (wantMass) unitSelect.value = "kg";
-          if (wantBundle) unitSelect.value = "pcs";
-        }
-        if (costHelp) costHelp.textContent = wantMass ? "What you pay per kilogram." : wantBundle ? "What you pay for each piece (or each pack at pack price)." : "What you pay for each one.";
-        if (priceHelp) priceHelp.textContent = wantMass ? "What the customer pays per kilogram." : wantBundle ? "What the customer pays (per piece or per pack)." : "What the customer pays.";
-        if (packInputBlock) packInputBlock.style.display = wantBundle ? "" : "none";
-        if (soldByHelp) soldByHelp.textContent = wantMass ? "For items the shop weighs: flour, produce, meat." : wantBundle ? `Bundled stock — the till asks how many pieces${editor.values.packSize ? ` (1 ${nextSoldBy} = ${editor.values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold).";
+      // Legacy Sold-by buttons, still work if rendered; select selects use change.
+      const soldByBtn = event.target.closest("#product-soldby .seg-btn, #product-soldby button");
+      if (soldByBtn && form.querySelector("#product-soldby")?.tagName?.toLowerCase() === "button") {
+        applySoldBy(form, soldByBtn.dataset.soldby || "each");
         return;
       }
     });
@@ -2391,6 +2457,7 @@
       iconName: "i-scale",
       focus: "#weigh-kg",
       onClose: null,
+      size: "compact",
       body: `<div class="supplier-pay-target">
           <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(product.name))}</span>
           <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${esc(T.massLabel(product.stock))} in stock · ${esc(T.money(pricePerKg))} per kg</small></div>
@@ -2498,6 +2565,7 @@
       iconName: "i-box",
       focus: "#pack-pieces",
       onClose: null,
+      size: "compact",
       body: `<div class="supplier-pay-target">
           <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(product.name))}</span>
           <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${esc(T.productStock(product))} ${esc(product.unit || "pcs")} in stock · ${esc(T.money(price))} each</small></div>

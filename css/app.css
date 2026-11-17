@@ -2510,6 +2510,9 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   outline: 0;
 }
 .layers.is-open .sheet { transform: translateY(0); }
+.sheet.sheet-compact { max-height: min(62%, 480px); }
+.sheet.sheet-compact .sheet-body { padding-top: 12px; padding-bottom: calc(18px + var(--safe-bottom)); }
+.sheet.sheet-compact .sheet-head h2 { font-size: calc(15px * var(--fs)); }
 .sheet-grabber { width: 34px; height: 4px; flex: none; margin: 7px auto 0; border-radius: 2px; background: var(--line-strong); }
 .sheet-head { flex: none; display: flex; align-items: flex-start; gap: 10px; padding: 10px 18px 8px; }
 .sheet-head > div { flex: 1; min-width: 0; }
