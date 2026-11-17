@@ -45,9 +45,16 @@
   function variantStockLine(product) {
     const variants = product?.variants || [];
     if (!variants.length) return "";
-    const parts = variants.slice(0, 3).map((v) => `${v.label} ${v.stock}`);
-    if (variants.length > 3) parts.push(`+${variants.length - 3} more`);
-    return parts.join(" · ");
+    const parts = [];
+    if (product.sellParent) {
+      // Plain line sellable alongside its variants — show the parent's own stock.
+      const plainLabel = (T.unitSizeLabel ? T.unitSizeLabel(product) : "") || product.detail || "Plain item";
+      parts.push(`${plainLabel} ${product.stock}`);
+    }
+    parts.push(...variants.map((v) => `${v.label} ${v.stock}`));
+    const visible = parts.slice(0, 3);
+    if (parts.length > 3) visible.push(`+${parts.length - 3} more`);
+    return visible.join(" · ");
   }
 
   /** "The price a product sells at: min variant price, or per kg / per bundle. */
