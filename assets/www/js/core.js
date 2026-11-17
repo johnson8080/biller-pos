@@ -238,12 +238,22 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     };
   }
 
-  /** Clean a saved category list: trim, drop blanks, remove duplicates. */
+  /** Clean a saved category list: trim, drop blanks, remove duplicates.
+   *  Merges in newly shipped Kenya defaults so existing shops do not miss the
+   *  bigger catalog on app updates. Anything the shop already has comes first.
+   */
   function normalizeCategories(list) {
-    const source = Array.isArray(list) && list.length ? list : CATEGORIES;
+    const saved = Array.isArray(list) && list.length ? list : [];
+    // Anything in CATEGORIES that the saved list does not already contain
+    // gets appended after the shop's existing items, in default order.
+    const savedKeys = new Set(saved.map((raw) => String(raw ?? "").trim().replace(/\s+/g, " ").toLowerCase()));
+    for (const def of CATEGORIES) {
+      const key = def.toLowerCase();
+      if (!savedKeys.has(key)) { saved.push(def); savedKeys.add(key); }
+    }
     const out = [];
     const seen = new Set();
-    for (const raw of source) {
+    for (const raw of saved) {
       const name = String(raw ?? "").trim().replace(/\s+/g, " ");
       if (!name) continue;
       const key = name.toLowerCase();
