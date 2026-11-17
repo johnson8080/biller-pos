@@ -276,28 +276,49 @@
    * Open a compact choice of a product's variants: tap the size/type you
    * want, and it drops into the cart. Out-of-stock variants are disabled.
    */
+  /**
+   * Variant picker — each row shows the variant with quick picks: single
+   * pieces and whole packs (when a pack size is set). Tap a chip to add that
+   * many to the sale, then Done.
+   */
   function openVariantPicker(product, options = {}) {
     if (!product || !(product.variants || []).length) return;
-    T.ui?.scanPaused === true; // no-op, kept explicit: scanner handles its own pause
     const onClose = typeof options.onClose === "function" ? options.onClose : null;
+    const packSize = Math.max(0, Math.round(Number(product.packSize) || 0));
+    const unit = product.unit || "pcs";
     open({
       title: esc(product.name),
-      subtitle: esc(product.detail || "Choose a variant"),
+      subtitle: esc(product.detail || "Choose a variant and quantity"),
       iconName: "i-box",
       onClose,
       body: `<div class="variant-list">
         ${product.variants.map((variant) => {
           const out = variant.stock <= 0;
-          return `<button class="variant-pick-row" data-act="pick-variant" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" ${out ? "disabled" : ""}>
-            <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
-            <span class="variant-pick-copy">
-              <strong>${esc(variant.label)}</strong>
-              <small>${out ? "Sold out" : `${variant.stock} ${esc(product.unit || "pcs")} in stock`}</small>
-            </span>
-            <span class="variant-pick-price">${money(variant.price)}</span>
-          </button>`;
+          const chips = [1, 2, 6].map((n) => `<button class="variant-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="${n}" ${out ? "disabled" : ""}>${n} pc</button>`).join("");
+          const packChips = packSize > 0
+            ? [1, 2, 5].map((n) => `<button class="variant-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-packs="${n}" ${out ? "disabled" : ""}>${n === 1 ? "1 pack" : `${n} packs`} (${n * packSize})</button>`).join("")
+            : "";
+          return `<div class="variant-pick ${out ? "is-out" : ""}">
+            <div class="variant-pick-head">
+              <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
+              <span class="variant-pick-copy">
+                <strong>${esc(variant.label)}</strong>
+                <small>${out ? "Sold out" : `${variant.stock} ${esc(unit)} in stock`}</small>
+              </span>
+              <span class="variant-pick-price">${money(variant.price)}</span>
+              <button class="variant-pick-one" data-act="pick-variant" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" aria-label="Add one ${esc(variant.label)}" ${out ? "disabled" : ""}>+1</button>
+            </div>
+            ${packSize > 0
+              ? `<div class="variant-pick-chips">
+                  <span class="variant-pick-chips-label">Pieces</span>${chips}
+                  <span class="variant-pick-chips-label">Packs (${packSize} pcs)</span>${packChips}
+                </div>`
+              : `<div class="variant-pick-chips">${chips}</div>`}
+          </div>`;
         }).join("")}
-        <p class="field-help" style="margin-top:8px">Tap a size/variant. ${product.soldByMass ? "For weighed items, use the scale instead." : ""}</p>
+      </div>
+      <div class="sheet-actions" style="margin-top:8px">
+        <button class="btn btn-quiet btn-block" data-act="close-sheet">Done</button>
       </div>`
     });
   }
@@ -309,7 +330,7 @@
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "pcs",
-      soldByMass: false, packSize: "", variants: []
+      soldByMass: false, packSize: "", packMode: "piece", variants: []
     };
   }
 
@@ -327,6 +348,7 @@
       unit: product.unit || "pcs",
       soldByMass: product.soldByMass === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
+      packMode: product.packMode === "pack" ? "pack" : "piece",
       variants: (product.variants || []).map((variant) => ({
         id: variant.id,
         label: variant.label,
@@ -425,6 +447,13 @@
           </div>
           <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
           <p class="field-help">For items you receive in boxes or dozens — stock-in will convert packs into pieces for you.</p>
+          <div class="segmented-row pack-mode-row" id="pack-price-row" style="${values.packSize ? "" : "display:none"}">
+            <span class="field-help" style="margin:0">The cost &amp; price above are per:</span>
+            <div class="segmented compact" id="product-price-mode" role="group" aria-label="Prices per piece or per pack">
+              <button type="button" class="seg-btn ${values.packMode === "pack" ? "" : "is-active"}" data-mode="piece">Piece</button>
+              <button type="button" class="seg-btn ${values.packMode === "pack" ? "is-active" : ""}" data-mode="pack">Pack</button>
+            </div>
+          </div>
         </div>
 
         <div class="field">
@@ -509,6 +538,9 @@
         if (chip.classList.contains("pack-chip")) chip.classList.toggle("is-active", chip.dataset.pack === packValue);
         else chip.classList.toggle("is-active", chip.dataset.variant === detailValue);
       });
+      // Show the piece/pack price toggle only when a pack size is filled.
+      const packModeRow = form.querySelector("#pack-price-row");
+      if (packModeRow) packModeRow.style.display = packValue ? "" : "none";
       // Variant tile initials update as the label is typed.
       form.querySelectorAll(".variant-editor-row").forEach((row) => {
         const tile = row.querySelector(".variant-editor-tile");
@@ -518,6 +550,14 @@
     });
 
     form?.addEventListener("click", (event) => {
+      // Piece/Pack price mode toggle — only relevant with a pack size entered.
+      const segBtn = event.target.closest("#product-price-mode .seg-btn");
+      if (segBtn) {
+        document.querySelectorAll("#product-price-mode .seg-btn").forEach((btn) => {
+          btn.classList.toggle("is-active", btn === segBtn);
+        });
+        return;
+      }
       // Common size chips set the Size field; pack chips fill pack size.
       const chip = event.target.closest(".variant-chip");
       if (chip) {
@@ -656,6 +696,12 @@
         ? summaryCost
         : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
       const barcode = T.cleanBarcode(values.barcode);
+      // Pack mode: the prices typed in are per pack, so convert to per piece.
+      // Variant prices are already per-piece and are never divided.
+      const packSizeShared = T.clampInt(values.packSize || "0", 0, 100000);
+      const perPack = values.packMode === "pack" && packSizeShared > 0 && !hasVariants;
+      const unitPrice = perPack ? Math.max(1, Math.round(price / packSizeShared)) : price;
+      const unitCost = perPack ? Math.max(0, Math.round(cost / packSizeShared)) : cost;
 
       if (existing) {
         existing.name = values.name;
@@ -738,7 +784,8 @@
       category: String(data.get("category") || T.categories()[0] || "General"),
       unit: String(data.get("unit") || "pcs").trim() || "pcs",
       soldByMass: editorMass,
-      variants
+      variants,
+      packMode: form.querySelector("#product-price-mode .seg-btn.is-active")?.dataset?.mode || "piece"
     };
   }
 
