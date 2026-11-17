@@ -813,11 +813,11 @@
 
   function sortedInventory() {
     const query = T.ui.stockSearch.trim().toLowerCase();
-    const status = (p) => p.stock === 0 ? 0 : p.stock <= p.lowStockAt ? 1 : 2;
+    const status = (p) => T.productStock(p) === 0 ? 0 : T.productStock(p) <= p.lowStockAt ? 1 : 2;
     let products = T.state.products
       .filter((p) => !query || `${p.name} ${p.detail} ${p.barcode} ${p.category}`.toLowerCase().includes(query));
-    if (T.ui.stockFilter === "low") products = products.filter((p) => p.stock > 0 && p.stock <= p.lowStockAt);
-    if (T.ui.stockFilter === "out") products = products.filter((p) => p.stock === 0);
+    if (T.ui.stockFilter === "low") products = products.filter((p) => T.productStock(p) > 0 && T.productStock(p) <= p.lowStockAt);
+    if (T.ui.stockFilter === "out") products = products.filter((p) => T.productStock(p) === 0);
     return products
       .sort((a, b) => status(a) - status(b) || a.name.localeCompare(b.name));
   }
@@ -841,16 +841,21 @@
       </div>`;
     }
     return `<div class="inv-list">${products.map((p) => {
+      const out = T.productStock(p) === 0;
+      const unit = T.stockCountUnit ? T.stockCountUnit(p) : (p.unit || "pcs");
+      const price = priceTag(p);
+      const stockText = out ? "Sold out" : p.soldByMass ? `${T.massLabel(T.productStock(p))} in stock` : `${T.productStock(p)} ${esc(unit)} in stock`;
+      const detailLine = [variantStockLine(p), [T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" · ")].filter(Boolean)[0] || "";
       const stockLabel = p.soldByMass ? T.massLabel(p.stock) : String(p.stock);
       const stockCls = p.stock === 0 ? "is-out" : p.stock <= p.lowStockAt ? "is-low" : "";
       return `<div class="inv-row">
-        <button class="inv-main" data-act="edit-product" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
-          ${productTile(p)}
-          <span class="inv-copy">
-            <span class="inv-name">${esc(p.name)}${(T.unitSizeLabel(p) || T.bundleLabel(p) || p.detail) ? ` <span class="muted" style="font-weight:500">· ${esc([T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" · "))}</span>` : ""}${p.soldByMass ? ` <span class="muted" style="font-weight:500">· ${esc(T.money(p.price))}/kg</span>` : ""}</span>
-            <span class="inv-meta">${esc(p.barcode || "No barcode")} · <span class="inv-price">${esc(priceTag(p))}</span>${p.cost ? ` · <span class="inv-cost">cost ${money(p.cost)}</span>` : ""}</span>
+        <button class="product-row ${out ? "is-out" : ""}" data-act="edit-product" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
+          <span class="product-row-tile">${productTile(p)}</span>
+          <span class="product-row-copy">
+            <strong>${esc(p.name)}</strong>
+            <small>${[detailLine, stockText].filter(Boolean).map(esc).join(" · ")}</small>
           </span>
-          ${icon("i-pencil", "ico inv-edit")}
+          <span class="product-row-price">${esc(price)}</span>
         </button>
         <span class="stepper compact" aria-label="Stock for ${esc(p.name)}">
           <button class="step-btn" data-act="stock-dec" data-id="${esc(p.id)}" aria-label="Decrease stock" ${p.stock === 0 ? "disabled" : ""}>${icon("i-minus")}</button>
@@ -2382,10 +2387,11 @@
       const variantAttr = variant ? ` data-variant="${esc(variant.id)}"` : "";
       const variantName = variant ? ` · ${esc(variant.label)}` : "";
       const fullName = `${esc(product.name)}${variantName}`;
+      const detail = variant ? [product.detail].filter(Boolean).join("") : [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · ");
       return `<div class="cart-item">
         <div class="cart-item-top">${productTile(product, "tile-sm")}
           <div class="cart-item-copy">
-            <div class="cart-item-name">${fullName}${variant ? "" : (product.detail ? ` <span class="product-detail">${esc(product.detail)}</span>` : "")}</div>
+            <div class="cart-item-name">${fullName}${detail ? ` <span class="product-detail">${esc(detail)}</span>` : ""}</div>
             ${stock <= product.lowStockAt ? `<div class="cart-item-stock">only ${mass ? esc(T.massLabel(stock)) : stock} left</div>` : ""}
           </div>
           <div class="cart-item-total">${money(lineTotal)}</div>

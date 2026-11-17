@@ -1772,9 +1772,11 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 .inventory-alert .ico { width: 16px; height: 16px; margin-top: 1px; }
 .inventory-alert strong { color: var(--amber); }
-.inv-list { display: flex; flex-direction: column; }
-.inv-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 0.5px solid var(--line); }
+.inv-list { display: flex; flex-direction: column; gap: 8px; }
+.inv-row { display: flex; align-items: stretch; gap: 8px; padding: 0; border-bottom: 0; }
 .inv-row:last-child { border-bottom: 0; }
+.inv-row > .product-row { flex: 1; min-width: 0; width: auto; }
+.inv-row > .stepper { align-self: center; }
 .inv-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; text-align: left; }
 .inv-copy { flex: 1; min-width: 0; }
 .inv-name { display: block; font-size: calc(12.5px * var(--fs)); font-weight: 650; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
