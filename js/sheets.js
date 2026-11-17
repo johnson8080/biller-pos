@@ -332,7 +332,7 @@
     const categories = T.categories();
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
-      barcode: "", category: categories[0] || "General", unit: "kg",
+      barcode: "", category: categories[0] || "General", unit: "", unitSize: "",
       soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each"
     };
   }
@@ -349,6 +349,7 @@
       barcode: product.barcode,
       category: product.category,
       unit: product.unit || "pcs",
+      unitSize: product.unitSize ? String(product.unitSize) : "",
       soldByMass: product.soldByMass === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
       packMode: product.packMode === "pack" ? "pack" : "piece",
@@ -406,9 +407,19 @@
     // an older unit keep it as the first option so editing never silently
     // rewrites their unit.
     const OFFICIAL_UNITS = [["kg","Kilograms"],["g","Grams"],["L","Litres"],["ml","Millilitres"]];
+    const UNIT_LABELS = { kg: "Kilograms", g: "Grams", L: "Litres", ml: "Millilitres" };
+    const UNIT_SYMBOLS = { kg: "kg", g: "g", L: "L", ml: "ml" };
     const LEGACY_UNIT_LABELS = { pcs: "Pieces", each: "Each", pack: "Pack", box: "Box", bottle: "Bottle", sachet: "Sachet" };
-    const currentUnit = String(values.unit || "kg");
-    const unitOptions = OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? OFFICIAL_UNITS : [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS];
+    const unitLabel = (u) => UNIT_LABELS[u] || LEGACY_UNIT_LABELS[u] || u;
+    const unitSymbol = (u) => UNIT_SYMBOLS[u] || u;
+    const unitHint = (u, sizeStr) => {
+      if (!u) return "Pick a unit to show how the till counts stock.";
+      const num = Number(String(sizeStr ?? "").trim());
+      const sizePart = Number.isFinite(num) && num > 0 ? ` · ${num} ${unitSymbol(u)} each` : "";
+      return `Till counts stock in ${unitLabel(u).toLowerCase()}${sizePart}.`;
+    };
+    const currentUnit = String(values.unit || "");
+    const unitOptions = currentUnit && !OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS] : OFFICIAL_UNITS;
     open({
       title: editing ? "Edit product" : "New product",
       subtitle: editing ? "Changes apply to future sales." : "Add the details once — scan it forever.",
@@ -444,9 +455,19 @@
           <div class="field">
             <label for="product-unit">Unit</label>
             <select class="select" id="product-unit" name="unit" aria-label="Official product unit">
+              <option value="">—</option>
               ${unitOptions.map(([value,label]) => `<option value="${esc(value)}" ${currentUnit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
+        </div>
+
+        <div class="field" id="unit-size-row"${currentUnit ? "" : ' style="display:none"'}>
+          <label for="product-unit-size">Amount per unit</label>
+          <div class="input-affix">
+            <input class="input" id="product-unit-size" name="unitSize" type="number" min="0" step="0.001" inputmode="decimal" value="${esc(values.unitSize ?? "")}" placeholder="e.g. 500">
+            <span class="affix" id="unit-size-affix">${esc(unitSymbol(currentUnit))}</span>
+          </div>
+          <p class="field-help" id="unit-size-hint" style="margin-top:6px">${esc(unitHint(currentUnit, values.unitSize))}</p>
         </div>
 
         <div class="field-row">
@@ -516,14 +537,32 @@
       if (tile) { tile.textContent = T.initials(name); tile.className = `tile tile-lg tone-${T.toneFor(category)}`; }
       if (previewName) previewName.textContent = name;
       if (meta) meta.textContent = `${category}${form.querySelector("#product-barcode")?.value ? ` · ${form.querySelector("#product-barcode").value}` : ""}`;
+      // Keep the "how the till counts stock" hint in step with the size typed.
+      const hint = form.querySelector("#unit-size-hint");
+      if (hint) {
+        const unit = form.querySelector("#product-unit")?.value || "";
+        const size = form.querySelector("#product-unit-size")?.value || "";
+        hint.textContent = unitHint(unit, size);
+      }
     });
 
-    // Size dropdown writes to the hidden detail.
+    // Picking a unit reveals the "amount per unit" box; clearing it hides it.
     form?.addEventListener("change", (event) => {
       const t = event.target;
       if (t.id === "product-size") {
         const detail = form.querySelector("#product-detail");
         if (detail) detail.value = t.value || "";
+        return;
+      }
+      if (t.id === "product-unit") {
+        const row = form.querySelector("#unit-size-row");
+        const affix = form.querySelector("#unit-size-affix");
+        const hint = form.querySelector("#unit-size-hint");
+        const sizeInput = form.querySelector("#product-unit-size");
+        if (row) row.style.display = t.value ? "" : "none";
+        if (affix) affix.textContent = unitSymbol(t.value);
+        if (hint) hint.textContent = unitHint(t.value, sizeInput?.value || "");
+        if (t.value && sizeInput) sizeInput.focus({ preventScroll: true });
       }
     });
 
@@ -601,6 +640,9 @@
         ? summaryCost
         : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
       const barcode = T.cleanBarcode(values.barcode);
+      // "500 ml" / "1 kg" — how much one item holds, in its unit.
+      const unitSizeNum = Number(String(values.unitSize ?? "").trim());
+      const unitSize = Number.isFinite(unitSizeNum) && unitSizeNum > 0 ? Math.round(unitSizeNum * 1000) / 1000 : 0;
       // Pack mode: if the shopkeeper typed prices per pack, convert to per piece.
       const perPackSimple = values.packMode === "pack" && packSize > 0 && !hasVariants;
       const unitPrice = perPackSimple ? Math.max(1, Math.round(price / packSize)) : price;
@@ -613,7 +655,8 @@
         existing.cost = unitCost;
         existing.stock = stock;
         existing.lowStockAt = lowStockAt;
-        existing.unit = mass ? "kg" : values.unit;
+        existing.unit = mass ? "kg" : (values.unit || "pcs");
+        existing.unitSize = unitSize;
         existing.barcode = barcode;
         existing.category = values.category;
         existing.soldByMass = mass;
@@ -631,7 +674,8 @@
           cost: unitCost,
           stock,
           lowStockAt,
-          unit: mass ? "kg" : values.unit,
+          unit: mass ? "kg" : (values.unit || "pcs"),
+          unitSize,
           barcode,
           category: values.category,
           soldByMass: mass,
@@ -660,6 +704,7 @@
     const data = new FormData(form);
     // Preserve the previous product's sold-by, pack and variant config — the
     // simplified onboarding form no longer edits them.
+    const previous = T.ui?.editor?.values || {};
     // The product-type choice is the bundle the item comes in; it drives the
     // sold-by mode the till uses. Legacy mass (weight-sold) items keep their
     // mode; "—" means "not a bundle" → the till sells pieces.
@@ -675,7 +720,8 @@
       lowStockAt: String(data.get("lowStockAt") || "5").trim(),
       barcode: String(data.get("barcode") || "").trim(),
       category: String(data.get("category") || T.categories()[0] || "General"),
-      unit: String(data.get("unit") || "kg").trim() || "kg",
+      unit: String(data.get("unit") || "").trim(),
+      unitSize: String(data.get("unitSize") || "").trim(),
       soldByMass: soldBy === "mass",
       // Variants preserved from a product being edited are never wiped just
       // because the field is gone from the form.

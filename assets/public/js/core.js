@@ -416,6 +416,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         stock: clampInt(p.stock, 0, 1000000),
         lowStockAt: clampInt(p.lowStockAt ?? 5, 0, 1000000),
         unit: String(p.unit || "pcs").trim().slice(0, 12) || "pcs",
+        // How much one item holds, in the chosen unit (500 ml, 1 kg, 2 L).
+        // Drives the "till counts stock in …" line in the editor.
+        unitSize: Number.isFinite(Number(p.unitSize)) ? Math.max(0, Number(p.unitSize)) : 0,
         // Weighed items (fruit, ugali flour, meat): every quantity for this
         // product is grams, and the price is per kilogram.
         soldByMass: p.soldByMass === true,
@@ -1388,6 +1391,13 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   T.isMass = (product) => product?.soldByMass === true || product?.soldBy === "mass";
   /** True when the item is sold in bundles (pack / dozen / crate) — like weight, the till asks how many pieces. */
   T.isBundle = (product) => ["dozen", "packet", "box", "crate"].includes(String(product?.soldBy || ""));
+  // "500 ml" / "1 kg" — how much one item holds, in its unit.
+  T.unitSizeLabel = (product) => {
+    const size = Number(product?.unitSize);
+    if (!Number.isFinite(size) || size <= 0) return "";
+    const trimmed = Math.round(size * 1000) / 1000;
+    return `${trimmed} ${String(product?.unit || "")}`.trim();
+  };
   /** The unit a weighed product is priced in: always the kilogram. */
   T.massUnit = () => "kg";
 
