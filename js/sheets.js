@@ -400,8 +400,8 @@
         <button type="button" class="vrow-delete" aria-label="Remove variant">${icon("i-trash")}</button>
       </div>
       <div class="vrow-grid">
-        <label class="vrow-field"><span class="vrow-cap">Price</span><span class="input-affix"><input class="input" data-field="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.price || "")}" placeholder="0.00" aria-label="Variant price"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
-        <label class="vrow-field"><span class="vrow-cap">Cost</span><span class="input-affix"><input class="input" data-field="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.cost || "")}" placeholder="0.00" aria-label="Variant cost"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
+        <label class="vrow-field"><span class="vrow-cap">Buying price</span><span class="input-affix"><input class="input" data-field="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.cost || "")}" placeholder="0.00" aria-label="Variant buying price"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
+        <label class="vrow-field"><span class="vrow-cap">Selling price</span><span class="input-affix"><input class="input" data-field="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.price || "")}" placeholder="0.00" aria-label="Variant selling price"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
         <label class="vrow-field"><span class="vrow-cap">Stock</span><input class="input" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(variant.stock || "")}" placeholder="0" aria-label="Variant stock"></label>
       </div>
       <input class="vrow-barcode" data-field="barcode" value="${esc(variant.barcode || "")}" placeholder="Barcode (optional)" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Variant barcode">
@@ -576,35 +576,7 @@
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
-        <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
-          <summary class="vsummary">
-            <span class="vtitle">
-              <span class="vtitle-ico">${icon("i-tag")}</span>
-              <span>Variants<small>Optional &middot; 500 ml / 1 L / Small</small></span>
-            </span>
-            <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
-          </summary>
-          <div class="vbody">
-            <label class="vtoggle" for="variant-sell-parent">
-              <input type="checkbox" id="variant-sell-parent" ${values.sellParent ? "checked" : ""} aria-label="Also sell the plain item">
-              <span class="vtoggle-switch" aria-hidden="true"></span>
-              <span class="vtoggle-copy"><strong>Also sell the plain item</strong><small>Adds a “${esc(values.name || "Plain item")}” line at the parent price to the picker, deducting from the parent stock.</small></span>
-            </label>
-            <div class="vchips" id="variant-quick-add">
-              <p class="vchips-cap">Quick add</p>
-              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
-              <button type="button" class="vchip vchip-custom" data-vchip="__blank">Custom&hellip;</button>
-            </div>
-            <div class="vlist" id="variant-editor-list">
-              ${values.variants.map((variant) => renderVariantEditorRow(variant)).join("")}
-            </div>
-            <div class="vempty" id="variant-empty"${values.variants.length ? ' style="display:none"' : ""}>
-              ${icon("i-tag")}
-              <span>No variants yet.<br>Tap a quick-add chip above to create the first one.</span>
-            </div>
-            <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
-          </div>
-        </details>
+        
 
         <div class="field-row">
           <div class="field">
@@ -635,6 +607,36 @@
             ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
           </select>
         </div>
+
+<details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
+          <summary class="vsummary">
+            <span class="vtitle">
+              <span class="vtitle-ico">${icon("i-tag")}</span>
+              <span>Variants<small>Optional &middot; 500 ml / 1 L / Small</small></span>
+            </span>
+            <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
+          </summary>
+          <div class="vbody">
+            <label class="vtoggle" for="variant-sell-parent">
+              <input type="checkbox" id="variant-sell-parent" ${values.sellParent ? "checked" : ""} aria-label="Also sell the plain item">
+              <span class="vtoggle-switch" aria-hidden="true"></span>
+              <span class="vtoggle-copy"><strong>Also sell the plain item</strong><small>Adds a “${esc(values.name || "Plain item")}” line at the parent price to the picker, deducting from the parent stock.</small></span>
+            </label>
+            <div class="vchips" id="variant-quick-add">
+              <p class="vchips-cap">Quick add</p>
+              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
+              <button type="button" class="vchip vchip-custom" data-vchip="__blank">Custom&hellip;</button>
+            </div>
+            <div class="vlist" id="variant-editor-list">
+              ${values.variants.map((variant) => renderVariantEditorRow(variant)).join("")}
+            </div>
+            <div class="vempty" id="variant-empty"${values.variants.length ? ' style="display:none"' : ""}>
+              ${icon("i-tag")}
+              <span>No variants yet.<br>Tap a quick-add chip above to create the first one.</span>
+            </div>
+            <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
+          </div>
+        </details>
 
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail || "")}">
 
