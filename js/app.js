@@ -883,9 +883,9 @@ function runAction(btn) {
     const variant = product ? T.findVariant(product, variantId) : null;
     if (!product || !variant) { T.toast("That variant is no longer available", "i-alert"); T.sheets?.close?.(true); return; }
     const unit = T.stockCountUnit(product);
-    const pieces = btn.dataset.packs
-      ? Math.max(1, Math.round((Number(btn.dataset.packs) || 1) * (Number(product.packSize) || 1)))
-      : Math.max(1, Number(btn.dataset.qty) || 1);
+    const scope = btn.closest?.(".variant-pick-qty");
+    const typed = scope?.querySelector(".step-input");
+    const pieces = Math.max(1, Math.min(999999, Math.floor(Number(typed?.value) || 1)));
     const ok = T.addToCart(product, pieces, variant.id);
     if (ok) T.toast(`${product.name} · ${variant.label} — ${pieces} ${unit} added`, "i-check");
     resetSellSearch();
@@ -894,12 +894,23 @@ function runAction(btn) {
     const product = T.findProduct(id);
     if (!product || product.sellParent !== true) return;
     const unit = T.stockCountUnit(product);
-    const pieces = btn.dataset.packs
-      ? Math.max(1, Math.round((Number(btn.dataset.packs) || 1) * (Number(product.packSize) || 1)))
-      : Math.max(1, Number(btn.dataset.qty) || 1);
+    const scope = btn.closest?.(".variant-pick-qty");
+    const typed = scope?.querySelector(".step-input");
+    const pieces = Math.max(1, Math.min(999999, Math.floor(Number(typed?.value) || 1)));
     const ok = T.addToCart(product, pieces);
     if (ok) T.toast(`${product.name} — ${pieces} ${unit} added`, "i-check");
     resetSellSearch();
+  }
+  else if (act === "step-qty") {
+    const scope = btn.closest?.(".variant-pick-qty");
+    const input = scope?.querySelector(".step-input");
+    if (!input) return;
+    const max = Number(input.dataset.max) || 999999;
+    const current = Math.max(1, Math.floor(Number(input.value) || 1));
+    const next = Math.max(1, Math.min(max, current + (Number(btn.dataset.delta) || 0)));
+    input.value = String(next);
+    const addBtn = scope?.querySelector(".step-add");
+    if (addBtn) addBtn.textContent = `Add ${next}`;
   }
   else if (act === "pick-variant" && id && btn.dataset.variant) {
     const product = T.findProduct(id);
@@ -2158,6 +2169,54 @@ window.render = render;
 
 // The search bar stays open until the shopkeeper closes it themselves
 // (the search button toggles it). Tapping outside no longer dismisses it.
+
+// Quantity typed straight into the cart commits the same way the ± buttons do:
+// clamped to what's in stock, 0 removes the line, Enter also commits.
+document.addEventListener("change", (event) => {
+  const T = window.Till;
+  const input = event.target?.closest?.("[data-qty-input]");
+  if (!T || !input) return;
+  if (T.subscriptionLocked?.()) {
+    T.toast("Your monthly plan needs paying before you can change a sale", "i-alert");
+    render();
+    return;
+  }
+  const id = input.dataset.id;
+  const variantId = input.dataset.variant || null;
+  const product = T.findProduct(id) || null;
+  if (!product) return;
+  const variant = T.findVariant(product, variantId) || null;
+  const stock = variant ? variant.stock : product.stock;
+  const mass = input.dataset.mass === "1";
+  let raw = Number(input.value);
+  if (!Number.isFinite(raw) || raw < 0) raw = 0;
+  let qty = mass ? Math.round(raw * 1000) : Math.floor(raw);
+  qty = Math.min(Math.max(0, qty), stock);
+  const item = T.state.cart.items.find((entry) => entry.productId === id && String(entry.variantId || "") === String(variantId || ""));
+  if (!item) return;
+  if (qty <= 0) T.state.cart.items = T.state.cart.items.filter((entry) => entry !== item);
+  else item.qty = qty;
+  T.save();
+  render();
+});
+
+// Enter in a qty or price field commits it, the same as leaving the field.
+document.addEventListener("keydown", (event) => {
+  const input = event.target?.closest?.("[data-qty-input], .variant-pick-qty .step-input");
+  if (!input || event.key !== "Enter") return;
+  event.preventDefault();
+  const pickerRow = input.closest?.(".variant-pick-qty");
+  if (pickerRow) pickerRow.querySelector(".step-add")?.click();
+  else input.blur();
+});
+
+// The Add button on a picker row shows the running quantity as it changes.
+document.addEventListener("input", (event) => {
+  const input = event.target?.closest?.(".variant-pick-qty .step-input");
+  if (!input || event.target !== input) return;
+  const addBtn = input.closest(".variant-pick-qty")?.querySelector(".step-add");
+  if (addBtn) addBtn.textContent = `Add ${Math.max(1, Math.floor(Number(input.value) || 1))}`;
+});
 
 // The price of a line in the open sale is typed straight into the cart.
 // The change is saved when the field is left or Enter is pressed.

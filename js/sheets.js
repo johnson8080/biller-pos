@@ -290,28 +290,29 @@
     const onClose = typeof options.onClose === "function" ? options.onClose : null;
     const packSize = Math.max(0, Math.round(Number(product.packSize) || 0));
     const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
+    // How much one item holds, shown next to the parent's stock line.
+    const sizeLabel = T.unitSizeLabel ? T.unitSizeLabel(product) : "";
+    // Compact quantity stepper: minus/plus around an entry box, one Add button.
+    const stepper = (act, id, variant, stock, out) => `<div class="variant-pick-qty">
+        <button class="step-btn" data-act="step-qty" data-delta="-1" ${out ? "disabled" : ""} aria-label="Decrease quantity">${icon("i-minus")}</button>
+        <input class="step-input" type="number" inputmode="numeric" min="1" step="1" value="1" ${out ? "disabled" : ""} data-max="${Math.max(1, Math.floor(stock))}" aria-label="Quantity">
+        <button class="step-btn" data-act="step-qty" data-delta="1" ${out ? "disabled" : ""} aria-label="Increase quantity">${icon("i-plus")}</button>
+        <button class="step-add" data-act="${act}" data-id="${esc(id)}"${variant ? ` data-variant="${esc(variant)}"` : ""} ${out ? "disabled" : ""}>Add 1</button>
+      </div>`;
     // When the plain item is sellable alongside the variants, it gets its own
     // pick row at the top at the parent price against the parent stock.
     const plainBlock = product.sellParent ? (() => {
       const plainOut = (product.stock || 0) <= 0;
-      const plainPack = packSize > 0
-        ? `<button class="variant-pick-chip is-pack" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-packs="1" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">1 pack</span><small>${packSize} pcs</small></button>`
-        : `<button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="12" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 12</span><small>pcs</small></button>`;
       return `<div class="variant-pick ${plainOut ? "is-out" : ""}">
         <div class="variant-pick-head">
           <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(product.name))}</span>
           <span class="variant-pick-copy">
             <strong>${esc(product.name)}</strong>
-            <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`} · ${money(product.price)} each</small>
+            <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`}${sizeLabel ? ` · ${esc(sizeLabel)}/piece` : ""} · ${money(product.price)} each</small>
           </span>
           <span class="variant-pick-price">${money(product.price)}</span>
         </div>
-        <div class="variant-pick-grid">
-          <button class="variant-pick-chip is-primary" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="1" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">Add 1</span><small>pc</small></button>
-          <button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="2" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 2</span><small>pcs</small></button>
-          <button class="variant-pick-chip" data-act="pick-parent-qty" data-id="${esc(product.id)}" data-qty="6" ${plainOut ? "disabled" : ""}><span class="variant-pick-chip-top">+ 6</span><small>pcs</small></button>
-          ${plainPack}
-        </div>
+        ${stepper("pick-parent-qty", product.id, null, product.stock || 0, plainOut)}
       </div>`;
     })() : "";
     open({
@@ -324,9 +325,6 @@
         ${plainBlock}
         ${product.variants.map((variant) => {
           const out = variant.stock <= 0;
-          const packButton = packSize > 0
-            ? `<button class="variant-pick-chip is-pack" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-packs="1" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">1 pack</span><small>${packSize} pcs</small></button>`
-            : `<button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="12" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 12</span><small>pcs</small></button>`;
           return `<div class="variant-pick ${out ? "is-out" : ""}">
             <div class="variant-pick-head">
               <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
@@ -336,12 +334,7 @@
               </span>
               <span class="variant-pick-price">${money(variant.price)}</span>
             </div>
-            <div class="variant-pick-grid">
-              <button class="variant-pick-chip is-primary" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="1" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">Add 1</span><small>pc</small></button>
-              <button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="2" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 2</span><small>pcs</small></button>
-              <button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="6" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 6</span><small>pcs</small></button>
-              ${packButton}
-            </div>
+            ${stepper("pick-variant-qty", product.id, variant.id, variant.stock, out)}
           </div>`;
         }).join("")}
       </div>

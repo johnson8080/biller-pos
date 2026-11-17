@@ -41,7 +41,16 @@
     return `<span class="stock-note">${copy}${variantSuffix}</span>`;
   }
 
-  /** The price a product sells at: min variant price, or per kg / per bundle. */
+  /** Per-variant stock at a glance, shown on the card before the picker opens. */
+  function variantStockLine(product) {
+    const variants = product?.variants || [];
+    if (!variants.length) return "";
+    const parts = variants.slice(0, 3).map((v) => `${v.label} ${v.stock}`);
+    if (variants.length > 3) parts.push(`+${variants.length - 3} more`);
+    return parts.join(" · ");
+  }
+
+  /** "The price a product sells at: min variant price, or per kg / per bundle. */
   function priceTag(product) {
     if (product.soldByMass) return `${money(product.price)}/kg`;
     const isBundle = ["dozen", "packet", "box", "crate"].includes(String(product.soldBy || ""));
@@ -189,7 +198,10 @@
       aria-label="${out ? "Out of stock: " : "Add "}${esc(product.name)}, ${esc(price)}">
       <span class="card-top">${productTile(product)}${stockNote(product)}${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}</span>
       <span class="product-name">${esc(product.name)}</span>
-      ${[T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).length ? `<span class="product-detail">${esc([T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · "))}</span>` : `<span class="product-detail is-empty" aria-hidden="true"></span>`}
+      ${(() => {
+        const detailLine = variantStockLine(product) || [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · ");
+        return detailLine ? `<span class="product-detail">${esc(detailLine)}</span>` : `<span class="product-detail is-empty" aria-hidden="true"></span>`;
+      })()}
       <span class="card-bottom"><span class="product-price">${esc(price)}</span></span>
     </button>`;
   }
@@ -207,7 +219,7 @@
       <span class="product-row-tile">${productTile(product)}</span>
       <span class="product-row-copy">
         <strong>${esc(product.name)}</strong>
-        <small>${[T.unitSizeLabel(product), T.bundleLabel(product), product.detail, stockText].filter(Boolean).map(esc).join(" · ")}</small>
+        <small>${[variantStockLine(product) || [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · "), stockText].filter(Boolean).map(esc).join(" · ")}</small>
       </span>
       <span class="product-row-price">${esc(price)}</span>
       ${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}
@@ -2360,7 +2372,6 @@
       const atMax = qty >= stock;
       const changed = price !== basePrice;
       const lineProfit = lineTotal - lineCost;
-      const qtyLabel = mass ? T.massLabel(qty) : String(qty);
       const variantAttr = variant ? ` data-variant="${esc(variant.id)}"` : "";
       const variantName = variant ? ` · ${esc(variant.label)}` : "";
       const fullName = `${esc(product.name)}${variantName}`;
@@ -2387,7 +2398,7 @@
           <span class="stepper" aria-label="Quantity for ${fullName}">
             ${mass ? `<button class="step-btn weigh-edit" data-act="open-weigh" data-id="${esc(product.id)}"${variantAttr} data-edit="1" aria-label="Reweigh ${fullName}" ${locked ? "disabled" : ""}>${icon("i-scale")}</button>` : ""}
             <button class="step-btn minus ${!mass && qty === 1 ? "at-one" : ""}" data-act="dec-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? `Take off 100 g` : (qty === 1 ? "Remove" : "Decrease quantity")}" ${locked ? "disabled" : ""}>${icon(mass || qty > 1 ? "i-minus" : "i-trash")}</button>
-            <span class="step-value">${esc(qtyLabel)}</span>
+            <input class="step-input cart-qty" type="number" inputmode="${mass ? "decimal" : "numeric"}" min="0" step="${mass ? "0.005" : "1"}" value="${mass ? (qty / 1000).toFixed(3).replace(/\.?0+$/, "") : qty}" data-qty-input data-id="${esc(product.id)}"${variantAttr} data-mass="${mass ? "1" : "0"}" aria-label="Quantity for ${fullName}" ${locked ? "disabled" : ""}>
             <button class="step-btn" data-act="inc-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? "Add 100 g" : "Increase quantity"}" ${atMax || locked ? "disabled" : ""}>${icon("i-plus")}</button>
           </span>
         </div>

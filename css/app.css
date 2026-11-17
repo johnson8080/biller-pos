@@ -2621,16 +2621,17 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .variant-pick-copy strong { display: block; font-size: calc(12px * var(--fs)); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .variant-pick-copy small { display: block; font-size: calc(9px * var(--fs)); color: var(--muted); }
 .variant-pick-price { flex: none; font-weight: 750; font-size: calc(13.5px * var(--fs)); color: var(--ink); font-variant-numeric: tabular-nums; }
-.variant-pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 7px; border-top: 0.5px solid var(--line); }
-.variant-pick-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border-radius: 7px; background: var(--surface-2); border: 0.5px solid var(--ui-line); color: var(--ink-2); font-weight: 700; transition: transform .1s ease, background .12s ease; }
-.variant-pick-chip:active { transform: scale(.96); }
-.variant-pick-chip:disabled { opacity: .45; }
-.variant-pick-chip-top { font-size: calc(12.5px * var(--fs)); letter-spacing: -.02em; font-weight: 800; color: var(--ink); }
-.variant-pick-chip small { font-size: calc(8.5px * var(--fs)); color: var(--muted); font-weight: 650; }
-.variant-pick-chip.is-primary { background: var(--forest); border-color: var(--forest-ink); }
-.variant-pick-chip.is-primary .variant-pick-chip-top { color: var(--lime); }
-.variant-pick-chip.is-primary small { color: rgba(255,255,255,.75); }
-.variant-pick-chip.is-pack { background: var(--lime-soft); border-color: rgba(var(--accent-rgb),.22); }
+.variant-pick-qty { display: flex; align-items: stretch; gap: 6px; padding: 8px 10px 10px; border-top: 0.5px solid var(--line); }
+.qty-input { text-align: center; border: 0.5px solid var(--ui-line); background: var(--surface); border-radius: 8px; outline: none; font-variant-numeric: tabular-nums; color: var(--ink); }
+.qty-input:focus { border-color: var(--forest); }
+.variant-pick-qty .step-btn { flex: none; width: 42px; min-height: 40px; display: grid; place-items: center; border-radius: 8px; border: 0.5px solid var(--ui-line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.variant-pick-qty .step-btn:active { transform: scale(.93); }
+.variant-pick-qty .step-btn:disabled { opacity: .35; }
+.variant-pick-qty .step-btn .ico { width: 16px; height: 16px; }
+.variant-pick-qty .step-input { flex: none; width: 62px; min-height: 40px; font-weight: 800; font-size: calc(14px * var(--fs)); }
+.variant-pick-qty .step-add { flex: 1; min-height: 40px; border: 0; border-radius: 8px; background: var(--forest); color: #fff; font-weight: 800; font-size: calc(12.5px * var(--fs)); letter-spacing: .02em; cursor: pointer; }
+.variant-pick-qty .step-add:disabled { opacity: .4; }
+.cart-item-bottom .qty-input { flex: none; width: 46px; height: 30px; font-size: calc(12.5px * var(--fs)); font-weight: 800; }
 .pay-method-picker { display: flex; gap: 5px; }
 .pay-method { flex: 1; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; border: 1px solid var(--ui-line); background: var(--surface); font-size: calc(11px * var(--fs)); font-weight: 650; color: var(--muted); }
 .pay-method.is-active { background: var(--lime-soft); border-color: rgba(var(--accent-rgb),.9); color: var(--forest-ink); }
