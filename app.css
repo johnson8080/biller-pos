@@ -2549,7 +2549,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .variant-stock-row .variants-field { min-width: 0; }
 .variant-stock-row .variants-field:has(.vblock[open]) { grid-column: 1 / -1; }
 .variant-stock-row .variants-field:has(.vblock[open]) + .field { grid-column: 1 / -1; }
-.variant-stock-row .vblock .vsummary { min-height: 46px; align-items: center; padding: 10px 12px; }
+.variant-stock-row .vblock .vsummary { min-height: 46px; align-items: center; padding: 6px 12px; }
 .field-label { display: block; margin-bottom: 5px; font-size: calc(9px * var(--fs)); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .vsummary-text { min-width: 0; font-size: calc(12px * var(--fs)); font-weight: 650; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pair-a { border-color: var(--forest) !important; background: var(--blue-bg) !important; box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), .4) !important; }
@@ -2581,8 +2581,8 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .vsummary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; cursor: pointer; list-style: none; }
 .vsummary::-webkit-details-marker { display: none; }
 .vtitle { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: calc(13px * var(--fs)); letter-spacing: -.01em; color: var(--ink); }
-.vtitle-ico { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--forest); color: #fff; }
-.vtitle-ico .ico { width: 17px; height: 17px; }
+.vtitle-ico { flex: none; width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; background: var(--forest); color: #fff; }
+.vtitle-ico .ico { width: 13px; height: 13px; }
 .vtitle small { display: block; margin-top: 1px; font-size: calc(8px * var(--fs)); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .vmeta { display: flex; align-items: center; gap: 8px; color: var(--muted); }
 .vcount { min-width: 24px; height: 21px; padding: 0 8px; border-radius: 999px; background: var(--lime-soft); color: var(--forest); font-size: calc(10px * var(--fs)); font-weight: 800; display: inline-grid; place-items: center; }
