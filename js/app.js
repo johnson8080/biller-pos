@@ -858,12 +858,8 @@ function runAction(btn) {
       }
     }
     // Variants choose before anything else (e.g. 500 ml vs 1 L), they work
-    // for single items and bundles alike. A product with exactly one variant
-    // IS that variant — add it straight away, no picker sheet.
-    if ((product?.variants || []).length === 1) {
-      if (T.addToCart(product, 1, product.variants[0].id)) resetSellSearch();
-      return;
-    }
+    // for single items and bundles alike. Tapping an item with variants
+    // always opens the picker so the shopkeeper picks what to sell.
     if ((product?.variants || []).length) {
       T.sheets?.openVariantPicker?.(product);
       return;
