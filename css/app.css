@@ -2544,9 +2544,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .field-row.three .input-affix .input { padding-left: 8px; }
 .field-row.three .input-affix .affix { padding: 0 8px; font-size: calc(11px * var(--fs)); }
 .field-row.three .field label { font-size: calc(8px * var(--fs)); letter-spacing: .055em; margin-bottom: 4px; }
-.variant-stock-row { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: stretch; }
+.variant-stock-row { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: start; }
 .variant-stock-row .vblock { margin: 0; }
 .variant-stock-row .vblock[open] { grid-column: 1 / -1; }
+.variant-stock-row .vblock[open] + .field { grid-column: 1 / -1; }
 .variant-stock-row .vblock .vsummary { min-height: 46px; align-items: center; padding: 10px 12px; }
 .pair-a { border-color: var(--forest) !important; background: var(--blue-bg) !important; box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), .4) !important; }
 .pair-b { border-color: var(--lime-ink) !important; background: var(--lime-soft) !important; box-shadow: 0 0 0 1.5px rgba(4, 120, 87, .4) !important; }
