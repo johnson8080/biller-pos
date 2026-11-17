@@ -1443,7 +1443,7 @@ html[data-color-scheme="light"] .chip.is-active {
 .product-card.is-out { opacity: .58; }
 .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 3px; margin-bottom: 5px; }
 .product-card .tile { width: 26px; height: 26px; border-radius: 5px; font-size: calc(9px * var(--fs)); }
-.product-card .stock-note { font-size: calc(8px * var(--fs)); gap: 2px; }
+.product-card .stock-note { font-size: calc(8px * var(--fs)); gap: 2px; white-space: normal; line-height: 1.2; text-align: right; max-width: 74px; justify-content: flex-end; }
 .tile {
   width: 40px;
   height: 40px;

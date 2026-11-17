@@ -289,7 +289,7 @@
     if (!product || !(product.variants || []).length) return;
     const onClose = typeof options.onClose === "function" ? options.onClose : null;
     const packSize = Math.max(0, Math.round(Number(product.packSize) || 0));
-    const unit = product.unit || "pcs";
+    const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
     open({
       title: esc(product.name),
       subtitle: esc(product.detail || "Choose a variant and quantity"),
@@ -338,13 +338,17 @@
   }
 
   function editorFromProduct(product) {
+    // Bundle-sold stock is typed in bundles, not pieces — show the shopkeeper
+    // the number of bundles they had on hand.
+    const bundleMode = ["packet", "box", "dozen", "crate"].includes(String(product.soldBy)) && Number.isFinite(Number(product.packSize)) && Number(product.packSize) > 0;
     return {
       name: product.name,
       detail: product.detail,
       price: (product.price / 100).toFixed(2),
       cost: product.cost ? (product.cost / 100).toFixed(2) : "",
       // Weighed items keep stock in grams but the shop reads kilograms.
-      stock: product.soldByMass ? (product.stock / 1000).toFixed(3).replace(/\.?0+$/, "") : String(product.stock),
+      // Bundle items divide pieces by the bundle size.
+      stock: bundleMode ? String(Math.round((product.stock / Number(product.packSize)) * 1000) / 1000) : product.soldByMass ? (product.stock / 1000).toFixed(3).replace(/\.?0+$/, "") : String(product.stock),
       lowStockAt: String(product.lowStockAt),
       barcode: product.barcode,
       category: product.category,
@@ -428,6 +432,48 @@
     };
     const currentUnit = String(values.unit || "");
     const currentType = isBundleType(String(values.soldBy)) ? String(values.soldBy) : "";
+    // Stock field: when a bundle type is chosen, stock is typed in bundles and
+    // converted to pieces on save (2 packets × 10 = 20 pieces of 100 g each).
+    // N/A type → the number typed is the stock.
+    const stockField = (type, packRaw, unit, unitSizeRaw, typed) => {
+      const bundle = isBundleType(type);
+      const packDigit = Number(String(packRaw ?? "").trim());
+      const unitSizeNum = Number(String(unitSizeRaw ?? "").trim());
+      const sizeNum = Number.isFinite(unitSizeNum) && unitSizeNum > 0 ? Math.round(unitSizeNum * 1000) / 1000 : null;
+      const unitPart = unit && sizeNum !== null ? ` of ${sizeNum} ${unitSymbol(unit)}` : "";
+      const plural = PACK_PLURAL[type] || "";
+      const typedStr = String(typed ?? "").trim();
+      const typedNum = Number(typedStr);
+      if (!bundle) return { label: "In stock", hint: "The number you type is the stock." };
+      const label = `In stock (${plural}${unitPart})`;
+      let hint;
+      if (typedStr === "" || !Number.isFinite(typedNum)) hint = "The number you type is how many bundles you have.";
+      else if (Number.isFinite(packDigit) && packDigit > 0) {
+        const total = Math.round(typedNum * packDigit * 1000) / 1000;
+        hint = `${typedStr} ${plural} × ${packDigit} = ${total} pieces${unitPart ? ` of ${sizeNum} ${unitSymbol(unit)} each` : ""}.`;
+      } else hint = "Type pieces per bundle above to see the total pieces.";
+      return { label, hint };
+    };
+    const initialStock = stockField(currentType, values.packSize, currentUnit, values.unitSize, values.stock);
+    const refreshStockField = () => {
+      const formEl = document.getElementById("product-form");
+      if (!formEl) return;
+      const type = String(formEl.querySelector("#product-type")?.value || "").toLowerCase();
+      const bundle = isBundleType(type);
+      const state = stockField(
+        type,
+        formEl.querySelector("#product-pack-size")?.value || "",
+        formEl.querySelector("#product-unit")?.value || "",
+        formEl.querySelector("#product-unit-size")?.value || "",
+        formEl.querySelector("#product-stock")?.value || ""
+      );
+      const label = formEl.querySelector("#product-stock-label");
+      const hint = formEl.querySelector("#product-stock-hint");
+      const input = formEl.querySelector("#product-stock");
+      if (label) label.textContent = state.label;
+      if (hint) hint.textContent = state.hint;
+      if (input) { input.step = bundle ? "0.001" : "1"; input.inputMode = bundle ? "decimal" : "numeric"; }
+    };
     const unitOptions = currentUnit && !OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS] : OFFICIAL_UNITS;
     open({
       title: editing ? "Edit product" : "New product",
@@ -515,8 +561,9 @@
 
         <div class="field-row">
           <div class="field">
-            <label for="product-stock" id="product-stock-label">In stock</label>
-            <input class="input" id="product-stock" name="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.stock)}" required>
+            <label for="product-stock" id="product-stock-label">${esc(initialStock.label)}</label>
+            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${isBundleType(currentType) ? "0.001" : "1"}" inputmode="${isBundleType(currentType) ? "decimal" : "numeric"}" value="${esc(values.stock)}" required>
+            <p class="field-help" id="product-stock-hint" style="margin-top:6px">${esc(initialStock.hint)}</p>
           </div>
           <div class="field">
             <label for="product-low">Low-stock alert</label>
@@ -568,6 +615,7 @@
         const size = form.querySelector("#product-pack-size")?.value || "";
         packSizeHint.textContent = packHint(type, size);
       }
+      refreshStockField();
     });
 
     // Picking a unit reveals the "amount per unit" box; clearing it hides it.
@@ -587,7 +635,6 @@
         if (affix) affix.textContent = unitSymbol(t.value);
         if (hint) hint.textContent = unitHint(t.value, sizeInput?.value || "");
         if (t.value && sizeInput) sizeInput.focus({ preventScroll: true });
-        return;
       }
       if (t.id === "product-type") {
         const row = form.querySelector("#pack-size-row");
@@ -601,6 +648,7 @@
         if (hint) hint.textContent = packHint(type, packInput?.value || "");
         if (bundle && packInput) packInput.focus({ preventScroll: true });
       }
+      refreshStockField();
     });
 
     form?.addEventListener("submit", (event) => {
@@ -657,12 +705,16 @@
       const summaryStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
       // Weighed stock is kept in grams: what the shop types as 2.5 kg is
       // stored as 2500 g so all the math stays in whole numbers.
+      // Bundle stock is typed in bundles: 2 packets of 10 → 20 pieces.
       const rawStock = Number(values.stock);
+      const bundleStockMode = ["packet","box","dozen","crate"].includes(values.soldBy) && packSize > 0;
       const stock = hasVariants
         ? summaryStock
         : mass
           ? Math.max(0, Math.min(1000000, Math.round((Number.isFinite(rawStock) ? rawStock : 0) * 1000)))
-          : T.clampInt(values.stock, 0, 999999);
+          : bundleStockMode
+            ? T.clampInt(String(Math.round((Number.isFinite(rawStock) ? rawStock : 0) * packSize)), 0, 999999)
+            : T.clampInt(values.stock, 0, 999999);
       const lowStockAt = T.clampInt(values.lowStockAt, 0, 999999);
       const price = hasVariants
         ? summaryPrice
@@ -1017,7 +1069,7 @@
 
   function stockLineOptions() {
     return (T.state.products || []).map((product) => {
-      const unit = product.unit || "pcs";
+      const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
       return `<option value="${esc(product.id)}">${esc(product.name)} — ${product.stock} ${esc(unit)} in stock</option>`;
     }).join("");
   }
@@ -1825,7 +1877,7 @@
   function openStockIn(id) {
     const product = T.findProduct(id);
     if (!product) return;
-    const unit = product.unit || "pcs";
+    const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
     const mass = product.soldByMass === true;
     const costValue = product.cost ? (product.cost / 100).toFixed(2) : "";
     const priceValue = product.price ? (product.price / 100).toFixed(2) : "";
@@ -2444,7 +2496,7 @@
       size: "compact",
       body: `<div class="supplier-pay-target">
           <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(product.name))}</span>
-          <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${esc(T.productStock(product))} ${esc(product.unit || "pcs")} in stock · ${esc(T.money(price))} each</small></div>
+          <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${esc(T.productStock(product))} ${esc(T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs"))} in stock · ${esc(T.money(price))} each</small></div>
         </div>
         <form id="pack-form" novalidate>
           <div class="field">

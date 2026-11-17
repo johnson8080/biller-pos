@@ -22,7 +22,6 @@
   }
 
   function stockNote(product) {
-    const unit = product.unit || "pcs";
     const stock = T.productStock(product);
     if (stock === 0) return `<span class="stock-note out"><span class="dot"></span>Sold out</span>`;
     if (product.soldByMass) {
@@ -30,9 +29,16 @@
       if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${esc(label)}</span>`;
       return `<span class="stock-note">${esc(label)}</span>`;
     }
+    const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
+    const pieceLike = ["pcs", "each", "", "piece", "pieces"].includes(String(unit || "").toLowerCase());
+    const countLabel = `${stock} ${pieceLike ? "pieces" : unit}`;
+    const sizeLabel = T.unitSizeLabel(product);
+    // "10 pieces · 100 g/piece" — what one sale removes from the shelf.
+    const sizeSuffix = pieceLike && sizeLabel ? ` · ${sizeLabel}/piece` : "";
     const variantSuffix = (product.variants || []).length ? ` · ${product.variants.length} variants` : "";
-    if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${stock} ${unit}${variantSuffix}</span>`;
-    return `<span class="stock-note">${stock} ${unit}${variantSuffix}</span>`;
+    const copy = esc(countLabel + sizeSuffix);
+    if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${copy}${variantSuffix}</span>`;
+    return `<span class="stock-note">${copy}${variantSuffix}</span>`;
   }
 
   /** The price a product sells at: min variant price, or per kg / per bundle. */
@@ -196,7 +202,7 @@
   function productRow(product) {
     const qty = qtyInCart(product.id);
     const out = T.productStock(product) === 0;
-    const unit = product.unit || "pcs";
+    const unit = T.stockCountUnit ? T.stockCountUnit(product) : (product.unit || "pcs");
     const badge = qtyBadgeText(product, qty);
     const price = priceTag(product);
     const stockText = out ? "Sold out" : product.soldByMass ? `${T.massLabel(T.productStock(product))} in stock` : `${T.productStock(product)} ${esc(unit)} in stock`;

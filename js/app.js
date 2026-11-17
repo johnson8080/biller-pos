@@ -881,7 +881,7 @@ function runAction(btn) {
     const variantId = btn.dataset.variant || null;
     const variant = product ? T.findVariant(product, variantId) : null;
     if (!product || !variant) { T.toast("That variant is no longer available", "i-alert"); T.sheets?.close?.(true); return; }
-    const unit = product.unit || "pcs";
+    const unit = T.stockCountUnit(product);
     const pieces = btn.dataset.packs
       ? Math.max(1, Math.round((Number(btn.dataset.packs) || 1) * (Number(product.packSize) || 1)))
       : Math.max(1, Number(btn.dataset.qty) || 1);

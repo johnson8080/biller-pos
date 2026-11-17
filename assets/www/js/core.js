@@ -1405,6 +1405,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (!Number.isFinite(n) || n <= 0) return "";
     return `${Math.round(n)} pcs/${String(product?.soldBy || "bundle")}`;
   };
+  // How a stock quantity reads: bundles are always counted in pieces,
+  // weighed items in kg, everything else keeps its saved unit.
+  T.stockCountUnit = (product) => T.isBundle(product) ? "pcs" : (product?.soldByMass ? "kg" : (product?.unit || "pcs"));
   /** The unit a weighed product is priced in: always the kilogram. */
   T.massUnit = () => "kg";
 
@@ -1499,7 +1502,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       id: uid("w"),
       productId: product.id,
       name: product.name,
-      unit: mass ? "kg" : (product.unit || "pcs"),
+      unit: T.stockCountUnit(product),
       qty: amount,
       reason: cleanReason,
       note: String(note || "").trim().slice(0, 140),
@@ -1607,7 +1610,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         productId,
         name: product?.name || "Removed item",
         mass: product?.soldByMass === true,
-        unit: product?.soldByMass ? "kg" : (product?.unit || "pcs"),
+        unit: T.stockCountUnit(product),
         opening: opening[productId] || 0,
         closing: closing[productId] || 0,
         sold: sold[productId] || 0,
@@ -2124,7 +2127,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       qty: line.qty,
       // Weighed lines remember how they were counted so the receipt reads
       // "1.5 kg" instead of a bare "1500".
-      unit: line.product.soldByMass ? "kg" : (line.product.unit || "pcs"),
+      unit: T.stockCountUnit(line.product),
       soldByMass: line.product.soldByMass === true
     }));
     const receiptNo = Math.max(1, Number(T.state.nextReceipt) || 1);
