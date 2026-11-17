@@ -457,19 +457,11 @@
 
         <div class="field-row">
           <div class="field">
-            <label for="product-type">Product type</label>
-            <select class="select" id="product-type" name="soldByType" aria-label="Bundle of supply">
-              ${["Single","Dozen","Packet","Box","Crate"].map((label) => `<option value="${label === "Single" ? "each" : label.toLowerCase()}" ${(["each","dozen","packet","box","crate"].includes(values.soldBy) && (label === "Single" ? values.soldBy === "each" : values.soldBy === label.toLowerCase())) ? "selected" : ""}>${label}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field">
             <label for="product-soldby">Sold by</label>
             <select class="select" id="product-soldby" name="soldBy" aria-label="How the item is counted at the till">
               ${[["each","Each"],["mass","Weight (kg)"],["dozen","Dozen"],["packet","Packet"],["box","Box"],["crate","Crate"]].map(([value,label]) => `<option value="${value}" ${values.soldBy === value ? "selected" : ""}>${label}</option>`).join("")}
             </select>
           </div>
-        </div>
-        <div class="field-row">
           <div class="field">
             <label for="product-add-variant">Add variant</label>
             <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
@@ -477,6 +469,15 @@
               ${["250 ml","500 ml","1 L","500 g","1 kg","Small","Medium","Large","Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
             </select>
           </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="product-type">Product type</label>
+            <select class="select" id="product-type" name="soldByType" aria-label="Which bundle the item comes in">
+              ${["Dozen","Packet","Box","Crate"].map((label) => `<option value="${label.toLowerCase()}" ${values.soldBy === label.toLowerCase() ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">Which type of bundle it comes in</span></div>
         </div>
         <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["dozen","packet","box","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces in a ${values.soldBy} (${values.packSize} pcs).` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
 
