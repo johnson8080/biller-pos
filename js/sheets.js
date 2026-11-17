@@ -356,7 +356,7 @@
       name: "", detail: "", price: "", cost: "", stock: "", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "", unitSize: "",
       soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each",
-      sellParent: false
+      sellParent: true
     };
   }
 
