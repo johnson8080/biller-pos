@@ -2355,6 +2355,103 @@
     });
   }
 
+  /* ---------- Pack picker (products sold in bundles) ---------- */
+
+  /**
+   * Bundled products (dozen of eggs, crate of soda, box of 12) are sold
+   * pieces at a time. Tapping one opens this sheet so the shopkeeper picks
+   * how many, with quick picks for both pieces and whole packs.
+   */
+  function openPackPicker(product, { fromScan = false, fromEditor = false } = {}) {
+    if (!product) return;
+    const packSize = Math.max(0, Math.round(Number(product.packSize) || 0));
+    if (packSize <= 0) return;
+    const existing = T.state.cart.items.find((item) => item.productId === product.id);
+    const price = product.variants?.length ? 0 : product.price;
+    open({
+      title: "Pack",
+      subtitle: product.name + (packSize ? ` · 1 pack = ${packSize} pcs` : ""),
+      iconName: "i-box",
+      focus: "#pack-pieces",
+      onClose: null,
+      body: `<div class="supplier-pay-target">
+          <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(product.name))}</span>
+          <div class="supplier-pay-target-copy"><strong>${esc(product.name)}</strong><small>${esc(T.productStock(product))} ${esc(product.unit || "pcs")} in stock · ${esc(T.money(price))} each</small></div>
+        </div>
+        <form id="pack-form" novalidate>
+          <div class="field">
+            <label for="pack-pieces">How many pieces?</label>
+            <input class="input weigh-input" id="pack-pieces" name="pieces" type="number" min="1" step="1" inputmode="numeric" value="1" required>
+            <div class="variant-chips" role="group" aria-label="Quick pick">
+              ${[1, 2, 3, 6].map((n) => `<button type="button" class="variant-chip" data-pieces="${n}">${n} pc</button>`).join("")}
+              ${[1, 2, 5].map((n) => `<button type="button" class="variant-chip" data-packs="${n}">${n === 1 ? "1" : n} pack${n === 1 ? "" : "s"} (${n * packSize})</button>`).join("")}
+            </div>
+          </div>
+          <div class="weigh-total">
+            <span class="weigh-total-label">Comes to</span>
+            <strong class="weigh-total-amount" id="pack-total">${esc(T.money(price))}</strong>
+            <small class="weigh-total-note" id="pack-note">1 pc × ${esc(T.money(price))}</small>
+          </div>
+          <div class="form-error" role="alert"></div>
+          <div class="sheet-actions">
+            <button class="btn btn-primary btn-block" type="submit">Add to the sale ${icon("i-check")}</button>
+          </div>
+        </form>`
+    });
+
+    const form = document.getElementById("pack-form");
+    const input = form?.querySelector("#pack-pieces");
+    const totalEl = document.getElementById("pack-total");
+    const noteEl = document.getElementById("pack-note");
+
+    const piecesFromInput = () => {
+      const value = Number(input?.value);
+      return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+    };
+
+    const paintTotal = () => {
+      const pieces = piecesFromInput();
+      if (totalEl) totalEl.textContent = T.money(Math.round(price * pieces));
+      if (noteEl) noteEl.textContent = `${pieces} pc × ${T.money(price)} each`;
+    };
+    input?.addEventListener("input", paintTotal);
+    paintTotal();
+
+    form?.querySelectorAll("[data-pieces]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (!input) return;
+        input.value = chip.dataset.pieces || "1";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+    form?.querySelectorAll("[data-packs]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        if (!input) return;
+        input.value = String(Math.max(1, Number(chip.dataset.packs) * packSize));
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+
+    form?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const pieces = piecesFromInput();
+      if (pieces <= 0) {
+        setFormError(form, "Enter how many pieces you are selling.");
+        return;
+      }
+      if (pieces > T.productStock(product)) {
+        setFormError(form, `Only ${T.productStock(product)} in stock.`);
+        return;
+      }
+      if (T.addToCart(product, pieces)) {
+        T.confirmAdded(product, pieces);
+        close(true);
+        if (fromScan) T.scanner?.resume?.();
+        window.render?.();
+      }
+    });
+  }
+
   /* ---------- Wastage ---------- */
 
   /**
@@ -2614,7 +2711,7 @@
     openStaffPicker,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
-    openVariantPicker,
+    openVariantPicker, openPackPicker,
     setFormError
   };
 })();

@@ -862,6 +862,12 @@ function runAction(btn) {
       T.sheets?.openWeigh?.(product);
       return;
     }
+    // Bundled stock (dozen / crate / pack): pick how many pieces, the same
+    // way the scale works for weighed items.
+    if ((product?.packSize || 0) > 0 && !(product?.variants || []).length) {
+      T.sheets?.openPackPicker?.(product);
+      return;
+    }
     // Variants choose before they join the sale (e.g. 500 ml vs 1 L).
     if ((product?.variants || []).length) {
       T.sheets?.openVariantPicker?.(product);

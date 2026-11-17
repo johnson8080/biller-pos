@@ -2505,6 +2505,14 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         });
         return { status: "pick-variant", product };
       }
+      // Bundled stock — pick how many pieces.
+      if ((product.packSize || 0) > 0) {
+        T.scanner?.pause?.();
+        T.sheets?.openPackPicker?.(product, {
+          fromScan: true
+        });
+        return { status: "pick-pack", product };
+      }
       const added = T.addToCart(product, 1, variant?.id || null);
       if (!added) return { status: "failed", product };
       // Confirm at the top of the screen what just went into the cart.
