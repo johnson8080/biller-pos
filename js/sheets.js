@@ -332,7 +332,7 @@
     const categories = T.categories();
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
-      barcode: "", category: categories[0] || "General", unit: "pcs",
+      barcode: "", category: categories[0] || "General", unit: "kg",
       soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each"
     };
   }
@@ -402,6 +402,13 @@
     if (!editor) return;
     const values = editor.values;
     const editing = Boolean(editor.id);
+    // Unit dropdown offers only official mass/volume units. Products saved with
+    // an older unit keep it as the first option so editing never silently
+    // rewrites their unit.
+    const OFFICIAL_UNITS = [["kg","Kilograms"],["g","Grams"],["L","Litres"],["ml","Millilitres"]];
+    const LEGACY_UNIT_LABELS = { pcs: "Pieces", each: "Each", pack: "Pack", box: "Box", bottle: "Bottle", sachet: "Sachet" };
+    const currentUnit = String(values.unit || "kg");
+    const unitOptions = OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? OFFICIAL_UNITS : [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS];
     open({
       title: editing ? "Edit product" : "New product",
       subtitle: editing ? "Changes apply to future sales." : "Add the details once — scan it forever.",
@@ -436,10 +443,24 @@
           </div>
           <div class="field">
             <label for="product-unit">Unit</label>
-            <select class="select" id="product-unit" name="unit" aria-label="Stock unit">
-              ${[["pcs","Pieces"],["each","Each"],["pack","Pack"],["box","Box"],["bottle","Bottle"],["sachet","Sachet"],["kg","Kg"],["g","g"],["L","L"],["ml","ml"]].map(([value,label]) => `<option value="${esc(value)}" ${values.unit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
+            <select class="select" id="product-unit" name="unit" aria-label="Official product unit">
+              ${unitOptions.map(([value,label]) => `<option value="${esc(value)}" ${currentUnit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="product-type">Product type</label>
+            <select class="select" id="product-type" name="productType" aria-label="The bundle the item comes in">
+              <option value="">—</option>
+              ${["Packet","Box","Dozen","Crate"].map((label) => {
+                const value = label.toLowerCase();
+                return `<option value="${value}" ${String(values.soldBy) === value ? "selected" : ""}>${label}</option>`;
+              }).join("")}
+            </select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">The bundle the item comes in</span></div>
         </div>
 
         <div class="field-row">
@@ -639,7 +660,12 @@
     const data = new FormData(form);
     // Preserve the previous product's sold-by, pack and variant config — the
     // simplified onboarding form no longer edits them.
-    const previous = T.ui?.editor?.values || {};
+    // The product-type choice is the bundle the item comes in; it drives the
+    // sold-by mode the till uses. Legacy mass (weight-sold) items keep their
+    // mode; "—" means "not a bundle" → the till sells pieces.
+    const productType = String(data.get("productType") || "").trim().toLowerCase();
+    const bundle = ["dozen","packet","box","crate"].includes(productType) ? productType : "";
+    const soldBy = bundle || (previous.soldBy === "mass" ? "mass" : "each");
     return {
       name: String(data.get("name") || "").trim(),
       detail: String(data.get("detail") || "").trim(),
@@ -649,16 +675,15 @@
       lowStockAt: String(data.get("lowStockAt") || "5").trim(),
       barcode: String(data.get("barcode") || "").trim(),
       category: String(data.get("category") || T.categories()[0] || "General"),
-      unit: String(data.get("unit") || "pcs").trim() || "pcs",
-      soldByMass: previous.soldBy === "mass",
-      // New products default to a simple piece-sold config; variants preserved
-      // from a product being edited are never wiped just because the field
-      // is gone from the form.
-      soldBy: previous.soldBy || "each",
+      unit: String(data.get("unit") || "kg").trim() || "kg",
+      soldByMass: soldBy === "mass",
+      // Variants preserved from a product being edited are never wiped just
+      // because the field is gone from the form.
+      soldBy,
       variants: previous.variants || [],
       packSize: previous.packSize || "",
       packMode: previous.packMode || "piece",
-      packLabel: previous.packLabel || ""
+      packLabel: bundle || (["dozen","packet","box","crate"].includes(String(previous.soldBy)) ? String(previous.soldBy) : "")
     };
   }
 
