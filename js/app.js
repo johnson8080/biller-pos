@@ -893,7 +893,6 @@ function runAction(btn) {
     const variant = product ? T.findVariant(product, btn.dataset.variant) : null;
     if (!product || !variant) { T.toast("That variant is no longer available", "i-alert"); T.sheets?.close?.(true); return; }
     if (T.addToCart(product, 1, variant.id)) T.toast(`${product.name} · ${variant.label} added`, "i-check");
-    T.sheets?.close?.(true);
     window.render?.();
   }
   else if (act === "open-weigh" && id) {
