@@ -120,6 +120,7 @@
     if (!box) return;
     box.textContent = message;
     box.classList.toggle("show", Boolean(message));
+    if (message) box.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   /* ---------- Manual barcode entry ---------- */
@@ -659,9 +660,11 @@
     };
     // Save every keystroke back to T.ui.editor.values so nothing the shopkeeper
     // typed is lost if the sheet closes and reopens.
-    form?.addEventListener("input", () => {
+    form?.addEventListener("input", (event) => {
       const editor = T.ui.editor;
       if (editor) editor.values = { ...editor.values, ...readProductForm(form) };
+      const target = event.target;
+      if (target?.classList?.contains("is-error")) target.classList.remove("is-error");
       const name = form.querySelector("#product-name")?.value || "New product";
       const category = form.querySelector("#product-category")?.value || T.categories()[0] || "General";
       const tile = document.getElementById("product-preview-tile");
@@ -768,12 +771,19 @@
       const perPackToPiece = (value) => perPack && value !== null && value !== undefined && Number.isFinite(value) ? Math.max(0, Math.round(Number(value) / packSize)) : value;
       // Variants: each needs a label and a price greater than zero.
       const previousVariants = new Map((existing?.variants || []).map((v) => [String(v.label).toLowerCase(), v]));
+      const highlightRow = (label, field) => {
+        for (const row of form.querySelectorAll(".vrow")) {
+          const labelInput = row.querySelector('[data-field="label"]');
+          if (label && labelInput && labelInput.value.trim() === label) row.querySelector(`[data-field="${field}"]`)?.classList.add("is-error");
+          if (!label && field === "label" && labelInput && !labelInput.value.trim()) labelInput.classList.add("is-error");
+        }
+      };
       let variantError = "";
       const variants = values.variants.map((v) => {
         if (variantError) return null;
-        if (!v.label) { variantError = "Give every variant a label."; return null; }
+        if (!v.label) { variantError = "Give every variant a label."; highlightRow(null, "label"); return null; }
         const vPrice = T.parsePriceToCents(v.price);
-        if (!Number.isFinite(vPrice) || vPrice <= 0) { variantError = `Variant “${v.label}” needs a price greater than zero.`; return null; }
+        if (!Number.isFinite(vPrice) || vPrice <= 0) { variantError = `Variant “${v.label}” needs a price greater than zero.`; highlightRow(v.label, "price"); return null; }
         const rawVPrice = vPrice;
         const vPriceFinal = perPack && rawVPrice > 0 ? Math.max(1, Math.round(rawVPrice / packSize)) : rawVPrice;
         const vCost = String(v.cost || "").trim() === "" ? 0 : (T.parsePriceToCents(v.cost) || 0);

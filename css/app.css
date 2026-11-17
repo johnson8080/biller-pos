@@ -2603,6 +2603,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .vrow-head { display: flex; gap: 8px; align-items: center; }
 .vrow-label { flex: 1; min-width: 0; height: 42px; border: 0; border-bottom: 2px solid var(--ui-line); background: transparent; font-size: calc(15px * var(--fs)); font-weight: 800; letter-spacing: -.01em; color: var(--ink); outline: none; padding: 2px 4px; }
 .vrow-label:focus { border-bottom-color: var(--forest); }
+.vrow-label.is-error, .vrow-field .input.is-error { border-color: var(--red) !important; box-shadow: 0 0 0 1.5px rgba(185, 28, 28, .3) !important; background: var(--red-bg) !important; }
 .vrow-delete { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border: 0; background: transparent; color: var(--faint); border-radius: 9px; cursor: pointer; }
 .vrow-delete:hover { color: var(--red); background: rgba(0, 0, 0, .04); }
 .vrow-delete .ico { width: 19px; height: 19px; }
