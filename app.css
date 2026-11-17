@@ -2546,9 +2546,12 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .field-row.three .field label { font-size: calc(8px * var(--fs)); letter-spacing: .055em; margin-bottom: 4px; }
 .variant-stock-row { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: start; }
 .variant-stock-row .vblock { margin: 0; }
-.variant-stock-row .vblock[open] { grid-column: 1 / -1; }
-.variant-stock-row .vblock[open] + .field { grid-column: 1 / -1; }
+.variant-stock-row .variants-field { min-width: 0; }
+.variant-stock-row .variants-field:has(.vblock[open]) { grid-column: 1 / -1; }
+.variant-stock-row .variants-field:has(.vblock[open]) + .field { grid-column: 1 / -1; }
 .variant-stock-row .vblock .vsummary { min-height: 46px; align-items: center; padding: 10px 12px; }
+.field-label { display: block; margin-bottom: 5px; font-size: calc(9px * var(--fs)); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.vsummary-text { min-width: 0; font-size: calc(12px * var(--fs)); font-weight: 650; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pair-a { border-color: var(--forest) !important; background: var(--blue-bg) !important; box-shadow: 0 0 0 1.5px rgba(var(--accent-rgb), .4) !important; }
 .pair-b { border-color: var(--lime-ink) !important; background: var(--lime-soft) !important; box-shadow: 0 0 0 1.5px rgba(4, 120, 87, .4) !important; }
 .pair-a:focus, .pair-b:focus { outline: none; }
@@ -2574,7 +2577,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .variant-chip.is-active { background: var(--forest); border-color: var(--forest-ink); color: var(--lime); }
 
 /* Variant editor ---------------------------------------------- (fresh design) */
-.vblock { border: 1px solid var(--ui-line); border-radius: 14px; background: var(--surface); margin: 14px 0 6px; overflow: hidden; box-shadow: var(--shadow-card); }
+.vblock { border: 1px solid var(--ui-line); border-radius: var(--ui-radius); background: var(--surface); margin: 14px 0 6px; overflow: hidden; box-shadow: var(--shadow-card); }
 .vsummary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 13px; cursor: pointer; list-style: none; }
 .vsummary::-webkit-details-marker { display: none; }
 .vtitle { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: calc(13px * var(--fs)); letter-spacing: -.01em; color: var(--ink); }

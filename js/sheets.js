@@ -594,11 +594,13 @@
         </div>
 
         <div class="field-row variant-stock-row">
-<details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
+          <div class="field variants-field">
+            <span class="field-label">Variants</span>
+          <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
           <summary class="vsummary">
             <span class="vtitle">
               <span class="vtitle-ico">${icon("i-tag")}</span>
-              <span>Variants<small>Optional &middot; 500 ml / 1 L / Small</small></span>
+              <span class="vsummary-text" id="variant-summary">${values.variants.length ? `${values.variants.length} variant${values.variants.length === 1 ? "" : "s"} · ${values.variants.map((v) => v.label).filter(Boolean).slice(0, 3).join(", ")}${values.variants.length > 3 ? "…" : ""}` : "Optional — none yet"}</span>
             </span>
             <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
           </summary>
@@ -623,6 +625,7 @@
             <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
           </div>
         </details>
+          </div>
 
           <div class="field">
             <label for="product-low">Low-stock alert</label>
@@ -648,6 +651,11 @@
       if (badge) badge.textContent = count > 0 ? String(count) : "";
       const empty = document.getElementById("variant-empty");
       if (empty) empty.style.display = count ? "none" : "";
+      const summary = document.getElementById("variant-summary");
+      if (summary) {
+        const labels = Array.from(form.querySelectorAll(".vrow [data-field='label']")).map((input) => String(input.value || "").trim()).filter(Boolean);
+        summary.textContent = labels.length ? `${labels.length} variant${labels.length === 1 ? "" : "s"} · ${labels.slice(0, 3).join(", ")}${labels.length > 3 ? "…" : ""}` : "Optional — none yet";
+      }
     };
     // Save every keystroke back to T.ui.editor.values so nothing the shopkeeper
     // typed is lost if the sheet closes and reopens.
@@ -676,6 +684,7 @@
         packSizeHint.textContent = packHint(type, size);
       }
       refreshStockField();
+      updateVariantCount();
     });
 
     // Picking a unit reveals the "amount per unit" box; clearing it hides it.
