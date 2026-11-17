@@ -659,7 +659,7 @@
       const tile = document.getElementById("product-preview-tile");
       const previewName = document.getElementById("product-preview-name");
       const meta = document.getElementById("product-preview-meta");
-      if (tile) { tile.textContent = T.initials(name); tile.className = `tile tile-lg tone-${T.toneFor(category)}`; }
+      if (tile) { tile.textContent = T.initials(name); tile.className = `tile tile-md tone-${T.toneFor(category)}`; }
       if (previewName) previewName.textContent = name;
       if (meta) meta.textContent = `${category}${form.querySelector("#product-barcode")?.value ? ` · ${form.querySelector("#product-barcode").value}` : ""}`;
       // Keep the "how the till counts stock" hints in step with what was typed.
