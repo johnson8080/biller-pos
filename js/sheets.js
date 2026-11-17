@@ -305,9 +305,9 @@
       const plainOut = (product.stock || 0) <= 0;
       return `<div class="variant-pick ${plainOut ? "is-out" : ""}">
         <div class="variant-pick-head">
-          <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(product.name))}</span>
+          <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${icon("i-box")}</span>
           <span class="variant-pick-copy">
-            <strong>${esc(product.name)}</strong>
+            <strong>Plain item</strong>
             <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`}${sizeLabel ? ` · ${esc(sizeLabel)}/piece` : ""} · ${money(product.price)} each</small>
           </span>
           <span class="variant-pick-price">${money(product.price)}</span>

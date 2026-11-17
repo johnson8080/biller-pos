@@ -2372,6 +2372,7 @@
       const atMax = qty >= stock;
       const changed = price !== basePrice;
       const lineProfit = lineTotal - lineCost;
+      const qtyLabel = mass ? T.massLabel(qty) : String(qty);
       const variantAttr = variant ? ` data-variant="${esc(variant.id)}"` : "";
       const variantName = variant ? ` · ${esc(variant.label)}` : "";
       const fullName = `${esc(product.name)}${variantName}`;
@@ -2398,7 +2399,7 @@
           <span class="stepper" aria-label="Quantity for ${fullName}">
             ${mass ? `<button class="step-btn weigh-edit" data-act="open-weigh" data-id="${esc(product.id)}"${variantAttr} data-edit="1" aria-label="Reweigh ${fullName}" ${locked ? "disabled" : ""}>${icon("i-scale")}</button>` : ""}
             <button class="step-btn minus ${!mass && qty === 1 ? "at-one" : ""}" data-act="dec-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? `Take off 100 g` : (qty === 1 ? "Remove" : "Decrease quantity")}" ${locked ? "disabled" : ""}>${icon(mass || qty > 1 ? "i-minus" : "i-trash")}</button>
-            <input class="step-input cart-qty" type="number" inputmode="${mass ? "decimal" : "numeric"}" min="0" step="${mass ? "0.005" : "1"}" value="${mass ? (qty / 1000).toFixed(3).replace(/\.?0+$/, "") : qty}" data-qty-input data-id="${esc(product.id)}"${variantAttr} data-mass="${mass ? "1" : "0"}" aria-label="Quantity for ${fullName}" ${locked ? "disabled" : ""}>
+            <span class="step-value">${esc(qtyLabel)}</span>
             <button class="step-btn" data-act="inc-item" data-id="${esc(product.id)}"${variantAttr} aria-label="${mass ? "Add 100 g" : "Increase quantity"}" ${atMax || locked ? "disabled" : ""}>${icon("i-plus")}</button>
           </span>
         </div>

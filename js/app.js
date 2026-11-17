@@ -2170,44 +2170,12 @@ window.render = render;
 // The search bar stays open until the shopkeeper closes it themselves
 // (the search button toggles it). Tapping outside no longer dismisses it.
 
-// Quantity typed straight into the cart commits the same way the ± buttons do:
-// clamped to what's in stock, 0 removes the line, Enter also commits.
-document.addEventListener("change", (event) => {
-  const T = window.Till;
-  const input = event.target?.closest?.("[data-qty-input]");
-  if (!T || !input) return;
-  if (T.subscriptionLocked?.()) {
-    T.toast("Your monthly plan needs paying before you can change a sale", "i-alert");
-    render();
-    return;
-  }
-  const id = input.dataset.id;
-  const variantId = input.dataset.variant || null;
-  const product = T.findProduct(id) || null;
-  if (!product) return;
-  const variant = T.findVariant(product, variantId) || null;
-  const stock = variant ? variant.stock : product.stock;
-  const mass = input.dataset.mass === "1";
-  let raw = Number(input.value);
-  if (!Number.isFinite(raw) || raw < 0) raw = 0;
-  let qty = mass ? Math.round(raw * 1000) : Math.floor(raw);
-  qty = Math.min(Math.max(0, qty), stock);
-  const item = T.state.cart.items.find((entry) => entry.productId === id && String(entry.variantId || "") === String(variantId || ""));
-  if (!item) return;
-  if (qty <= 0) T.state.cart.items = T.state.cart.items.filter((entry) => entry !== item);
-  else item.qty = qty;
-  T.save();
-  render();
-});
-
-// Enter in a qty or price field commits it, the same as leaving the field.
+// Enter in a picker qty field commits it, the same as tapping Add.
 document.addEventListener("keydown", (event) => {
-  const input = event.target?.closest?.("[data-qty-input], .variant-pick-qty .step-input");
+  const input = event.target?.closest?.(".variant-pick-qty .step-input");
   if (!input || event.key !== "Enter") return;
   event.preventDefault();
-  const pickerRow = input.closest?.(".variant-pick-qty");
-  if (pickerRow) pickerRow.querySelector(".step-add")?.click();
-  else input.blur();
+  input.closest(".variant-pick-qty")?.querySelector(".step-add")?.click();
 });
 
 // The Add button on a picker row shows the running quantity as it changes.
