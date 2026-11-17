@@ -294,26 +294,24 @@
       body: `<div class="variant-list">
         ${product.variants.map((variant) => {
           const out = variant.stock <= 0;
-          const chips = [1, 2, 6].map((n) => `<button class="variant-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="${n}" ${out ? "disabled" : ""}>${n} pc</button>`).join("");
-          const packChips = packSize > 0
-            ? [1, 2, 5].map((n) => `<button class="variant-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-packs="${n}" ${out ? "disabled" : ""}>${n === 1 ? "1 pack" : `${n} packs`} (${n * packSize})</button>`).join("")
-            : "";
+          const packButton = packSize > 0
+            ? `<button class="variant-pick-chip is-pack" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-packs="1" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">1 pack</span><small>${packSize} pcs</small></button>`
+            : `<button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="12" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 12</span><small>pcs</small></button>`;
           return `<div class="variant-pick ${out ? "is-out" : ""}">
             <div class="variant-pick-head">
               <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${esc(T.initials(variant.label))}</span>
               <span class="variant-pick-copy">
                 <strong>${esc(variant.label)}</strong>
-                <small>${out ? "Sold out" : `${variant.stock} ${esc(unit)} in stock`}</small>
+                <small>${out ? "Sold out" : `${variant.stock} ${esc(unit)} in stock`} · ${money(variant.price)} each</small>
               </span>
               <span class="variant-pick-price">${money(variant.price)}</span>
-              <button class="variant-pick-one" data-act="pick-variant" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" aria-label="Add one ${esc(variant.label)}" ${out ? "disabled" : ""}>+1</button>
             </div>
-            ${packSize > 0
-              ? `<div class="variant-pick-chips">
-                  <span class="variant-pick-chips-label">Pieces</span>${chips}
-                  <span class="variant-pick-chips-label">Packs (${packSize} pcs)</span>${packChips}
-                </div>`
-              : `<div class="variant-pick-chips">${chips}</div>`}
+            <div class="variant-pick-grid">
+              <button class="variant-pick-chip is-primary" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="1" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">Add 1</span><small>pc</small></button>
+              <button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="2" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 2</span><small>pcs</small></button>
+              <button class="variant-pick-chip" data-act="pick-variant-qty" data-id="${esc(product.id)}" data-variant="${esc(variant.id)}" data-qty="6" ${out ? "disabled" : ""}><span class="variant-pick-chip-top">+ 6</span><small>pcs</small></button>
+              ${packButton}
+            </div>
           </div>`;
         }).join("")}
       </div>
@@ -641,6 +639,10 @@
       const existing = editor.id ? T.findProduct(editor.id) : null;
       const mass = values.soldByMass === true;
       const packSize = T.clampInt(values.packSize || "0", 0, 100000);
+      // When the shopkeeper said prices are per pack, every variant price and
+      // cost is divided by pieces per pack so the till always knows piece price.
+      const perPack = values.packMode === "pack" && packSize > 0;
+      const perPackToPiece = (value) => perPack && value !== null && value !== undefined && Number.isFinite(value) ? Math.max(0, Math.round(Number(value) / packSize)) : value;
       // Variants: each needs a label and a price greater than zero.
       const previousVariants = new Map((existing?.variants || []).map((v) => [String(v.label).toLowerCase(), v]));
       let variantError = "";
@@ -649,14 +651,17 @@
         if (!v.label) { variantError = "Give every variant a label."; return null; }
         const vPrice = T.parsePriceToCents(v.price);
         if (!Number.isFinite(vPrice) || vPrice <= 0) { variantError = `Variant “${v.label}” needs a price greater than zero.`; return null; }
+        const rawVPrice = vPrice;
+        const vPriceFinal = perPack && rawVPrice > 0 ? Math.max(1, Math.round(rawVPrice / packSize)) : rawVPrice;
         const vCost = String(v.cost || "").trim() === "" ? 0 : (T.parsePriceToCents(v.cost) || 0);
+        const vCostFinal = perPack && vCost > 0 ? Math.max(0, Math.round(vCost / packSize)) : vCost;
         const vStock = T.clampInt(v.stock || "0", 0, 1000000);
         const match = previousVariants.get(String(v.label).toLowerCase());
         return {
           id: match?.id || v.id || T.uid("v"),
           label: v.label,
-          price: vPrice,
-          cost: vCost,
+          price: vPriceFinal,
+          cost: vCostFinal,
           stock: vStock,
           barcode: T.cleanBarcode(v.barcode)
         };
@@ -696,12 +701,10 @@
         ? summaryCost
         : costRaw === "" ? 0 : (T.parsePriceToCents(costRaw) || 0);
       const barcode = T.cleanBarcode(values.barcode);
-      // Pack mode: the prices typed in are per pack, so convert to per piece.
-      // Variant prices are already per-piece and are never divided.
-      const packSizeShared = T.clampInt(values.packSize || "0", 0, 100000);
-      const perPack = values.packMode === "pack" && packSizeShared > 0 && !hasVariants;
-      const unitPrice = perPack ? Math.max(1, Math.round(price / packSizeShared)) : price;
-      const unitCost = perPack ? Math.max(0, Math.round(cost / packSizeShared)) : cost;
+      // Pack mode: if the shopkeeper typed prices per pack, convert to per piece.
+      const perPackSimple = values.packMode === "pack" && packSize > 0 && !hasVariants;
+      const unitPrice = perPackSimple ? Math.max(1, Math.round(price / packSize)) : price;
+      const unitCost = perPackSimple ? Math.max(0, Math.round(cost / packSize)) : cost;
 
       if (existing) {
         existing.name = values.name;
