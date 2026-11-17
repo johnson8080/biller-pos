@@ -420,9 +420,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // product is grams, and the price is per kilogram.
         soldByMass: p.soldByMass === true,
         // How the item is sold at the till: pieces, weight, or bundled by
-        // pack. Older saves derive from soldByMass and the pack size.
-        soldBy: ["each", "mass", "pack", "dozen", "crate"].includes(String(p.soldBy)) ? String(p.soldBy) : (p.soldByMass === true ? "mass" : (Number(p.packSize) > 0 ? "pack" : "each")),
-        packLabel: ["pack", "dozen", "crate"].includes(String(p.packLabel)) ? String(p.packLabel) : (String(p.soldBy) === "dozen" ? "dozen" : String(p.soldBy) === "crate" ? "crate" : "pack"),
+        // type. Older saves derive from soldByMass and the pack size.
+        soldBy: ["each", "mass", "dozen", "packet", "box", "crate"].includes(String(p.soldBy)) ? String(p.soldBy) : (p.soldByMass === true ? "mass" : (Number(p.packSize) > 0 ? "packet" : "each")),
+        packLabel: ["dozen", "packet", "box", "crate"].includes(String(p.soldBy)) ? String(p.soldBy) : (Number(p.packSize) > 0 ? "packet" : ""),
         category: match || categories[0],
         variants,
         // Pack size for products received in packs but sold piece by piece
@@ -1387,7 +1387,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   /** True when a product is sold by the kilogram (fruit, flour, meat…). */
   T.isMass = (product) => product?.soldByMass === true || product?.soldBy === "mass";
   /** True when the item is sold in bundles (pack / dozen / crate) — like weight, the till asks how many pieces. */
-  T.isBundle = (product) => ["pack", "dozen", "crate"].includes(String(product?.soldBy || ""));
+  T.isBundle = (product) => ["dozen", "packet", "box", "crate"].includes(String(product?.soldBy || ""));
   /** The unit a weighed product is priced in: always the kilogram. */
   T.massUnit = () => "kg";
 

@@ -20,15 +20,17 @@
   // next to the stock number on the Sell cards.
   const STOCK_UNITS = [
     ["pcs", "Pieces"],
-    ["pack", "Pack"],
+    ["each", "Each"],
+    ["dozen", "Dozen"],
+    ["packet", "Packet"],
     ["box", "Box"],
+    ["crate", "Crate"],
     ["bottle", "Bottle"],
     ["sachet", "Sachet"],
     ["kg", "Kg"],
     ["g", "g"],
     ["L", "L"],
-    ["ml", "ml"],
-    ["dozen", "Dozen"]
+    ["ml", "ml"]
   ];
 
   let closeTimer = null;
@@ -350,7 +352,7 @@
       soldByMass: product.soldByMass === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
       packMode: product.packMode === "pack" ? "pack" : "piece",
-      soldBy: ["each", "mass", "pack", "dozen", "crate"].includes(String(product.soldBy)) ? String(product.soldBy) : (product.soldByMass === true ? "mass" : (Number(product.packSize) > 0 ? "pack" : "each")),
+      soldBy: ["each", "mass", "dozen", "packet", "box", "crate"].includes(String(product.soldBy)) ? String(product.soldBy) : (product.soldByMass === true ? "mass" : (Number(product.packSize) > 0 ? "packet" : "each")),
       variants: (product.variants || []).map((variant) => ({
         id: variant.id,
         label: variant.label,
@@ -439,42 +441,50 @@
         <div class="field-row">
           <div class="field">
             <label for="product-size">Size</label>
-            <select class="select" id="product-size" aria-label="Pick a common size">
+            <select class="select" id="product-size" aria-label="Pick a size">
               <option value="">—</option>
-              ${["Small","Medium","Large","250 g","500 g","750 g","1 kg","2 kg","500 ml","750 ml","1 L","2 L","Pack","Piece","Dozen"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
+              ${["Small","Medium","Large"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
           <div class="field">
             <label for="product-variant">Variant</label>
-            <select class="select" id="product-variant" aria-label="Pick a common variant">
+            <select class="select" id="product-variant" aria-label="Pick a variant unit">
               <option value="">—</option>
-              ${["250 ml","500 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Pack","Piece","Dozen"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
+              ${["Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
         </div>
 
         <div class="field-row">
           <div class="field">
-            <label for="product-soldby">Sold by</label>
-            <select class="select" id="product-soldby" name="soldBy" aria-label="How the item is counted at the till">
-              ${[["each","Each"],["mass","Weight (kg)"],["pack","Pack"],["dozen","Dozen"],["crate","Crate"]].map(([value,label]) => `<option value="${value}" ${values.soldBy === value ? "selected" : ""}>${label}</option>`).join("")}
+            <label for="product-type">Product type</label>
+            <select class="select" id="product-type" name="soldByType" aria-label="Bundle of supply">
+              ${["Single","Dozen","Packet","Box","Crate"].map((label) => `<option value="${label === "Single" ? "each" : label.toLowerCase()}" ${(["each","dozen","packet","box","crate"].includes(values.soldBy) && (label === "Single" ? values.soldBy === "each" : values.soldBy === label.toLowerCase())) ? "selected" : ""}>${label}</option>`).join("")}
             </select>
           </div>
+          <div class="field">
+            <label for="product-soldby">Sold by</label>
+            <select class="select" id="product-soldby" name="soldBy" aria-label="How the item is counted at the till">
+              ${[["each","Each"],["mass","Weight (kg)"],["dozen","Dozen"],["packet","Packet"],["box","Box"],["crate","Crate"]].map(([value,label]) => `<option value="${value}" ${values.soldBy === value ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label for="product-add-variant">Add variant</label>
             <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
               <option value="">— pick to add —</option>
-              ${["250 ml","500 ml","1 L","500 g","1 kg","Small","Medium","Large"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
+              ${["250 ml","500 ml","1 L","500 g","1 kg","Small","Medium","Large","Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
             </select>
           </div>
         </div>
-        <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["pack","dozen","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces${values.packSize ? ` (1 ${values.soldBy} = ${values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
+        <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["dozen","packet","box","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces in a ${values.soldBy} (${values.packSize} pcs).` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
 
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail)}">
 
-        <div class="field" id="product-pack-size-row" style="${["pack","dozen","crate"].includes(values.soldBy) ? "" : "display:none"}">
-          <label for="product-pack-size">Pieces per ${values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack"} <span class="muted" style="text-transform:none;letter-spacing:0">(bundle size)</span></label>
-          <div class="variant-chips" role="group" aria-label="Pack multipliers">
+        <div class="field" id="product-pack-size-row" style="${["dozen","packet","box","crate"].includes(values.soldBy) ? "" : "display:none"}">
+          <label for="product-pack-size">Pieces per ${values.soldBy} <span class="muted" style="text-transform:none;letter-spacing:0">(pieces per bundle)</span></label>
+          <div class="variant-chips" role="group" aria-label="Bundle size in pieces">
             ${[6, 12, 24, 30, 48].map((n) => `<button type="button" class="variant-chip pack-chip ${values.packSize === String(n) ? "is-active" : ""}" data-pack="${n}">${n}</button>`).join("")}
           </div>
           <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
@@ -551,7 +561,7 @@
       if (!editor || editor.values.soldBy === nextSoldBy) return;
       editor.values.soldBy = nextSoldBy;
       const wantMass = nextSoldBy === "mass";
-      const wantBundle = ["pack", "dozen", "crate"].includes(nextSoldBy);
+      const wantBundle = ["dozen", "packet", "box", "crate"].includes(nextSoldBy);
       editor.values.packMode = wantMass || wantBundle ? editor.values.packMode : "piece";
       const stockInput = form.querySelector("#product-stock");
       const stockLabel = form.querySelector("#product-stock-label");
@@ -596,6 +606,8 @@
       }
       if (t === soldBySelect && t.tagName?.toLowerCase() === "select") {
         applySoldBy(form, t.value);
+        const productTypeSelect = form.querySelector("#product-type");
+        if (productTypeSelect && productTypeSelect.value !== t.value) productTypeSelect.value = t.value;
         return;
       }
       if (t === addVariantSelect && t.value) {
@@ -608,6 +620,17 @@
         list.lastElementChild?.querySelector(".variant-price")?.focus({ preventScroll: true });
         list.dispatchEvent(new Event("input", { bubbles: true }));
         t.selectedIndex = 0;
+        return;
+      }
+      // Product type dropdown change → mirror into the Sold by dropdown.
+      const productTypeSelect = form.querySelector("#product-type");
+      if (t === productTypeSelect && t.tagName?.toLowerCase() === "select") {
+        const soldBySelect = form.querySelector("#product-soldby");
+        if (soldBySelect) {
+          soldBySelect.value = t.value;
+          // Dispatch a change so the sold-by branch runs its mode flip.
+          soldBySelect.dispatchEvent(new Event("change", { bubbles: true }));
+        }
         return;
       }
     });
