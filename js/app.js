@@ -1309,6 +1309,10 @@ function runAction(btn) {
     T.ui.sellerPeriod = value === "30" ? "30" : "7";
     render();
   }
+  else if (act === "set-wastage-period" && value) {
+    T.ui.wastagePeriod = ["7", "30", "all"].includes(value) ? value : "30";
+    render();
+  }
   else if (act === "start-audit") {
     T.ui.auditInProgress = true;
     T.ui.auditChecks = {};

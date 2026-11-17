@@ -2729,30 +2729,33 @@
       iconName: "i-alert",
       focus: products.length ? "#wastage-product" : "",
       body: `${products.length ? `<form id="wastage-form" novalidate>
-        <div class="field">
-          <label for="wastage-product">Product</label>
-          <select class="select" id="wastage-product" name="productId">
-            ${products.map((product) => `<option value="${esc(product.id)}">${esc(product.name)}${product.detail ? ` · ${esc(product.detail)}` : ""}</option>`).join("")}
-          </select>
-        </div>
-        <div class="field">
-          <label for="wastage-qty" id="wastage-qty-label">How many were wasted?</label>
-          <input class="input" id="wastage-qty" name="qty" type="number" min="1" step="1" inputmode="numeric" value="1" required>
-          <div class="variant-chips" id="wastage-chips" role="group" aria-label="Common quantities"></div>
-        </div>
-        <div class="field">
-          <label>Why</label>
-          <div class="chip-row" id="wastage-reasons" role="group" aria-label="Reason for the wastage">
-            ${reasons.map((reason) => `<button type="button" class="chip ${reason === reasons[0] ? "is-active" : ""}" data-reason="${esc(reason)}">${esc(reason)}</button>`).join("")}
+        <div class="field-row three">
+          <div class="field">
+            <label for="wastage-product">Product</label>
+            <select class="select" id="wastage-product" name="productId">
+              ${products.map((product) => `<option value="${esc(product.id)}">${esc(product.name)}${product.detail ? ` · ${esc(product.detail)}` : ""}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="wastage-qty" id="wastage-qty-label">Wasted qty</label>
+            <input class="input" id="wastage-qty" name="qty" type="number" min="1" step="1" inputmode="numeric" value="1" required>
+          </div>
+          <div class="field">
+            <label for="wastage-employee">Recorded by</label>
+            <input class="input" id="wastage-employee" name="employee" value="${esc(defaultEmployee)}" placeholder="Name" maxlength="60">
           </div>
         </div>
-        <div class="field">
-          <label for="wastage-employee">Recorded by <span class="field-optional">Optional</span></label>
-          <input class="input" id="wastage-employee" name="employee" value="${esc(defaultEmployee)}" placeholder="Who is writing this off?" maxlength="60">
-        </div>
-        <div class="field">
-          <label for="wastage-note">Note <span class="field-optional">Optional</span></label>
-          <input class="input" id="wastage-note" name="note" placeholder="e.g. Power cut spoiled the milk" maxlength="140">
+        <div class="field-row">
+          <div class="field">
+            <label for="wastage-reason">Why</label>
+            <select class="select" id="wastage-reason" name="reason">
+              ${reasons.map((reason) => `<option value="${esc(reason)}">${esc(reason)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label for="wastage-note">Note <span class="field-optional">Optional</span></label>
+            <input class="input" id="wastage-note" name="note" placeholder="e.g. Power cut" maxlength="140">
+          </div>
         </div>
         <div class="form-error" role="alert"></div>
         <div class="sheet-actions">
@@ -2776,45 +2779,21 @@
     const productSelect = form.querySelector("#wastage-product");
     const qtyInput = form.querySelector("#wastage-qty");
     const qtyLabel = form.querySelector("#wastage-qty-label");
-    const chipsRow = form.querySelector("#wastage-chips");
-    let reason = reasons[0];
+    const reasonSelect = form.querySelector("#wastage-reason");
 
     const paintProduct = () => {
       const product = T.findProduct(productSelect.value);
       const mass = product?.soldByMass === true;
-      if (qtyLabel) qtyLabel.textContent = mass ? "How much was wasted (kg)?" : "How many were wasted?";
+      if (qtyLabel) qtyLabel.textContent = mass ? "How much wasted (kg)?" : "Wasted qty";
       if (qtyInput) {
         qtyInput.step = mass ? "0.001" : "1";
         qtyInput.min = mass ? "0.001" : "1";
         qtyInput.inputMode = mass ? "decimal" : "numeric";
         qtyInput.value = mass ? "0.5" : "1";
       }
-      if (chipsRow) {
-        chipsRow.innerHTML = mass
-          ? [[100, "100 g"], [250, "250 g"], [500, "500 g"], [1000, "1 kg"]].map(([g, label]) => `<button type="button" class="variant-chip" data-grams="${g}">${label}</button>`).join("")
-          : [1, 2, 6, 12].map((n) => `<button type="button" class="variant-chip" data-qty="${n}">${n}</button>`).join("");
-      }
     };
     productSelect?.addEventListener("change", paintProduct);
     paintProduct();
-
-    chipsRow?.addEventListener("click", (event) => {
-      const chip = event.target.closest(".variant-chip");
-      if (!chip || !qtyInput) return;
-      if (chip.dataset.grams) {
-        const grams = Number(chip.dataset.grams) || 1000;
-        qtyInput.value = (grams / 1000).toFixed(3).replace(/\.?0+$/, "");
-      } else {
-        qtyInput.value = chip.dataset.qty;
-      }
-    });
-
-    form.querySelector("#wastage-reasons")?.addEventListener("click", (event) => {
-      const chip = event.target.closest(".chip");
-      if (!chip) return;
-      reason = chip.dataset.reason;
-      form.querySelectorAll("#wastage-reasons .chip").forEach((btn) => btn.classList.toggle("is-active", btn === chip));
-    });
 
     form?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -2827,7 +2806,7 @@
         : T.clampInt(data.get("qty"), 0, 1000000);
       const result = T.recordWastage(product?.id, {
         qty,
-        reason,
+        reason: String(reasonSelect?.value || "Other"),
         note: String(data.get("note") || ""),
         employee: String(data.get("employee") || "")
       });

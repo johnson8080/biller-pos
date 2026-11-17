@@ -577,7 +577,15 @@
     // The monthly target the shop set, next to what the month made so far.
     const target = T.monthTarget?.() || { set: false };
     const targetMonthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(now);
-    const wastageMonth = T.wastageSince?.(30) || { count: 0, qty: 0, cost: 0 };
+    // Wastage: what left the shelf without a sale, in the chosen window.
+    const wastagePeriod = ["7", "30", "all"].includes(String(T.ui.wastagePeriod)) ? String(T.ui.wastagePeriod) : "30";
+    const wastageReport = T.wastageSince ? T.wastageSince(wastagePeriod === "all" ? 365000 : Number(wastagePeriod)) : { entries: [], count: 0, qty: 0, cost: 0 };
+    const wastageReasons = new Map();
+    for (const entry of wastageReport.entries || []) {
+      const key = String(entry.reason || "Other");
+      wastageReasons.set(key, (wastageReasons.get(key) || 0) + 1);
+    }
+    const wastageTopReasons = [...wastageReasons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
 
     // Profit per item, so the shop can see what really pays.
     const profitRows = new Map();
@@ -747,6 +755,25 @@
           }).join("")}
         </div>
         <p class="report-note">${mixTxs.length} ${mixTxs.length === 1 ? "sale" : "sales"} · ${compactMoney(mixTotal)} taken in this window.</p>
+      </div>
+
+      <div class="settings-card">
+        <div class="report-card-head"><h2>Wastage</h2>
+          <span class="report-chips" role="group" aria-label="Wastage period">
+            ${[["7", "7 days"], ["30", "30 days"], ["all", "All time"]].map(([value, label]) => `<button class="chip chip-sm${wastagePeriod === value ? " is-active" : ""}" data-act="set-wastage-period" data-value="${value}">${label}</button>`).join("")}
+          </span>
+        </div>
+        ${(wastageReport.count || 0) ? `
+          <p class="report-note" style="margin-top:0"><strong>${wastageReport.count}</strong> ${wastageReport.count === 1 ? "write-off" : "write-offs"} · <strong>${wastageReport.qty}</strong> lost · <strong>${money(wastageReport.cost || 0)}</strong> at cost${wastageTopReasons.length ? ` · ${wastageTopReasons.map(([reason, count]) => `${reason} (${count})`).join(" · ")}` : ""}</p>
+          <div class="report-list">${(wastageReport.entries || []).slice(0, 5).map((entry) => {
+            const showQty = entry.unit === "kg" && T.findProduct(entry.productId)?.soldByMass ? T.massLabel(entry.qty) : `${entry.qty} ${esc(entry.unit)}`;
+            return `<div class="report-row">
+              <span class="report-row-copy"><strong>${esc(entry.name)}</strong><small>${esc(T.dayLabel(`${entry.date}T00:00:00`))} · ${esc(entry.reason)}${entry.employee ? ` · ${esc(entry.employee)}` : ""}${entry.note ? ` · ${esc(entry.note)}` : ""}</small></span>
+              <span class="report-amount">${esc(showQty)}</span>
+            </div>`;
+          }).join("")}</div>
+          ${(wastageReport.entries || []).length > 5 ? `<p class="report-note">Showing the latest 5 of ${wastageReport.entries.length}. All records are exportable as CSV below.</p>` : ""}
+        ` : `<p class="report-empty">No wastage recorded in this window.</p>`}
       </div>
 
       <div class="settings-card">
