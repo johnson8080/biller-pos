@@ -495,8 +495,8 @@
       );
       const label = formEl.querySelector("#product-stock-label");
       const input = formEl.querySelector("#product-stock");
-      const sellParentOn = formEl.querySelector("#variant-sell-parent")?.checked === true;
       const variantRows = formEl.querySelectorAll(".vrow").length;
+      const sellParentOn = variantRows > 0;
       if (label) label.textContent = sellParentOn && variantRows ? "In stock (plain item)" : state.label;
       if (input) input.placeholder = sellParentOn && variantRows ? "Plain item's own stock" : state.hint;
       if (input) { input.step = bundle ? "0.001" : "1"; input.inputMode = bundle ? "decimal" : "numeric"; }
@@ -606,11 +606,6 @@
             <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
           </summary>
           <div class="vbody">
-            <label class="vtoggle" for="variant-sell-parent">
-              <input type="checkbox" id="variant-sell-parent" ${values.sellParent ? "checked" : ""} aria-label="Also sell the plain item">
-              <span class="vtoggle-switch" aria-hidden="true"></span>
-              <span class="vtoggle-copy"><strong>Also sell the plain item</strong><small>Adds a “${esc(values.name || "Plain item")}” line at the parent price to the picker, deducting from the parent stock.</small></span>
-            </label>
             <div class="vchips" id="variant-quick-add">
               <p class="vchips-cap">Quick add</p>
               ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
@@ -935,7 +930,9 @@
       unitSize: String(data.get("unitSize") || "").trim(),
       soldByMass: soldBy === "mass",
       soldBy,
-      sellParent: Boolean(form.querySelector("#variant-sell-parent")?.checked),
+      // Everything sells by default: the parent item is always sellable
+      // alongside its variants in the picker.
+      sellParent: true,
       // Variants live on their own rows — read them straight out of the DOM.
       variants: (() => {
         const rows = [];

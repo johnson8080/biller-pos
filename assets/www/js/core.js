@@ -433,9 +433,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // Pack size for products received in packs but sold piece by piece
         // (eggs by the tray of 30, bread by the pallet/box): how many pieces
         // one pack/box/dozen carries.
-        // When on, the parent line is sellable in the picker with its own
-        // price and stock, alongside the variants.
-        sellParent: p.sellParent === true,
+      // The parent item sells by default alongside its variants.
+      sellParent: true,
         packSize: Number.isFinite(Number(p.packSize)) ? Math.max(0, Math.round(Number(p.packSize))) : 0
       };
     });
