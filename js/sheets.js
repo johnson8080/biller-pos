@@ -370,23 +370,19 @@
   }
 
   /** One editable variant row: label, price, cost, stock and barcode. */
-  function renderVariantEditorRow(variant, index, category) {
-    const initials = T.initials(variant.label || "New");
-    return `<div class="variant-editor-row" data-index="${index}" data-variant-id="${esc(variant.id || "")}">
-      <span class="variant-editor-tile tone-${T.toneFor(category)}" aria-hidden="true">${esc(initials)}</span>
-      <div class="variant-editor-body">
-        <div class="variant-editor-top">
-          <input class="input variant-field variant-label" data-field="label" value="${esc(variant.label || "")}" placeholder="Label (e.g. 500 g)" autocomplete="off">
-          <button type="button" class="icon-btn danger variant-remove" aria-label="Remove variant">${icon("i-trash")}</button>
-        </div>
-        <div class="variant-editor-grid">
-          <input class="input variant-field variant-price" data-field="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.price || "")}" placeholder="Price" aria-label="Variant price">
-          <input class="input variant-field variant-cost" data-field="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.cost || "")}" placeholder="Cost" aria-label="Variant cost">
-          <input class="input variant-field variant-stock" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(variant.stock || "")}" placeholder="Stock" aria-label="Variant stock">
-        </div>
-        <input class="input variant-field variant-barcode" data-field="barcode" value="${esc(variant.barcode || "")}" placeholder="Barcode (optional)" inputmode="numeric" autocomplete="off" spellcheck="false">
+  function renderVariantEditorRow(variant) {
+    return `<article class="vrow" data-variant-id="${esc(variant.id || "")}">
+      <div class="vrow-head">
+        <input class="vrow-label" data-field="label" value="${esc(variant.label || "")}" placeholder="e.g. 500 ml" autocomplete="off" spellcheck="false" aria-label="Variant label">
+        <button type="button" class="vrow-delete" aria-label="Remove variant">${icon("i-trash")}</button>
       </div>
-    </div>`;
+      <div class="vrow-grid">
+        <label class="vrow-field"><span class="vrow-cap">Price</span><span class="input-affix"><input class="input" data-field="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.price || "")}" placeholder="0.00" aria-label="Variant price"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
+        <label class="vrow-field"><span class="vrow-cap">Cost</span><span class="input-affix"><input class="input" data-field="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(variant.cost || "")}" placeholder="0.00" aria-label="Variant cost"><span class="affix">${esc(T.currencySymbol())}</span></span></label>
+        <label class="vrow-field"><span class="vrow-cap">Stock</span><input class="input" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(variant.stock || "")}" placeholder="0" aria-label="Variant stock"></label>
+      </div>
+      <input class="vrow-barcode" data-field="barcode" value="${esc(variant.barcode || "")}" placeholder="Barcode (optional)" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="Variant barcode">
+    </article>`;
   }
 
   function openProductEditor(id = null, { barcode = "", source = "inventory", addToCart = false } = {}) {
@@ -553,23 +549,29 @@
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
-        <details class="variant-editor-block" id="variant-editor-block"${values.variants.length ? " open" : ""}>
-          <summary class="variant-editor-summary">
-            <span class="variant-editor-summary-label">${icon("i-tag")} Variants <span class="muted">(optional)</span></span>
-            <span class="variant-editor-summary-meta"><span class="variant-editor-count" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
+        <details class="vblock" id="variant-editor-block"${values.variants.length ? " open" : ""}>
+          <summary class="vsummary">
+            <span class="vtitle">
+              <span class="vtitle-ico">${icon("i-tag")}</span>
+              <span>Variants<small>Optional &middot; 500 ml / 1 L / Small</small></span>
+            </span>
+            <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
           </summary>
-          <div class="variant-editor-list" id="variant-editor-list">
-            ${values.variants.map((variant, index) => renderVariantEditorRow(variant, index, values.category)).join("")}
+          <div class="vbody">
+            <div class="vchips" id="variant-quick-add">
+              <p class="vchips-cap">Quick add</p>
+              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
+              <button type="button" class="vchip vchip-custom" data-vchip="__blank">Custom&hellip;</button>
+            </div>
+            <div class="vlist" id="variant-editor-list">
+              ${values.variants.map((variant) => renderVariantEditorRow(variant)).join("")}
+            </div>
+            <div class="vempty" id="variant-empty"${values.variants.length ? ' style="display:none"' : ""}>
+              ${icon("i-tag")}
+              <span>No variants yet.<br>Tap a quick-add chip above to create the first one.</span>
+            </div>
+            <p class="vnote">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps; the parent prices are a summary of the variants.</p>
           </div>
-          <div class="field" style="margin-top:10px">
-            <label for="product-add-variant">Add variant</label>
-            <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
-              <option value="">Pick to add…</option>
-              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet","Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
-              <option value="__blank">Blank variant…</option>
-            </select>
-          </div>
-          <p class="field-help" style="margin:6px 2px 0">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps. The parent price is a summary of the variants.</p>
         </details>
 
         <div class="field-row">
@@ -614,9 +616,11 @@
 
     const form = document.getElementById("product-form");
     const updateVariantCount = () => {
-      const count = form?.querySelectorAll(".variant-editor-row").length || 0;
+      const count = form?.querySelectorAll(".vrow").length || 0;
       const badge = document.getElementById("variant-count");
       if (badge) badge.textContent = count > 0 ? String(count) : "";
+      const empty = document.getElementById("variant-empty");
+      if (empty) empty.style.display = count ? "none" : "";
     };
     // Save every keystroke back to T.ui.editor.values so nothing the shopkeeper
     // typed is lost if the sheet closes and reopens.
@@ -677,28 +681,30 @@
         if (hint) hint.textContent = packHint(type, packInput?.value || "");
         if (bundle && packInput) packInput.focus({ preventScroll: true });
       }
-      if (t.id === "product-add-variant" && t.value) {
-        const list = form.querySelector("#variant-editor-list");
-        const category = form.querySelector("#product-category")?.value || values.category;
-        const isBlank = t.value === "__blank";
-        if (list) {
-          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: isBlank ? "" : String(t.value), price: "", cost: "", stock: "", barcode: "" }, list.children.length, category));
-          list.lastElementChild?.querySelector(isBlank ? ".variant-label" : ".variant-price")?.focus({ preventScroll: true });
-          list.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        t.selectedIndex = 0;
-        updateVariantCount();
-        return;
-      }
       refreshStockField();
     });
 
-    // Trash a variant row.
+    // Quick-add chips and trash buttons for variants.
     form?.addEventListener("click", (event) => {
-      const btn = event.target?.closest?.(".variant-remove");
+      const chip = event.target?.closest?.(".vchip");
+      if (chip) {
+        event.preventDefault();
+        const list = form.querySelector("#variant-editor-list");
+        const isBlank = chip.dataset.vchip === "__blank";
+        if (list) {
+          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: isBlank ? "" : String(chip.dataset.vchip || ""), price: "", cost: "", stock: "", barcode: "" }));
+          list.lastElementChild?.querySelector(isBlank ? ".vrow-label" : '[data-field="price"]')?.focus({ preventScroll: true });
+          list.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        updateVariantCount();
+        const empty = document.getElementById("variant-empty");
+        if (empty) empty.style.display = "none";
+        return;
+      }
+      const btn = event.target?.closest?.(".vrow-delete");
       if (!btn) return;
       event.preventDefault();
-      btn.closest(".variant-editor-row")?.remove();
+      btn.closest(".vrow")?.remove();
       updateVariantCount();
       const editor = T.ui.editor;
       if (editor) editor.values = { ...editor.values, ...readProductForm(form) };
@@ -869,7 +875,7 @@
       // Variants live on their own rows — read them straight out of the DOM.
       variants: (() => {
         const rows = [];
-        for (const row of form.querySelectorAll(".variant-editor-row")) {
+        for (const row of form.querySelectorAll(".vrow")) {
           const label = String(row.querySelector('[data-field="label"]')?.value || "").trim();
           const price = String(row.querySelector('[data-field="price"]')?.value || "").trim();
           const cost = String(row.querySelector('[data-field="cost"]')?.value || "").trim();
