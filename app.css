@@ -2562,6 +2562,16 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .variant-editor-grid .input { min-width: 0; padding-left: 8px; padding-right: 8px; }
 .variant-barcode, .variant-field[type="text"] { width: 100%; }
 .variant-field { min-width: 0; }
+.variant-editor-block { border: 1px solid var(--ui-line); border-radius: 9px; background: var(--surface); padding: 10px 12px; margin: 12px 0 4px; }
+.variant-editor-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; list-style: none; font-size: calc(13px * var(--fs)); font-weight: 700; color: var(--ink); }
+.variant-editor-summary::-webkit-details-marker { display: none; }
+.variant-editor-summary-label { display: inline-flex; align-items: center; gap: 7px; }
+.variant-editor-summary-meta { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.variant-editor-count { min-width: 20px; text-align: center; font-size: calc(10px * var(--fs)); font-weight: 800; padding: 1px 7px; border-radius: 999px; background: var(--lime-soft); color: var(--forest-ink); }
+.variant-editor-count:empty { display: none; }
+.variant-editor-summary-meta .i-chevron { transition: transform .18s ease; }
+.variant-editor-block[open] .variant-editor-summary-meta .i-chevron { transform: rotate(90deg); }
+.variant-editor-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 
 /* Pack row in stock-in ---------------------------------------------------- */
 .pack-row { display: flex; gap: 5px; align-items: center; margin-top: 4px; }

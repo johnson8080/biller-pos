@@ -553,6 +553,25 @@
           <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
+        <details class="variant-editor-block" id="variant-editor-block"${values.variants.length ? " open" : ""}>
+          <summary class="variant-editor-summary">
+            <span class="variant-editor-summary-label">${icon("i-tag")} Variants <span class="muted">(optional)</span></span>
+            <span class="variant-editor-summary-meta"><span class="variant-editor-count" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
+          </summary>
+          <div class="variant-editor-list" id="variant-editor-list">
+            ${values.variants.map((variant, index) => renderVariantEditorRow(variant, index, values.category)).join("")}
+          </div>
+          <div class="field" style="margin-top:10px">
+            <label for="product-add-variant">Add variant</label>
+            <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
+              <option value="">Pick to add…</option>
+              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet","Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
+              <option value="__blank">Blank variant…</option>
+            </select>
+          </div>
+          <p class="field-help" style="margin:6px 2px 0">Each variant keeps its own price, cost and stock. The till sells the variant the shopkeeper taps. The parent price is a summary of the variants.</p>
+        </details>
+
         <div class="field-row">
           <div class="field">
             <label for="product-cost">Buying price</label>
@@ -594,6 +613,11 @@
     });
 
     const form = document.getElementById("product-form");
+    const updateVariantCount = () => {
+      const count = form?.querySelectorAll(".variant-editor-row").length || 0;
+      const badge = document.getElementById("variant-count");
+      if (badge) badge.textContent = count > 0 ? String(count) : "";
+    };
     // Save every keystroke back to T.ui.editor.values so nothing the shopkeeper
     // typed is lost if the sheet closes and reopens.
     form?.addEventListener("input", () => {
@@ -653,7 +677,31 @@
         if (hint) hint.textContent = packHint(type, packInput?.value || "");
         if (bundle && packInput) packInput.focus({ preventScroll: true });
       }
+      if (t.id === "product-add-variant" && t.value) {
+        const list = form.querySelector("#variant-editor-list");
+        const category = form.querySelector("#product-category")?.value || values.category;
+        const isBlank = t.value === "__blank";
+        if (list) {
+          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: isBlank ? "" : String(t.value), price: "", cost: "", stock: "", barcode: "" }, list.children.length, category));
+          list.lastElementChild?.querySelector(isBlank ? ".variant-label" : ".variant-price")?.focus({ preventScroll: true });
+          list.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        t.selectedIndex = 0;
+        updateVariantCount();
+        return;
+      }
       refreshStockField();
+    });
+
+    // Trash a variant row.
+    form?.addEventListener("click", (event) => {
+      const btn = event.target?.closest?.(".variant-remove");
+      if (!btn) return;
+      event.preventDefault();
+      btn.closest(".variant-editor-row")?.remove();
+      updateVariantCount();
+      const editor = T.ui.editor;
+      if (editor) editor.values = { ...editor.values, ...readProductForm(form) };
     });
 
     form?.addEventListener("submit", (event) => {
@@ -817,10 +865,23 @@
       unit: String(data.get("unit") || "").trim(),
       unitSize: String(data.get("unitSize") || "").trim(),
       soldByMass: soldBy === "mass",
-      // Variants preserved from a product being edited are never wiped just
-      // because the field is gone from the form.
       soldBy,
-      variants: previous.variants || [],
+      // Variants live on their own rows — read them straight out of the DOM.
+      variants: (() => {
+        const rows = [];
+        for (const row of form.querySelectorAll(".variant-editor-row")) {
+          const label = String(row.querySelector('[data-field="label"]')?.value || "").trim();
+          const price = String(row.querySelector('[data-field="price"]')?.value || "").trim();
+          const cost = String(row.querySelector('[data-field="cost"]')?.value || "").trim();
+          const stock = String(row.querySelector('[data-field="stock"]')?.value || "").trim();
+          const barcode = String(row.querySelector('[data-field="barcode"]')?.value || "").trim();
+          const id = String(row.dataset.variantId || "").trim();
+          // A fully empty row is simply not saved.
+          if (!label && !price && !cost && !stock && !barcode) continue;
+          rows.push({ id, label, price, cost, stock, barcode });
+        }
+        return rows;
+      })(),
       packSize: data.has("packSize") ? String(data.get("packSize") || "").trim() : (previous.packSize || ""),
       packMode: previous.packMode || "piece",
       packLabel: bundle || (["dozen","packet","box","crate"].includes(String(previous.soldBy)) ? String(previous.soldBy) : "")
