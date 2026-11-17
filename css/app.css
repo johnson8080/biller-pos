@@ -2590,11 +2590,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .vsummary .ico { width: 16px; height: 16px; transition: transform .2s ease; }
 .vblock[open] .vsummary .ico { transform: rotate(90deg); }
 .vbody { border-top: 1px solid var(--ui-line); padding: 12px 13px 13px; }
-.vchips { display: flex; flex-wrap: wrap; gap: 6px; }
-.vchips-cap { width: 100%; margin: 0 0 2px; font-size: calc(8.5px * var(--fs)); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.vchip { min-height: 33px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(var(--accent-rgb), .28); background: var(--lime-soft); color: var(--forest); font-size: calc(11px * var(--fs)); font-weight: 750; cursor: pointer; transition: transform .12s ease, box-shadow .15s ease; }
-.vchip:active { transform: scale(.95); }
-.vchip-custom { background: transparent; border-style: dashed; color: var(--ink-2); }
+.vquick { display: flex; gap: 8px; align-items: center; }
+.vquick .select { flex: 1; min-width: 0; min-height: 44px; }
+.vquick .vchip { flex: none; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: var(--ui-radius); border: 1px dashed rgba(var(--accent-rgb), .4); background: transparent; color: var(--forest); font-size: calc(11.5px * var(--fs)); font-weight: 750; white-space: nowrap; cursor: pointer; }
+.vquick .vchip:active { transform: scale(.97); }
 .vlist { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .vempty { margin-top: 10px; border: 1px dashed var(--ui-line); border-radius: 12px; padding: 16px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: calc(10.5px * var(--fs)); text-align: center; line-height: 1.45; }
 .vempty .ico { width: 22px; height: 22px; color: var(--faint); }

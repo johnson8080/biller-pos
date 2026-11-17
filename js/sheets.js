@@ -606,9 +606,11 @@
             <span class="vmeta"><span class="vcount" id="variant-count">${values.variants.length || ""}</span>${icon("i-chevron")}</span>
           </summary>
           <div class="vbody">
-            <div class="vchips" id="variant-quick-add">
-              <p class="vchips-cap">Quick add</p>
-              ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<button type="button" class="vchip" data-vchip="${esc(label)}">${esc(label)}</button>`).join("")}
+            <div class="vquick" id="variant-quick-add">
+              <select class="select" id="product-add-variant" aria-label="Quick add variant">
+                <option value="">Quick add variant…</option>
+                ${["250 ml","500 ml","750 ml","1 L","2 L","500 g","1 kg","2 kg","Small","Medium","Large","Piece","Sachet"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
+              </select>
               <button type="button" class="vchip vchip-custom" data-vchip="__blank">Custom&hellip;</button>
             </div>
             <div class="vlist" id="variant-editor-list">
@@ -688,6 +690,19 @@
     // Picking a unit reveals the "amount per unit" box; clearing it hides it.
     form?.addEventListener("change", (event) => {
       const t = event.target;
+      if (t.id === "product-add-variant" && t.value) {
+        const list = form.querySelector("#variant-editor-list");
+        if (list) {
+          list.insertAdjacentHTML("beforeend", renderVariantEditorRow({ label: String(t.value), price: "", cost: "", stock: "", barcode: "" }));
+          list.lastElementChild?.querySelector('[data-field="price"]')?.focus({ preventScroll: true });
+          list.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        t.selectedIndex = 0;
+        updateVariantCount();
+        const empty = document.getElementById("variant-empty");
+        if (empty) empty.style.display = "none";
+        return;
+      }
       if (t.id === "product-size") {
         const detail = form.querySelector("#product-detail");
         if (detail) detail.value = t.value || "";
