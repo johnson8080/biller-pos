@@ -425,18 +425,6 @@
             <input class="input" id="product-name" name="name" value="${esc(values.name)}" placeholder="e.g. Oat Milk" required autocomplete="off">
           </div>
         </div>
-        <div class="scan-bar" id="mini-scan" hidden>
-          <div class="scan-bar-head">
-            <span class="scan-bar-title">${icon("i-scan")} Scan the barcode</span>
-            <button class="scan-bar-close" type="button" data-act="close-mini-scan" aria-label="Close the camera">${icon("i-close")}</button>
-          </div>
-          <div class="scan-bar-stage">
-            <video id="mini-scan-video" playsinline muted autoplay aria-label="Camera preview"></video>
-            <span class="scan-bar-reticle" aria-hidden="true"></span>
-            <span class="scan-bar-status" id="mini-scan-status">Starting the camera…</span>
-          </div>
-        </div>
-        <p class="field-help" style="margin-top:8px">EAN-13, EAN-8, UPC-A, UPC-E, Code 128, and Code 39. Leave blank if the item has no barcode.</p>
 
         <div class="field-row">
           <div class="field">
@@ -447,104 +435,44 @@
             </select>
           </div>
           <div class="field">
-            <label for="product-variant">Variant</label>
-            <select class="select" id="product-variant" aria-label="Pick a variant unit">
-              <option value="">—</option>
-              ${["Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
+            <label for="product-unit">Unit</label>
+            <select class="select" id="product-unit" name="unit" aria-label="Stock unit">
+              ${[["pcs","Pieces"],["each","Each"],["pack","Pack"],["box","Box"],["bottle","Bottle"],["sachet","Sachet"],["kg","Kg"],["g","g"],["L","L"],["ml","ml"]].map(([value,label]) => `<option value="${esc(value)}" ${values.unit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="product-soldby">Sold by</label>
-            <select class="select" id="product-soldby" name="soldBy" aria-label="How the item is counted at the till">
-              ${[["each","Each"],["mass","Weight (kg)"],["dozen","Dozen"],["packet","Packet"],["box","Box"],["crate","Crate"]].map(([value,label]) => `<option value="${value}" ${values.soldBy === value ? "selected" : ""}>${label}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field">
-            <label for="product-add-variant">Add variant</label>
-            <select class="select" id="product-add-variant" aria-label="Quickly add a variant">
-              <option value="">— pick to add —</option>
-              ${["250 ml","500 ml","1 L","500 g","1 kg","Small","Medium","Large","Litres","Millilitres","Kilograms","Grams","Milligrams"].map((label) => `<option value="${esc(label)}">${esc(label)}</option>`).join("")}
-            </select>
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="product-type">Product type</label>
-            <select class="select" id="product-type" name="soldByType" aria-label="Which bundle the item comes in">
-              ${["Dozen","Packet","Box","Crate"].map((label) => `<option value="${label.toLowerCase()}" ${values.soldBy === label.toLowerCase() ? "selected" : ""}>${label}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">Which type of bundle it comes in</span></div>
-        </div>
-        <p class="field-help" id="product-soldby-help" style="margin-top:-2px">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["dozen","packet","box","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces in a ${values.soldBy} (${values.packSize} pcs).` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
-
-        <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail)}">
-
-        <div class="field" id="product-pack-size-row" style="${["dozen","packet","box","crate"].includes(values.soldBy) ? "" : "display:none"}">
-          <label for="product-pack-size">Pieces per ${values.soldBy} <span class="muted" style="text-transform:none;letter-spacing:0">(pieces per bundle)</span></label>
-          <div class="variant-chips" role="group" aria-label="Bundle size in pieces">
-            ${[6, 12, 24, 30, 48].map((n) => `<button type="button" class="variant-chip pack-chip ${values.packSize === String(n) ? "is-active" : ""}" data-pack="${n}">${n}</button>`).join("")}
-          </div>
-          <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
-          <p class="derived-piece" id="derived-piece-row" style="${values.packSize ? "" : "display:none"}"><span id="derived-piece-text">Live: each piece derives to —</span></p>
-          <p class="field-help">For items you receive in boxes or dozens — stock-in will convert packs into pieces for you.</p>
-          <div class="segmented-row pack-mode-row" id="pack-price-row">
-            <span class="field-help" style="margin:0">The cost &amp; price above are per:</span>
-            <div class="segmented compact" id="product-price-mode" role="group" aria-label="Prices per piece or per pack">
-              <button type="button" class="seg-btn ${values.packMode === "pack" ? "" : "is-active"}" data-mode="piece">Piece</button>
-              <button type="button" class="seg-btn ${values.packMode === "pack" ? "is-active" : ""}" data-mode="pack">Pack</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Variants <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
-          <div class="variant-editor" id="variant-editor-list">
-            ${(values.variants || []).map((variant, index) => renderVariantEditorRow(variant, index, values.category)).join("")}
-          </div>
-          <p class="field-help">Sold in sizes, packs or strengths (500g / 1kg, small / large). Each variant gets its own price, cost, stock and barcode — the till will ask which one you sold. Pick one from the Add variant dropdown above to add it.</p>
         </div>
 
         <div class="field-row">
           <div class="field">
             <label for="product-cost">Buying price</label>
             <div class="input-affix"><input class="input" id="product-cost" name="cost" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(values.cost)}" placeholder="0.00"><span class="affix">${esc(T.currencySymbol())}</span></div>
-            <p class="field-help" id="product-cost-help">${values.soldByMass ? "What you pay per kilogram." : "What you pay for each one."}</p>
           </div>
           <div class="field">
             <label for="product-price">Selling price</label>
             <div class="input-affix"><input class="input" id="product-price" name="price" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(values.price)}" placeholder="0.00" required><span class="affix">${esc(T.currencySymbol())}</span></div>
-            <p class="field-help" id="product-price-help">${values.soldByMass ? "What the customer pays per kilogram." : "What the customer pays."}</p>
           </div>
         </div>
-        <div class="field-row field-row-2">
-          <div class="field">
-            <label for="product-stock" id="product-stock-label">${values.soldByMass ? "In stock (kg)" : "In stock"}</label>
-            <input class="input" id="product-stock" name="stock" type="number" min="0" step="${values.soldByMass ? "0.001" : "1"}" inputmode="decimal" value="${esc(values.stock)}" required>
-          </div>
-          <div class="field">
-            <label for="product-unit">Unit</label>
-            <select class="select" id="product-unit" name="unit" aria-label="Stock unit" ${values.soldByMass ? "disabled" : ""}>
-              ${STOCK_UNITS.map(([value, label]) => `<option value="${esc(value)}" ${values.soldByMass ? value === "kg" : values.unit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
-            </select>
-          </div>
-        </div>
+
         <div class="field-row">
           <div class="field">
-            <label for="product-category">Category</label>
-            <select class="select" id="product-category" name="category">
-              ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
-            </select>
-            <p class="field-help">Add or rename categories in More.</p>
+            <label for="product-stock" id="product-stock-label">In stock</label>
+            <input class="input" id="product-stock" name="stock" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.stock)}" required>
           </div>
           <div class="field">
             <label for="product-low">Low-stock alert</label>
             <input class="input" id="product-low" name="lowStockAt" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.lowStockAt)}">
           </div>
         </div>
+
+        <div class="field">
+          <label for="product-category">Category</label>
+          <select class="select" id="product-category" name="category">
+            ${T.categories().map((category) => `<option value="${esc(category)}" ${values.category === category ? "selected" : ""}>${esc(category)}</option>`).join("")}
+          </select>
+        </div>
+
+        <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail || "")}">
+
         <div class="form-error" role="alert"></div>
         <div class="sheet-actions">
           <button class="btn btn-primary" type="submit">${editing ? "Save changes" : "Add product"} ${icon("i-check")}</button>
@@ -554,91 +482,9 @@
     });
 
     const form = document.getElementById("product-form");
-    // Switch the "Sold by" mode. Shared by the inline select and the legacy
-    // segmented buttons: flipping the mode invisibly keeps grid/unit fields in
-    // sync so the shopkeeper never loses what they already typed.
-    function applySoldBy(form, nextSoldBy) {
-      const editor = T.ui.editor;
-      if (!editor || editor.values.soldBy === nextSoldBy) return;
-      editor.values.soldBy = nextSoldBy;
-      const wantMass = nextSoldBy === "mass";
-      const wantBundle = ["dozen", "packet", "box", "crate"].includes(nextSoldBy);
-      editor.values.packMode = wantMass || wantBundle ? editor.values.packMode : "piece";
-      const stockInput = form.querySelector("#product-stock");
-      const stockLabel = form.querySelector("#product-stock-label");
-      const unitSelect = form.querySelector("#product-unit");
-      const costHelp = form.querySelector("#product-cost-help");
-      const priceHelp = form.querySelector("#product-price-help");
-      const soldByHelp = form.querySelector("#product-soldby-help");
-      const packInputBlock = form.querySelector("#product-pack-size-row");
-      if (stockInput) {
-        stockInput.step = wantMass ? "0.001" : "1";
-        stockInput.inputMode = wantMass ? "decimal" : "numeric";
-      }
-      if (stockLabel) stockLabel.textContent = wantMass ? "In stock (kg)" : "In stock";
-      if (unitSelect) {
-        unitSelect.disabled = wantMass || wantBundle;
-        if (wantMass) unitSelect.value = "kg";
-        if (wantBundle) unitSelect.value = "pcs";
-      }
-      if (costHelp) costHelp.textContent = wantMass ? "What you pay per kilogram." : wantBundle ? "What you pay for each piece (or each pack at pack price)." : "What you pay for each one.";
-      if (priceHelp) priceHelp.textContent = wantMass ? "What the customer pays per kilogram." : wantBundle ? "What the customer pays (per piece or per pack)." : "What the customer pays.";
-      if (packInputBlock) packInputBlock.style.display = wantBundle ? "" : "none";
-      if (soldByHelp) soldByHelp.textContent = wantMass ? "For items the shop weighs: flour, produce, meat." : wantBundle ? `Bundled stock — the till asks how many pieces${editor.values.packSize ? ` (1 ${nextSoldBy} = ${editor.values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold).";
-    }
-
-        // Dropdown selects: selection runs top to bottom — size/variant fill the
-    // detail field, sold-by flips mode, add-variant inserts a variant row.
-    form?.addEventListener("change", (event) => {
-      const t = event.target;
-      const sizeSelect = form.querySelector("#product-size");
-      const variantSelect = form.querySelector("#product-variant");
-      const soldBySelect = form.querySelector("#product-soldby");
-      const addVariantSelect = form.querySelector("#product-add-variant");
-      if (t === sizeSelect || t === variantSelect) {
-        const detail = form.querySelector("#product-detail");
-        if (detail && t.value) {
-          detail.value = t.value;
-          detail.dispatchEvent(new Event("input", { bubbles: true }));
-          if (t === sizeSelect && variantSelect && variantSelect.value !== t.value) variantSelect.value = t.value;
-          if (t === variantSelect && sizeSelect && sizeSelect.value !== t.value) sizeSelect.value = t.value;
-        }
-        return;
-      }
-      if (t === soldBySelect && t.tagName?.toLowerCase() === "select") {
-        applySoldBy(form, t.value);
-        const productTypeSelect = form.querySelector("#product-type");
-        if (productTypeSelect && productTypeSelect.value !== t.value) productTypeSelect.value = t.value;
-        return;
-      }
-      if (t === addVariantSelect && t.value) {
-        const list = form.querySelector("#variant-editor-list");
-        if (!list) return;
-        const values = T.ui?.editor?.values;
-        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
-        const rowHtml = renderVariantEditorRow({ label: t.value, price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
-        list.insertAdjacentHTML("beforeend", rowHtml);
-        list.lastElementChild?.querySelector(".variant-price")?.focus({ preventScroll: true });
-        list.dispatchEvent(new Event("input", { bubbles: true }));
-        t.selectedIndex = 0;
-        return;
-      }
-      // Product type dropdown change → mirror into the Sold by dropdown.
-      const productTypeSelect = form.querySelector("#product-type");
-      if (t === productTypeSelect && t.tagName?.toLowerCase() === "select") {
-        const soldBySelect = form.querySelector("#product-soldby");
-        if (soldBySelect) {
-          soldBySelect.value = t.value;
-          // Dispatch a change so the sold-by branch runs its mode flip.
-          soldBySelect.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        return;
-      }
-    });
-
+    // Save every keystroke back to T.ui.editor.values so nothing the shopkeeper
+    // typed is lost if the sheet closes and reopens.
     form?.addEventListener("input", () => {
-      // Keep the saved copy in step with the form, so nothing the shopkeeper
-      // has already typed is ever lost.
       const editor = T.ui.editor;
       if (editor) editor.values = { ...editor.values, ...readProductForm(form) };
       const name = form.querySelector("#product-name")?.value || "New product";
@@ -649,93 +495,14 @@
       if (tile) { tile.textContent = T.initials(name); tile.className = `tile tile-lg tone-${T.toneFor(category)}`; }
       if (previewName) previewName.textContent = name;
       if (meta) meta.textContent = `${category}${form.querySelector("#product-barcode")?.value ? ` · ${form.querySelector("#product-barcode").value}` : ""}`;
-      // Keep the quick-pick chips in step with whatever is in the field.
-      const detailValue = form.querySelector("#product-detail")?.value.trim() || "";
-      const packValue = form.querySelector("#product-pack-size")?.value.trim() || "";
-      form.querySelectorAll(".variant-chip").forEach((chip) => {
-        if (chip.classList.contains("pack-chip")) chip.classList.toggle("is-active", chip.dataset.pack === packValue);
-        else chip.classList.toggle("is-active", chip.dataset.variant === detailValue);
-      });
-      // Variant tile initials update as the label is typed.
-      form.querySelectorAll(".variant-editor-row").forEach((row) => {
-        const tile = row.querySelector(".variant-editor-tile");
-        const label = row.querySelector('[data-field="label"]')?.value || "";
-        if (tile) tile.textContent = T.initials(label || "New");
-      });
-      // Live "each piece derives to X / sells at Y" preview so shopkeepers see
-      // exactly what unit price will be saved before they hit Save.
-      const derivedRow = form.querySelector("#derived-piece-row");
-      const derivedText = form.querySelector("#derived-piece-text");
-      const packN = Number(form.querySelector("#product-pack-size")?.value || 0);
-      const costRaw = String(form.querySelector("#product-cost")?.value || "").trim();
-      const priceRaw = String(form.querySelector("#product-price")?.value || "").trim();
-      const packMode = form.querySelector("#product-price-mode .seg-btn.is-active")?.dataset?.mode || "piece";
-      if (derivedRow && derivedText) {
-        if (packN > 0 && (packMode === "pack") && (costRaw !== "" || priceRaw !== "")) {
-          const cp = costRaw === "" ? 0 : Number(costRaw) || 0;
-          const sp = priceRaw === "" ? 0 : Number(priceRaw) || 0;
-          derivedRow.style.display = "";
-          derivedText.textContent = `Live (each piece): cost KSh ${(cp / packN).toFixed(2)} · sell KSh ${(sp / packN).toFixed(2)}`;
-        } else {
-          derivedRow.style.display = "none";
-        }
-      }
     });
 
-    form?.addEventListener("click", (event) => {
-      // Piece/Pack price mode toggle — only relevant with a pack size entered.
-      const segBtn = event.target.closest("#product-price-mode .seg-btn");
-      if (segBtn) {
-        document.querySelectorAll("#product-price-mode .seg-btn").forEach((btn) => {
-          btn.classList.toggle("is-active", btn === segBtn);
-        });
-        return;
-      }
-      // Common size chips set the Size field; pack chips fill pack size.
-      const chip = event.target.closest(".variant-chip");
-      if (chip) {
-        const pack = chip.dataset.pack;
-        if (pack !== undefined) {
-          const input = form.querySelector("#product-pack-size");
-          if (input) {
-            input.value = pack;
-            input.dispatchEvent(new Event("input", { bubbles: true }));
-            form.querySelectorAll(".pack-chip").forEach((b) => b.classList.toggle("is-active", b.dataset.pack === pack));
-          }
-          return;
-        }
-        const input = form.querySelector("#product-detail");
-        if (!input) return;
-        input.value = chip.dataset.variant;
-        input.dispatchEvent(new Event("input", { bubbles: true }));
-        return;
-      }
-      // Add/remove variant rows.
-      if (event.target.closest("#add-variant")) {
-        const list = form.querySelector("#variant-editor-list");
-        if (!list) return;
-        const values = T.ui?.editor?.values;
-        const category = form.querySelector("#product-category")?.value || (values?.category || T.categories()[0] || "General");
-        const rowHtml = renderVariantEditorRow({ label: "", price: "", cost: "", stock: "", barcode: "" }, list.children.length, category);
-        list.insertAdjacentHTML("beforeend", rowHtml);
-        list.lastElementChild?.querySelector(".variant-label")?.focus({ preventScroll: true });
-        list.dispatchEvent(new Event("input", { bubbles: true }));
-        return;
-      }
-      const removeBtn = event.target.closest(".variant-remove");
-      if (removeBtn) {
-        const row = removeBtn.closest(".variant-editor-row");
-        if (row) {
-          row.remove();
-          form.querySelector("#variant-editor-list")?.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        return;
-      }
-      // Legacy Sold-by buttons, still work if rendered; select selects use change.
-      const soldByBtn = event.target.closest("#product-soldby .seg-btn, #product-soldby button");
-      if (soldByBtn && form.querySelector("#product-soldby")?.tagName?.toLowerCase() === "button") {
-        applySoldBy(form, soldByBtn.dataset.soldby || "each");
-        return;
+    // Size dropdown writes to the hidden detail.
+    form?.addEventListener("change", (event) => {
+      const t = event.target;
+      if (t.id === "product-size") {
+        const detail = form.querySelector("#product-detail");
+        if (detail) detail.value = t.value || "";
       }
     });
 
@@ -831,7 +598,7 @@
         existing.soldByMass = mass;
         existing.soldBy = values.soldBy;
         existing.packSize = packSize;
-        existing.packLabel = values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack";
+        existing.packLabel = ["dozen","packet","box","crate"].includes(values.soldBy) ? values.soldBy : "";
         existing.packMode = values.packMode;
         existing.variants = variants;
       } else {
@@ -848,7 +615,7 @@
           category: values.category,
           soldByMass: mass,
           packSize,
-          packLabel: values.packLabel || (values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack"),
+          packLabel: values.packLabel || (["dozen","packet","box","crate"].includes(values.soldBy) ? values.soldBy : ""),
           variants,
           packMode: values.packMode
         };
@@ -870,28 +637,9 @@
   function readProductForm(form) {
     if (!form) return null;
     const data = new FormData(form);
-    // The Each/Weight/Pack buttons set the soldBy mode — Everything else follows.
-    const editorMass = T.ui?.editor?.values?.soldByMass === true;
-    const soldBy = form.querySelector("#product-soldby .seg-btn.is-active")?.dataset?.soldby || "each";
-    // Variants live on their own rows — read them straight out of the DOM.
-    const variants = [];
-    for (const row of form.querySelectorAll(".variant-editor-row")) {
-      const label = String(row.querySelector('[data-field="label"]')?.value || "").trim();
-      const priceStr = String(row.querySelector('[data-field="price"]')?.value || "").trim();
-      const costStr = String(row.querySelector('[data-field="cost"]')?.value || "").trim();
-      const stockStr = String(row.querySelector('[data-field="stock"]')?.value || "").trim();
-      const barcode = String(row.querySelector('[data-field="barcode"]')?.value || "").trim();
-      const id = String(row.dataset.variantId || "").trim();
-      if (!label) continue; // empty row → skip
-      variants.push({
-        id: id || "",
-        label,
-        price: priceStr,
-        cost: costStr,
-        stock: stockStr,
-        barcode
-      });
-    }
+    // Preserve the previous product's sold-by, pack and variant config — the
+    // simplified onboarding form no longer edits them.
+    const previous = T.ui?.editor?.values || {};
     return {
       name: String(data.get("name") || "").trim(),
       detail: String(data.get("detail") || "").trim(),
@@ -900,13 +648,17 @@
       stock: String(data.get("stock") || "").trim(),
       lowStockAt: String(data.get("lowStockAt") || "5").trim(),
       barcode: String(data.get("barcode") || "").trim(),
-      packSize: String(data.get("packSize") || "").trim(),
       category: String(data.get("category") || T.categories()[0] || "General"),
       unit: String(data.get("unit") || "pcs").trim() || "pcs",
-      soldByMass: soldBy === "mass",
-      soldBy,
-      variants,
-      packMode: form.querySelector("#product-price-mode .seg-btn.is-active")?.dataset?.mode || "piece"
+      soldByMass: previous.soldBy === "mass",
+      // New products default to a simple piece-sold config; variants preserved
+      // from a product being edited are never wiped just because the field
+      // is gone from the form.
+      soldBy: previous.soldBy || "each",
+      variants: previous.variants || [],
+      packSize: previous.packSize || "",
+      packMode: previous.packMode || "piece",
+      packLabel: previous.packLabel || ""
     };
   }
 
