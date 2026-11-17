@@ -720,23 +720,26 @@
       if (existing) {
         existing.name = values.name;
         existing.detail = values.detail;
-        existing.price = price;
-        existing.cost = cost;
+        existing.price = unitPrice;
+        existing.cost = unitCost;
         existing.stock = stock;
         existing.lowStockAt = lowStockAt;
         existing.unit = mass ? "kg" : values.unit;
         existing.barcode = barcode;
         existing.category = values.category;
         existing.soldByMass = mass;
+        existing.soldBy = values.soldBy;
         existing.packSize = packSize;
+        existing.packLabel = values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack";
+        existing.packMode = values.packMode;
         existing.variants = variants;
       } else {
         const product = {
           id: T.uid(),
           name: values.name,
           detail: values.detail,
-          price,
-          cost,
+          price: unitPrice,
+          cost: unitCost,
           stock,
           lowStockAt,
           unit: mass ? "kg" : values.unit,
@@ -744,7 +747,9 @@
           category: values.category,
           soldByMass: mass,
           packSize,
-          variants
+          packLabel: values.packLabel || (values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack"),
+          variants,
+          packMode: values.packMode
         };
         T.state.products.unshift(product);
         if (editor.addToCart) {
