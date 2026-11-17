@@ -328,7 +328,7 @@
     return {
       name: "", detail: "", price: "", cost: "", stock: "10", lowStockAt: "5",
       barcode: "", category: categories[0] || "General", unit: "pcs",
-      soldByMass: false, packSize: "", packMode: "piece", variants: []
+      soldByMass: false, packSize: "", packMode: "piece", variants: [], soldBy: "each"
     };
   }
 
@@ -347,6 +347,7 @@
       soldByMass: product.soldByMass === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
       packMode: product.packMode === "pack" ? "pack" : "piece",
+      soldBy: ["each", "mass", "pack", "dozen", "crate"].includes(String(product.soldBy)) ? String(product.soldBy) : (product.soldByMass === true ? "mass" : (Number(product.packSize) > 0 ? "pack" : "each")),
       variants: (product.variants || []).map((variant) => ({
         id: variant.id,
         label: variant.label,
@@ -438,14 +439,14 @@
           <p class="field-help">Tap a common size or unit, or type your own.</p>
         </div>
 
-        <div class="field">
-          <label>Pack size <span class="muted" style="text-transform:none;letter-spacing:0">(optional)</span></label>
+        <div class="field" id="product-pack-size-row" style="${["pack","dozen","crate"].includes(values.soldBy) ? "" : "display:none"}">
+          <label for="product-pack-size">Pieces per ${values.soldBy === "dozen" ? "dozen" : values.soldBy === "crate" ? "crate" : "pack"} <span class="muted" style="text-transform:none;letter-spacing:0">(bundle size)</span></label>
           <div class="variant-chips" role="group" aria-label="Pack multipliers">
             ${[6, 12, 24, 30, 48].map((n) => `<button type="button" class="variant-chip pack-chip ${values.packSize === String(n) ? "is-active" : ""}" data-pack="${n}">${n}</button>`).join("")}
           </div>
           <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
           <p class="field-help">For items you receive in boxes or dozens — stock-in will convert packs into pieces for you.</p>
-          <div class="segmented-row pack-mode-row" id="pack-price-row" style="${values.packSize ? "" : "display:none"}">
+          <div class="segmented-row pack-mode-row" id="pack-price-row">
             <span class="field-help" style="margin:0">The cost &amp; price above are per:</span>
             <div class="segmented compact" id="product-price-mode" role="group" aria-label="Prices per piece or per pack">
               <button type="button" class="seg-btn ${values.packMode === "pack" ? "" : "is-active"}" data-mode="piece">Piece</button>
@@ -464,11 +465,14 @@
         </div>
         <div class="field">
           <label>Sold by</label>
-          <div class="segmented" id="product-mass-toggle" role="group" aria-label="Sold by each or by weight">
-            <button type="button" class="seg-btn ${!values.soldByMass ? "is-active" : ""}" data-mass="off" aria-pressed="${!values.soldByMass}">Each</button>
-            <button type="button" class="seg-btn ${values.soldByMass ? "is-active" : ""}" data-mass="on" aria-pressed="${values.soldByMass}">${icon("i-scale")} Weight (kg)</button>
+          <div class="segmented seg-five" id="product-soldby" role="group" aria-label="How the item is counted at the till">
+            <button type="button" class="seg-btn ${values.soldBy === "each" ? "is-active" : ""}" data-soldby="each" aria-pressed="${values.soldBy === "each"}">Each</button>
+            <button type="button" class="seg-btn ${values.soldBy === "mass" ? "is-active" : ""}" data-soldby="mass" aria-pressed="${values.soldBy === "mass"}">${icon("i-scale")} Weight</button>
+            <button type="button" class="seg-btn ${values.soldBy === "pack" ? "is-active" : ""}" data-soldby="pack" aria-pressed="${values.soldBy === "pack"}">Pack</button>
+            <button type="button" class="seg-btn ${values.soldBy === "dozen" ? "is-active" : ""}" data-soldby="dozen" aria-pressed="${values.soldBy === "dozen"}">Dozen</button>
+            <button type="button" class="seg-btn ${values.soldBy === "crate" ? "is-active" : ""}" data-soldby="crate" aria-pressed="${values.soldBy === "crate"}">Crate</button>
           </div>
-          <p class="field-help">Pick Weight for items the shop weighs: flour, produce, meat. You will type the weight at the till.</p>
+          <p class="field-help" id="product-soldby-help">${values.soldBy === "mass" ? "For items the shop weighs: flour, produce, meat." : ["pack","dozen","crate"].includes(values.soldBy) ? `Bundled stock — the till asks how many pieces${values.packSize ? ` (1 ${values.soldBy} = ${values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold)."}</p>
         </div>
         <div class="field-row">
           <div class="field">
@@ -536,9 +540,6 @@
         if (chip.classList.contains("pack-chip")) chip.classList.toggle("is-active", chip.dataset.pack === packValue);
         else chip.classList.toggle("is-active", chip.dataset.variant === detailValue);
       });
-      // Show the piece/pack price toggle only when a pack size is filled.
-      const packModeRow = form.querySelector("#pack-price-row");
-      if (packModeRow) packModeRow.style.display = packValue ? "" : "none";
       // Variant tile initials update as the label is typed.
       form.querySelectorAll(".variant-editor-row").forEach((row) => {
         const tile = row.querySelector(".variant-editor-tile");
@@ -596,35 +597,45 @@
         }
         return;
       }
-      // The Each / Weight switch: it flips the stock and unit fields in
-      // place, so nothing the shopkeeper typed is lost.
-      const massBtn = event.target.closest("#product-mass-toggle .seg-btn");
-      if (!massBtn) return;
-      const wantMass = massBtn.dataset.mass === "on";
-      const editor = T.ui.editor;
-      if (!editor || editor.values.soldByMass === wantMass) return;
-      editor.values.soldByMass = wantMass;
-      const stockInput = form.querySelector("#product-stock");
-      const stockLabel = form.querySelector("#product-stock-label");
-      const unitSelect = form.querySelector("#product-unit");
-      const costHelp = form.querySelector("#product-cost-help");
-      const priceHelp = form.querySelector("#product-price-help");
-      form.querySelectorAll("#product-mass-toggle .seg-btn").forEach((btn) => {
-        const on = btn.dataset.mass === "on";
-        btn.classList.toggle("is-active", on === wantMass);
-        btn.setAttribute("aria-pressed", String(on === wantMass));
-      });
-      if (stockInput) {
-        stockInput.step = wantMass ? "0.001" : "1";
-        stockInput.inputMode = "decimal";
+      // The Sold-by buttons flop the shared stock/unit fields in place, so
+      // nothing the shopkeeper typed is lost.
+      const soldByBtn = event.target.closest("#product-soldby .seg-btn");
+      if (soldByBtn) {
+        const nextSoldBy = soldByBtn.dataset.soldby || "each";
+        const editor = T.ui.editor;
+        if (!editor || editor.values.soldBy === nextSoldBy) return;
+        editor.values.soldBy = nextSoldBy;
+        const wantMass = nextSoldBy === "mass";
+        const wantBundle = ["pack", "dozen", "crate"].includes(nextSoldBy);
+        editor.values.packMode = wantMass || wantBundle ? editor.values.packMode : "piece";
+        const stockInput = form.querySelector("#product-stock");
+        const stockLabel = form.querySelector("#product-stock-label");
+        const unitSelect = form.querySelector("#product-unit");
+        const costHelp = form.querySelector("#product-cost-help");
+        const priceHelp = form.querySelector("#product-price-help");
+        const soldByHelp = form.querySelector("#product-soldby-help");
+        const packInputBlock = form.querySelector("#product-pack-size-row");
+        form.querySelectorAll("#product-soldby .seg-btn").forEach((btn) => {
+          const on = btn.dataset.soldby === nextSoldBy;
+          btn.classList.toggle("is-active", on);
+          btn.setAttribute("aria-pressed", String(on));
+        });
+        if (stockInput) {
+          stockInput.step = wantMass ? "0.001" : "1";
+          stockInput.inputMode = wantMass ? "decimal" : "numeric";
+        }
+        if (stockLabel) stockLabel.textContent = wantMass ? "In stock (kg)" : "In stock";
+        if (unitSelect) {
+          unitSelect.disabled = wantMass || wantBundle;
+          if (wantMass) unitSelect.value = "kg";
+          if (wantBundle) unitSelect.value = "pcs";
+        }
+        if (costHelp) costHelp.textContent = wantMass ? "What you pay per kilogram." : wantBundle ? "What you pay for each piece (or each pack at pack price)." : "What you pay for each one.";
+        if (priceHelp) priceHelp.textContent = wantMass ? "What the customer pays per kilogram." : wantBundle ? "What the customer pays (per piece or per pack)." : "What the customer pays.";
+        if (packInputBlock) packInputBlock.style.display = wantBundle ? "" : "none";
+        if (soldByHelp) soldByHelp.textContent = wantMass ? "For items the shop weighs: flour, produce, meat." : wantBundle ? `Bundled stock — the till asks how many pieces${editor.values.packSize ? ` (1 ${nextSoldBy} = ${editor.values.packSize} pcs)` : ""}.` : "Whole, countable items (a piece leaves the shelf when sold).";
+        return;
       }
-      if (stockLabel) stockLabel.textContent = wantMass ? "In stock (kg)" : "In stock";
-      if (unitSelect) {
-        unitSelect.disabled = wantMass;
-        if (wantMass) unitSelect.value = "kg";
-      }
-      if (costHelp) costHelp.textContent = wantMass ? "What you pay per kilogram." : "What you pay for each one.";
-      if (priceHelp) priceHelp.textContent = wantMass ? "What the customer pays per kilogram." : "What the customer pays.";
     });
 
     form?.addEventListener("submit", (event) => {
@@ -753,9 +764,9 @@
   function readProductForm(form) {
     if (!form) return null;
     const data = new FormData(form);
-    // The Each/Weight switch is not a form field, so it rides in from the
-    // editor's own saved copy.
+    // The Each/Weight/Pack buttons set the soldBy mode — Everything else follows.
     const editorMass = T.ui?.editor?.values?.soldByMass === true;
+    const soldBy = form.querySelector("#product-soldby .seg-btn.is-active")?.dataset?.soldby || "each";
     // Variants live on their own rows — read them straight out of the DOM.
     const variants = [];
     for (const row of form.querySelectorAll(".variant-editor-row")) {
@@ -786,7 +797,8 @@
       packSize: String(data.get("packSize") || "").trim(),
       category: String(data.get("category") || T.categories()[0] || "General"),
       unit: String(data.get("unit") || "pcs").trim() || "pcs",
-      soldByMass: editorMass,
+      soldByMass: soldBy === "mass",
+      soldBy,
       variants,
       packMode: form.querySelector("#product-price-mode .seg-btn.is-active")?.dataset?.mode || "piece"
     };

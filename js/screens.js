@@ -35,9 +35,14 @@
     return `<span class="stock-note">${stock} ${unit}${variantSuffix}</span>`;
   }
 
-  /** The price a product sells at: min variant price, or per kg for weighed. */
+  /** The price a product sells at: min variant price, or per kg / per bundle. */
   function priceTag(product) {
     if (product.soldByMass) return `${money(product.price)}/kg`;
+    const isBundle = ["pack", "dozen", "crate"].includes(String(product.soldBy || ""));
+    if (isBundle && product.packSize > 0) {
+      const unit = product.packLabel || product.soldBy || "pack";
+      return `${money(product.price * product.packSize)}/${unit}`;
+    }
     const variantPrice = (product.variants || []).reduce((min, v) => v.price && (!min || v.price < min) ? v.price : min, 0);
     if (variantPrice) return `${money(variantPrice)}+`;
     return money(product.price);

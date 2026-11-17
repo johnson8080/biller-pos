@@ -857,20 +857,21 @@ function runAction(btn) {
         return;
       }
     }
-    // A weighed item has no fixed "one": the scale opens instead.
-    if (product?.soldByMass) {
+    // Variants choose before anything else (e.g. 500 ml vs 1 L), they work
+    // for single items and bundles alike.
+    if ((product?.variants || []).length) {
+      T.sheets?.openVariantPicker?.(product);
+      return;
+    }
+    // Weight is measured on the scale, like a pack is picked by piece.
+    if (product?.soldByMass || product?.soldBy === "mass") {
       T.sheets?.openWeigh?.(product);
       return;
     }
-    // Bundled stock (dozen / crate / pack): pick how many pieces, the same
-    // way the scale works for weighed items.
-    if ((product?.packSize || 0) > 0 && !(product?.variants || []).length) {
+    // A bundle (dozen / crate / pack) counts by pieces at the sale, the
+    // shopkeeper picks how many, just like reading the scale for weight.
+    if (typeof T.isBundle === "function" && T.isBundle(product)) {
       T.sheets?.openPackPicker?.(product);
-      return;
-    }
-    // Variants choose before they join the sale (e.g. 500 ml vs 1 L).
-    if ((product?.variants || []).length) {
-      T.sheets?.openVariantPicker?.(product);
       return;
     }
     if (T.addToCart(product, 1)) render();
