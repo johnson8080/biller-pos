@@ -303,12 +303,15 @@
     // pick row at the top at the parent price against the parent stock.
     const plainBlock = product.sellParent ? (() => {
       const plainOut = (product.stock || 0) <= 0;
+      // The plain row leads with its content size, just like a variant leads
+      // with its own label, and the small line matches the variant format.
+      const plainLabel = sizeLabel || product.detail || "Plain item";
       return `<div class="variant-pick ${plainOut ? "is-out" : ""}">
         <div class="variant-pick-head">
           <span class="variant-pick-tile tone-${T.toneFor(product.category)}" aria-hidden="true">${icon("i-box")}</span>
           <span class="variant-pick-copy">
-            <strong>Plain item</strong>
-            <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`}${sizeLabel ? ` · ${esc(sizeLabel)}/piece` : ""} · ${money(product.price)} each</small>
+            <strong>${esc(plainLabel)}</strong>
+            <small>${plainOut ? "Sold out" : `${product.stock} ${esc(unit)} in stock`} · ${money(product.price)} each</small>
           </span>
           <span class="variant-pick-price">${money(product.price)}</span>
         </div>
