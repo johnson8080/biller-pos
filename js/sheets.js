@@ -444,7 +444,12 @@
       const plural = PACK_PLURAL[type] || "";
       const typedStr = String(typed ?? "").trim();
       const typedNum = Number(typedStr);
-      if (!bundle) return { label: "In stock", hint: "The number you type is the stock." };
+      if (!bundle) {
+        if (unit && sizeNum !== null) {
+          return { label: `In stock (pieces of ${sizeNum} ${unitSymbol(unit)})`, hint: `The number you type is the stock — pieces of ${sizeNum} ${unitSymbol(unit)} each.` };
+        }
+        return { label: "In stock", hint: "The number you type is the stock." };
+      }
       const label = `In stock (${plural}${unitPart})`;
       let hint;
       if (typedStr === "" || !Number.isFinite(typedNum)) hint = "The number you type is how many bundles you have.";
@@ -784,7 +789,7 @@
       T.ui.editor = null;
       close(true);
       T.toast(existing ? "Product updated" : "Product added", "i-check");
-      window.render?.();
+      if (editor.addToCart && window.resetSellSearch) window.resetSellSearch(); else window.render?.();
     });
   }
 
@@ -2462,14 +2467,14 @@
         T.save();
         close(true);
         T.toast(`${product.name}: ${T.massLabel(grams)} added`, "i-check");
-        window.render?.();
+        if (window.resetSellSearch) window.resetSellSearch(); else window.render?.();
         return;
       }
       if (T.addToCart(product, grams)) {
         T.confirmAdded(product, grams);
         close(true);
         if (fromScan) T.scanner?.resume?.();
-        window.render?.();
+        if (window.resetSellSearch) window.resetSellSearch(); else window.render?.();
       }
     });
   }
@@ -2567,7 +2572,7 @@
         T.confirmAdded(product, pieces);
         close(true);
         if (fromScan) T.scanner?.resume?.();
-        window.render?.();
+        if (window.resetSellSearch) window.resetSellSearch(); else window.render?.();
       }
     });
   }

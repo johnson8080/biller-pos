@@ -874,7 +874,7 @@ function runAction(btn) {
       T.sheets?.openPackPicker?.(product);
       return;
     }
-    if (T.addToCart(product, 1)) render();
+    if (T.addToCart(product, 1)) resetSellSearch();
   }
   else if (act === "pick-variant-qty" && id) {
     const product = T.findProduct(id);
@@ -887,14 +887,14 @@ function runAction(btn) {
       : Math.max(1, Number(btn.dataset.qty) || 1);
     const ok = T.addToCart(product, pieces, variant.id);
     if (ok) T.toast(`${product.name} · ${variant.label} — ${pieces} ${unit} added`, "i-check");
-    window.render?.();
+    resetSellSearch();
   }
   else if (act === "pick-variant" && id && btn.dataset.variant) {
     const product = T.findProduct(id);
     const variant = product ? T.findVariant(product, btn.dataset.variant) : null;
     if (!product || !variant) { T.toast("That variant is no longer available", "i-alert"); T.sheets?.close?.(true); return; }
     if (T.addToCart(product, 1, variant.id)) T.toast(`${product.name} · ${variant.label} added`, "i-check");
-    window.render?.();
+    resetSellSearch();
   }
   else if (act === "open-weigh" && id) {
     const variantId = btn.dataset.variant || null;
@@ -1683,6 +1683,23 @@ function updateSyncDot() {
 // Keep the ring honest even when the Firebase SDK never loads.
 setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
 
+// Clearing the search query after an item is added to the sale, so the
+// shopkeeper can scan/type the next item right away. The search bar stays
+// open until they close it themselves (the search button toggles it).
+function resetSellSearch() {
+  const T = window.Till;
+  if (!T) return;
+  T.ui.search = "";
+  const keepOpen = Boolean(T.ui.searchOpen);
+  render();
+  if (keepOpen) {
+    requestAnimationFrame(() => {
+      document.getElementById("sell-search")?.focus({ preventScroll: true });
+    });
+  }
+}
+window.resetSellSearch = resetSellSearch;
+
 function render() {
   const T = window.Till;
   if (!T || !T.screens) {
@@ -2100,18 +2117,8 @@ function boot() {
 
 window.render = render;
 
-// Tapping anywhere outside the search bar closes it and returns to the
-// normal Sell view. The search button and the bar itself are excluded.
-document.addEventListener("click", (event) => {
-  const T = window.Till;
-  if (!T?.ui?.searchOpen) return;
-  if (T.ui.route?.name !== "sell") return;
-  const target = event.target;
-  if (target?.closest?.("#sell-search-wrap") || target?.closest?.(".hero-search")) return;
-  T.ui.searchOpen = false;
-  T.ui.search = "";
-  render();
-});
+// The search bar stays open until the shopkeeper closes it themselves
+// (the search button toggles it). Tapping outside no longer dismisses it.
 
 // The price of a line in the open sale is typed straight into the cart.
 // The change is saved when the field is left or Enter is pressed.

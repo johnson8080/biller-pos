@@ -1407,7 +1407,12 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   };
   // How a stock quantity reads: bundles are always counted in pieces,
   // weighed items in kg, everything else keeps its saved unit.
-  T.stockCountUnit = (product) => T.isBundle(product) ? "pcs" : (product?.soldByMass ? "kg" : (product?.unit || "pcs"));
+  T.stockCountUnit = (product) => {
+    if (product?.soldByMass) return "kg";
+    // A content size (100 g) or a bundle type means stock counts in pieces.
+    if (T.isBundle(product) || Number(product?.unitSize) > 0) return "pcs";
+    return product?.unit || "pcs";
+  };
   /** The unit a weighed product is priced in: always the kilogram. */
   T.massUnit = () => "kg";
 
