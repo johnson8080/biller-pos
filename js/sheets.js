@@ -445,6 +445,7 @@
             ${[6, 12, 24, 30, 48].map((n) => `<button type="button" class="variant-chip pack-chip ${values.packSize === String(n) ? "is-active" : ""}" data-pack="${n}">${n}</button>`).join("")}
           </div>
           <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize)}" placeholder="Pieces per pack (e.g. 12)">
+          <p class="derived-piece" id="derived-piece-row" style="${values.packSize ? "" : "display:none"}"><span id="derived-piece-text">Live: each piece derives to —</span></p>
           <p class="field-help">For items you receive in boxes or dozens — stock-in will convert packs into pieces for you.</p>
           <div class="segmented-row pack-mode-row" id="pack-price-row">
             <span class="field-help" style="margin:0">The cost &amp; price above are per:</span>
@@ -546,6 +547,24 @@
         const label = row.querySelector('[data-field="label"]')?.value || "";
         if (tile) tile.textContent = T.initials(label || "New");
       });
+      // Live "each piece derives to X / sells at Y" preview so shopkeepers see
+      // exactly what unit price will be saved before they hit Save.
+      const derivedRow = form.querySelector("#derived-piece-row");
+      const derivedText = form.querySelector("#derived-piece-text");
+      const packN = Number(form.querySelector("#product-pack-size")?.value || 0);
+      const costRaw = String(form.querySelector("#product-cost")?.value || "").trim();
+      const priceRaw = String(form.querySelector("#product-price")?.value || "").trim();
+      const packMode = form.querySelector("#product-price-mode .seg-btn.is-active")?.dataset?.mode || "piece";
+      if (derivedRow && derivedText) {
+        if (packN > 0 && (packMode === "pack") && (costRaw !== "" || priceRaw !== "")) {
+          const cp = costRaw === "" ? 0 : Number(costRaw) || 0;
+          const sp = priceRaw === "" ? 0 : Number(priceRaw) || 0;
+          derivedRow.style.display = "";
+          derivedText.textContent = `Live (each piece): cost KSh ${(cp / packN).toFixed(2)} · sell KSh ${(sp / packN).toFixed(2)}`;
+        } else {
+          derivedRow.style.display = "none";
+        }
+      }
     });
 
     form?.addEventListener("click", (event) => {

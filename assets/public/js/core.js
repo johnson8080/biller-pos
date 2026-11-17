@@ -50,7 +50,17 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   }
   // Categories are part of the saved state — the shop adds, renames and
   // removes them from the More tab. This is only the starting list.
-  const CATEGORIES = ["Groceries", "Beverages", "Snacks", "Personal Care", "Household", "Dairy", "Bakery", "Baby"];
+  // The default catalog for a Kenyan general duka. Keep it useful across
+  // supermarket / chemist / agrovet / butchery / salon shop types. Shops
+  // are free to add their own in More → Categories.
+  const CATEGORIES = [
+    "Groceries", "Fresh Produce", "Staples & Grains", "Dairy & Eggs", "Bakery", "Beverages",
+    "Snacks & Sweets", "Tea, Coffee & Cocoa", "Household", "Personal Care",
+    "Spices & Seasoning", "Canned & Preserved", "Frozen & Refrigerated",
+    "Butchery & Meat", "Cooking Oil & Fats",
+    "Baby", "Imported Goods", "Stationery", "Hardware", "Electronics",
+    "Pharmacy & OTC", "Agrovet", "Salon & Beauty", "Other"
+  ];
   // Delivery days for suppliers. Stored as short codes so the same data can be
   // shown as chips on the supplier account and picked in the editor.
   const SUPPLIER_DAYS = [
