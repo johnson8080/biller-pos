@@ -1690,13 +1690,40 @@ function resetSellSearch() {
   const T = window.Till;
   if (!T) return;
   T.ui.search = "";
-  const keepOpen = Boolean(T.ui.searchOpen);
-  render();
-  if (keepOpen) {
-    requestAnimationFrame(() => {
-      document.getElementById("sell-search")?.focus({ preventScroll: true });
-    });
+  const input = document.getElementById("sell-search");
+  if (T.ui.searchOpen && input) {
+    // Patch in place instead of re-rendering: the input element stays the
+    // same, so Android keeps the keyboard open and the cursor in the field.
+    input.value = "";
+    const wrap = document.getElementById("sell-search-wrap");
+    wrap?.classList.remove("has-value");
+    const results = document.getElementById("sell-results");
+    if (results) {
+      results.innerHTML = T.screens.sellResults();
+      wireNav(results);
+      wireActions(results);
+    }
+    // The cart hero lives outside #sell-results — sync it in place too.
+    const count = T.itemCount();
+    const hero = document.querySelector(".cart-hero");
+    if (hero) {
+      hero.setAttribute("aria-label", `Checkout, ${count} ${count === 1 ? "item" : "items"} in the cart`);
+      let badge = hero.querySelector(".cart-hero-count");
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "cart-hero-count";
+          hero.appendChild(badge);
+        }
+        badge.textContent = String(count);
+      } else if (badge) {
+        badge.remove();
+      }
+    }
+    input.focus({ preventScroll: true });
+    return;
   }
+  render();
 }
 window.resetSellSearch = resetSellSearch;
 
