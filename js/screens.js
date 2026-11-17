@@ -187,7 +187,7 @@
       aria-label="${out ? "Out of stock: " : "Add "}${esc(product.name)}, ${esc(price)}">
       <span class="card-top">${productTile(product)}${stockNote(product)}${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}</span>
       <span class="product-name">${esc(product.name)}</span>
-      ${[T.unitSizeLabel(product), product.detail].filter(Boolean).length ? `<span class="product-detail">${esc([T.unitSizeLabel(product), product.detail].filter(Boolean).join(" · "))}</span>` : `<span class="product-detail is-empty" aria-hidden="true"></span>`}
+      ${[T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).length ? `<span class="product-detail">${esc([T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · "))}</span>` : `<span class="product-detail is-empty" aria-hidden="true"></span>`}
       <span class="card-bottom"><span class="product-price">${esc(price)}</span></span>
     </button>`;
   }
@@ -205,7 +205,7 @@
       <span class="product-row-tile">${productTile(product)}</span>
       <span class="product-row-copy">
         <strong>${esc(product.name)}</strong>
-        <small>${[T.unitSizeLabel(product), product.detail, stockText].filter(Boolean).map(esc).join(" · ")}</small>
+        <small>${[T.unitSizeLabel(product), T.bundleLabel(product), product.detail, stockText].filter(Boolean).map(esc).join(" · ")}</small>
       </span>
       <span class="product-row-price">${esc(price)}</span>
       ${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}
@@ -826,7 +826,7 @@
         <button class="inv-main" data-act="edit-product" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
           ${productTile(p)}
           <span class="inv-copy">
-            <span class="inv-name">${esc(p.name)}${(T.unitSizeLabel(p) || p.detail) ? ` <span class="muted" style="font-weight:500">· ${esc([T.unitSizeLabel(p), p.detail].filter(Boolean).join(" · "))}</span>` : ""}${p.soldByMass ? ` <span class="muted" style="font-weight:500">· ${esc(T.money(p.price))}/kg</span>` : ""}</span>
+            <span class="inv-name">${esc(p.name)}${(T.unitSizeLabel(p) || T.bundleLabel(p) || p.detail) ? ` <span class="muted" style="font-weight:500">· ${esc([T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" · "))}</span>` : ""}${p.soldByMass ? ` <span class="muted" style="font-weight:500">· ${esc(T.money(p.price))}/kg</span>` : ""}</span>
             <span class="inv-meta">${esc(p.barcode || "No barcode")} · <span class="inv-price">${esc(priceTag(p))}</span>${p.cost ? ` · <span class="inv-cost">cost ${money(p.cost)}</span>` : ""}</span>
           </span>
           ${icon("i-pencil", "ico inv-edit")}

@@ -418,7 +418,16 @@
       const sizePart = Number.isFinite(num) && num > 0 ? ` · ${num} ${unitSymbol(u)} each` : "";
       return `Till counts stock in ${unitLabel(u).toLowerCase()}${sizePart}.`;
     };
+    const PACK_PLURAL = { packet: "packets", box: "boxes", dozen: "dozens", crate: "crates" };
+    const isBundleType = (t) => Object.prototype.hasOwnProperty.call(PACK_PLURAL, t);
+    const packHint = (type, sizeStr) => {
+      if (!isBundleType(type)) return "Pick a product type to show how the till counts stock.";
+      const num = Number(String(sizeStr ?? "").trim());
+      const sizePart = Number.isFinite(num) && num > 0 ? ` · ${num} pieces each` : "";
+      return `Till counts stock in ${PACK_PLURAL[type]}${sizePart}.`;
+    };
     const currentUnit = String(values.unit || "");
+    const currentType = isBundleType(String(values.soldBy)) ? String(values.soldBy) : "";
     const unitOptions = currentUnit && !OFFICIAL_UNITS.some(([value]) => value === currentUnit) ? [[currentUnit, LEGACY_UNIT_LABELS[currentUnit] || currentUnit], ...OFFICIAL_UNITS] : OFFICIAL_UNITS;
     open({
       title: editing ? "Edit product" : "New product",
@@ -448,14 +457,14 @@
           <div class="field">
             <label for="product-size">Size</label>
             <select class="select" id="product-size" aria-label="Pick a size">
-              <option value="">—</option>
+              <option value="">N/A</option>
               ${["Small","Medium","Large"].map((label) => `<option value="${esc(label)}" ${values.detail === label ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
           <div class="field">
             <label for="product-unit">Unit</label>
             <select class="select" id="product-unit" name="unit" aria-label="Official product unit">
-              <option value="">—</option>
+              <option value="">N/A</option>
               ${unitOptions.map(([value,label]) => `<option value="${esc(value)}" ${currentUnit === value ? "selected" : ""}>${esc(label)}</option>`).join("")}
             </select>
           </div>
@@ -474,7 +483,7 @@
           <div class="field">
             <label for="product-type">Product type</label>
             <select class="select" id="product-type" name="productType" aria-label="The bundle the item comes in">
-              <option value="">—</option>
+              <option value="">N/A</option>
               ${["Packet","Box","Dozen","Crate"].map((label) => {
                 const value = label.toLowerCase();
                 return `<option value="${value}" ${String(values.soldBy) === value ? "selected" : ""}>${label}</option>`;
@@ -482,6 +491,15 @@
             </select>
           </div>
           <div class="field" style="display:flex;align-items:flex-end;padding-bottom:6px"><span class="field-help" style="margin:0">The bundle the item comes in</span></div>
+        </div>
+
+        <div class="field" id="pack-size-row"${currentType ? "" : ' style="display:none"'}>
+          <label for="product-pack-size" id="pack-size-label">${currentType ? `Pieces per ${esc(currentType)}` : "Pieces per bundle"}</label>
+          <div class="input-affix">
+            <input class="input" id="product-pack-size" name="packSize" type="number" min="0" step="1" inputmode="numeric" value="${esc(values.packSize ?? "")}" placeholder="e.g. 12">
+            <span class="affix">pieces</span>
+          </div>
+          <p class="field-help" id="pack-size-hint" style="margin-top:6px">${esc(packHint(currentType, values.packSize))}</p>
         </div>
 
         <div class="field-row">
@@ -537,12 +555,18 @@
       if (tile) { tile.textContent = T.initials(name); tile.className = `tile tile-lg tone-${T.toneFor(category)}`; }
       if (previewName) previewName.textContent = name;
       if (meta) meta.textContent = `${category}${form.querySelector("#product-barcode")?.value ? ` · ${form.querySelector("#product-barcode").value}` : ""}`;
-      // Keep the "how the till counts stock" hint in step with the size typed.
-      const hint = form.querySelector("#unit-size-hint");
-      if (hint) {
+      // Keep the "how the till counts stock" hints in step with what was typed.
+      const unitSizeHint = form.querySelector("#unit-size-hint");
+      if (unitSizeHint) {
         const unit = form.querySelector("#product-unit")?.value || "";
         const size = form.querySelector("#product-unit-size")?.value || "";
-        hint.textContent = unitHint(unit, size);
+        unitSizeHint.textContent = unitHint(unit, size);
+      }
+      const packSizeHint = form.querySelector("#pack-size-hint");
+      if (packSizeHint) {
+        const type = String(form.querySelector("#product-type")?.value || "").toLowerCase();
+        const size = form.querySelector("#product-pack-size")?.value || "";
+        packSizeHint.textContent = packHint(type, size);
       }
     });
 
@@ -563,6 +587,19 @@
         if (affix) affix.textContent = unitSymbol(t.value);
         if (hint) hint.textContent = unitHint(t.value, sizeInput?.value || "");
         if (t.value && sizeInput) sizeInput.focus({ preventScroll: true });
+        return;
+      }
+      if (t.id === "product-type") {
+        const row = form.querySelector("#pack-size-row");
+        const label = form.querySelector("#pack-size-label");
+        const hint = form.querySelector("#pack-size-hint");
+        const packInput = form.querySelector("#product-pack-size");
+        const type = String(t.value || "").toLowerCase();
+        const bundle = isBundleType(type);
+        if (row) row.style.display = bundle ? "" : "none";
+        if (label) label.textContent = bundle ? `Pieces per ${type}` : "Pieces per bundle";
+        if (hint) hint.textContent = packHint(type, packInput?.value || "");
+        if (bundle && packInput) packInput.focus({ preventScroll: true });
       }
     });
 
@@ -727,7 +764,7 @@
       // because the field is gone from the form.
       soldBy,
       variants: previous.variants || [],
-      packSize: previous.packSize || "",
+      packSize: data.has("packSize") ? String(data.get("packSize") || "").trim() : (previous.packSize || ""),
       packMode: previous.packMode || "piece",
       packLabel: bundle || (["dozen","packet","box","crate"].includes(String(previous.soldBy)) ? String(previous.soldBy) : "")
     };

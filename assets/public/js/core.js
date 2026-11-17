@@ -1398,6 +1398,13 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     const trimmed = Math.round(size * 1000) / 1000;
     return `${trimmed} ${String(product?.unit || "")}`.trim();
   };
+  // "12 pcs/dozen" — pieces in one bundle, for bundle-sold products.
+  T.bundleLabel = (product) => {
+    if (!T.isBundle(product)) return "";
+    const n = Number(product?.packSize);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    return `${Math.round(n)} pcs/${String(product?.soldBy || "bundle")}`;
+  };
   /** The unit a weighed product is priced in: always the kilogram. */
   T.massUnit = () => "kg";
 
