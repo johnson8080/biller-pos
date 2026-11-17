@@ -633,10 +633,10 @@
         <input type="hidden" id="product-detail" name="detail" value="${esc(values.detail || "")}">
 
         <div class="form-error" role="alert"></div>
-        <div class="sheet-actions">
+        <div class="sheet-actions${editing ? " pair" : ""}">
           <button class="btn btn-primary" type="submit">${editing ? "Save changes" : "Add product"} ${icon("i-check")}</button>
+          ${editing ? `<button class="btn btn-danger delete-product" type="button" data-act="delete-product" data-id="${esc(editor.id)}">Delete product</button>` : ""}
         </div>
-        ${editing ? `<button class="btn btn-danger delete-product" type="button" data-act="delete-product" data-id="${esc(editor.id)}">Delete product</button>` : ""}
       </form>`
     });
 

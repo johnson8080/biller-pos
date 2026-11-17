@@ -2525,6 +2525,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .sheet-actions { display: grid; gap: 7px; margin-top: 14px; }
 .sheet-actions.pair { grid-template-columns: 1fr 1fr; }
 .sheet-actions .btn { width: 100%; }
+.delete-product { border: 1.5px solid var(--red); }
 .sheet-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 7px; background: var(--lime-soft); color: var(--forest-ink); }
 .code-pill { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 13px; border-radius: 7px; background: var(--surface-2); border: 1px dashed var(--ui-line); font-size: calc(16px * var(--fs)); font-weight: 700; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
 .code-pill .ico { width: 20px; height: 20px; color: var(--forest-3); }
@@ -2558,7 +2559,6 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .input-affix:has(.pair-a) .affix { color: var(--forest); }
 .input-affix:has(.pair-b) .affix { color: var(--lime-ink); }
 .confirm-copy { font-size: calc(12.5px * var(--fs)); line-height: 1.5; color: var(--ink-2); }
-.delete-product { margin-top: 8px; }
 .discount-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .discount-opt { min-height: 44px; border-radius: 6px; border: 1px solid var(--ui-line); background: var(--surface); font-size: calc(13px * var(--fs)); font-weight: 700; color: var(--forest-ink); }
 .discount-opt.is-active { background: var(--forest); border-color: var(--forest-ink); color: var(--lime); }
