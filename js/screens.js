@@ -1811,6 +1811,7 @@
         </button>
         <div class="settings-group-body" ${openGroups[id] ? "" : "hidden"}>${body}</div>
       </section>`;
+    const subscriptionBody = subscriptionSection();
     const shopBody = `
       <div class="data-list">
         <button class="data-row" data-nav="#/store">
@@ -1828,9 +1829,14 @@
           <span class="data-copy"><strong>M-Pesa</strong><small>Shortcode, Daraja app and connection test</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
-      </div>`;
+        <button class="data-row" data-nav="#/audit">
+          <span class="data-icon">${icon("i-check")}</span>
+          <span class="data-copy"><strong>Audit report</strong><small>Count shelf stock and mark each item as matched</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </button>
+      </div>
+      ${subscriptionBody}`;
     const catalogBody = categorySection();
-    const subscriptionBody = subscriptionSection();
     const appearanceBody = `
       <div class="theme-card">
         <p class="card-sub">Pick the palette for this till.</p>
@@ -1913,18 +1919,8 @@
         <p class="sub">Everything in one place, grouped.</p>
       </div>
 
-      <button type="button" class="account-card support-card audit-settings-card" data-nav="#/audit" style="margin-bottom:10px">
-        <span class="data-icon">${icon("i-check")}</span>
-        <span class="account-card-copy">
-          <strong>AUDIT REPORT</strong>
-          <small>Count shelf stock and mark each item as matched</small>
-        </span>
-        <span class="chev">${icon("i-chevron")}</span>
-      </button>
-
       <div class="settings-groups">
-        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · ${store.currency} · tax ${store.taxRate}%`, shopBody)}
-        ${settingsGroup("subscription", "i-card", "Monthly plan", (T.subscriptionStatus() === "active" ? "Active" : T.subscriptionStatus() === "trial" ? "Free trial" : T.subscriptionStatus() === "awaiting" ? "Awaiting confirmation" : "Payment due"), subscriptionBody)}
+        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"}`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
