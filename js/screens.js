@@ -1835,7 +1835,7 @@
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>
-      ${subscriptionBody}`;
+      ${subscriptionBody ? `<div class="section-head" style="margin-top:12px"><h2>Monthly plan</h2><span class="small muted">${T.subscriptionStatus() === "active" ? "Active" : T.subscriptionStatus() === "trial" ? "Free trial" : T.subscriptionStatus() === "awaiting" ? "Awaiting confirmation" : "Payment due"}</span></div>${subscriptionBody}` : ""}`;
     const catalogBody = categorySection();
     const appearanceBody = `
       <div class="theme-card">
@@ -1926,10 +1926,9 @@
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)}` : "", aboutBody)}
       </div>
 
-      <button type="button" class="account-card support-card" data-act="open-developer-chat">
+      <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
         <span class="data-icon">${icon("i-chat")}</span>
         <span class="account-card-copy">
           <strong>CHAT DEVELOPER</strong>
@@ -1937,6 +1936,10 @@
         </span>
         <span class="chev">${icon("i-chevron")}</span>
       </button>
+
+      <div class="settings-groups" style="margin-top:10px">
+        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)}` : "", aboutBody)}
+      </div>
     </section>`;
   }
 
