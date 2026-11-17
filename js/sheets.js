@@ -352,7 +352,7 @@
       lowStockAt: String(product.lowStockAt),
       barcode: product.barcode,
       category: product.category,
-      unit: product.unit || "pcs",
+      unit: product.unit == null ? "pcs" : String(product.unit),
       unitSize: product.unitSize ? String(product.unitSize) : "",
       soldByMass: product.soldByMass === true,
       packSize: Number.isFinite(Number(product.packSize)) && product.packSize > 0 ? String(product.packSize) : "",
@@ -749,7 +749,7 @@
         existing.cost = unitCost;
         existing.stock = stock;
         existing.lowStockAt = lowStockAt;
-        existing.unit = mass ? "kg" : (values.unit || "pcs");
+        existing.unit = mass ? "kg" : values.unit;
         existing.unitSize = unitSize;
         existing.barcode = barcode;
         existing.category = values.category;
@@ -768,7 +768,7 @@
           cost: unitCost,
           stock,
           lowStockAt,
-          unit: mass ? "kg" : (values.unit || "pcs"),
+          unit: mass ? "kg" : values.unit,
           unitSize,
           barcode,
           category: values.category,

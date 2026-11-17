@@ -415,7 +415,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         cost: clampInt(p.cost, 0, 100000000),
         stock: clampInt(p.stock, 0, 1000000),
         lowStockAt: clampInt(p.lowStockAt ?? 5, 0, 1000000),
-        unit: String(p.unit || "pcs").trim().slice(0, 12) || "pcs",
+        // An explicit empty unit means the shopkeeper left it N/A — keep it
+        // N/A across saves and reopen; only a missing unit defaults to pcs.
+        unit: p.unit == null ? "pcs" : String(p.unit).trim().slice(0, 12),
         // How much one item holds, in the chosen unit (500 ml, 1 kg, 2 L).
         // Drives the "till counts stock in …" line in the editor.
         unitSize: Number.isFinite(Number(p.unitSize)) ? Math.max(0, Number(p.unitSize)) : 0,
