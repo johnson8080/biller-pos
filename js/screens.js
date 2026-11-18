@@ -2016,6 +2016,11 @@
           <span class="data-copy"><strong>Reset all data</strong><small>Clear products, orders and settings</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
+        ${session ? `<button class="data-row danger" data-act="open-delete-account">
+          <span class="data-icon">${icon("i-trash")}</span>
+          <span class="data-copy"><strong>Delete this account</strong><small>Wipes the shop and its cloud data for good — products, orders, settings, plan, staff</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </button>` : ""}
       </div>`;
     const aboutBody = `
       <div class="about-card">
@@ -2262,21 +2267,24 @@
       <div class="settings-card">
         <h2>Shopkeepers</h2>
         <p class="card-sub">Everyone who can ring up sales. Each device picks who is selling, and the picked name prints on its receipts. One shopkeeper sells on one device at a time.</p>
-        <div class="staff-roster">
+        <div class="staff-picker">
           ${roster.length ? roster.map((name) => {
-            const taken = name !== active && Boolean(T.staffClaimedBy?.(name));
+            const isActive = name === active;
+            const taken = !isActive && Boolean(T.staffClaimedBy?.(name));
             return `
-            <span class="staff-chip">
-              <span class="staff-chip-name">${esc(name)}</span>
+            <div class="sort-option staff-pick ${isActive ? "is-active" : ""} ${taken ? "is-taken" : ""}">
+              <span class="staff-pick-avatar" aria-hidden="true">${esc(String(name).slice(0, 1).toUpperCase())}</span>
+              <span class="sort-option-copy"><strong>${esc(name)}</strong><small>${isActive ? "Selling on this device" : taken ? "Selling on another device" : "Free to sell from this device"}</small></span>
+              ${isActive ? `<span class="sort-option-check">${icon("i-check")}</span>` : ""}
               ${taken ? `<button type="button" class="staff-chip-free" data-act="release-staff" data-value="${esc(name)}" aria-label="Free ${esc(name)} from the other device">Free</button>` : ""}
               <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
-            </span>`;
+            </div>`;
           }).join("") : `<span class="staff-roster-empty">No shopkeepers yet — add the first one below.</span>`}
         </div>
-        <div class="staff-add-row">
-          <input class="input" id="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name">
-          <button class="btn" type="button" data-act="add-staff">Add</button>
-        </div>
+        <div class="staff-gate-divider" aria-hidden="true"><span>or</span></div>
+        <label class="field-label" for="new-staff-name">Add a new shopkeeper</label>
+        <input class="input" id="new-staff-name" name="new-staff-name" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. Mary Wanjiku" aria-label="New shopkeeper name" maxlength="40">
+        <button class="btn btn-primary btn-block" type="button" data-act="add-staff">${icon("i-plus")} Add shopkeeper</button>
       </div>
     </section>`;
   }

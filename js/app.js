@@ -497,6 +497,55 @@ async function deleteShopAccount(id) {
 
 
 
+/** The signed-in shop deletes itself — this till and its cloud copy. */
+async function confirmDeleteThisAccount() {
+  const T = window.Till;
+  const session = T.getSession?.() || {};
+  const uid = String(session.uid || "").trim();
+  const authDeleted = { ok: false };
+  // 1) Delete the shop's Firestore documents — best-effort, never hostage to one failure.
+  try {
+    const fs = window.firebase?.firestore?.();
+    if (fs && uid) {
+      try { await fs.collection("billerShops").doc(uid).delete(); } catch {}
+      try { await fs.collection("billerPayments").doc(uid).delete(); } catch {}
+      try { await fs.collection("billerPresence").doc(uid).delete(); } catch {}
+      try {
+        const reads = await fs.collection("billerAnnouncementReads").where("uid", "==", uid).get();
+        const deletions = [];
+        reads.forEach((doc) => deletions.push(doc.ref.delete()));
+        await Promise.allSettled(deletions);
+      } catch {}
+    }
+  } catch {}
+  // 2) Delete this account's Auth user. Firebase requires a recent sign-in for
+  //    it — failure is reported, but the wipe continues.
+  try {
+    const user = window.firebase?.auth?.()?.currentUser;
+    if (user) { await user.delete(); authDeleted.ok = true; }
+  } catch {}
+  // 3) Wipe every local artefact this app has ever written on this device.
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    for (const key of keys) if (key && key.startsWith("biller.pos")) localStorage.removeItem(key);
+  } catch {}
+  try { await window.firebase?.auth?.()?.signOut?.(); } catch {}
+  try { await T.cloud?.detach?.(); } catch {}
+  if (!authDeleted.ok) {
+    T.sheets?.confirm?.({
+      title: "Sign-in user stays in Firebase",
+      message: "This device was wiped and your shop is gone everywhere, but Firebase would not delete your sign-in user (it usually needs a fresh sign-in). Remove it in the Firebase console under Authentication → Users, or sign in again and delete from there.",
+      confirmLabel: "Got it — reload",
+      danger: true,
+      onConfirm: () => location.reload()
+    });
+    return;
+  }
+  location.hash = "#/auth";
+  location.reload();
+}
+
 /** The developer marks a request as not paid. */
 async function declineShopPayment(id) {
   const T = window.Till;
@@ -600,7 +649,7 @@ function runAction(btn, opts = {}) {
   // every tap. Sales keep working — it blocks damage, not business.
   const PIN_GUARDED = new Set([
     "edit-product", "delete-product", "delete-order", "delete-customer",
-    "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
+    "delete-account", "open-delete-account", "confirm-delete-this-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
     "add-stock", "stock-dec", "restock-product", "open-wastage", "start-audit",
     "set-payment-mode", "toggle-no-debt", "clear-activity-log",
     "reset-data", "import-data"
@@ -1415,6 +1464,12 @@ function runAction(btn, opts = {}) {
     }
   }
   else if (act === "save-info") { T.sheets?.openSaveInfo?.(); }
+  else if (act === "open-delete-account") {
+    T.sheets?.openDeleteAccount?.();
+  }
+  else if (act === "confirm-delete-this-account") {
+    confirmDeleteThisAccount();
+  }
   else if (act === "reset-data") {
     T.sheets?.confirm?.({
       title: "Reset all data?",

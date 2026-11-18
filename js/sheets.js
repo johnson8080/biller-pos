@@ -2521,6 +2521,45 @@
     });
   }
 
+  /**
+   * Delete the account from this device and from Firestore for good.
+   * The PIN gate has already run by the time this opens (delete-this-account
+   * is PIN-guarded); typing DELETE is the second lock — there is no undo.
+   */
+  function openDeleteAccount() {
+    const uid = T.getSession?.()?.uid || "";
+    const email = T.getSession?.()?.email || "this account";
+    const shopName = T.state?.store?.name || "This shop";
+    open({
+      locked: true,
+      title: "Delete this account?",
+      subtitle: "Everything on this till and in Firestore goes with it — permanent",
+      iconName: "i-trash",
+      tone: "warn",
+      body: `<div class="danger-confirm">
+        <p class="danger-confirm-body">Deleting <strong>${esc(email)}</strong> removes, permanently and for good:</p>
+        <ul class="danger-list">
+          <li>${esc(shopName)} — products, stock, wastage, audits</li>
+          <li>Sales history, debts, receipts, settings, theme, PIN</li>
+          <li>Your subscription plan and payment details</li>
+          <li>Staff roster, claims and reading history</li>
+          <li>Your Firestore documents — shop, payments, presence, receipts</li>
+          <li>Your sign-in account itself — nobody can sign in with it again</li>
+        </ul>
+        <label class="field-label" for="confirm-delete-account">Type DELETE to confirm</label>
+        <input class="input" id="confirm-delete-account" name="confirm-delete-account" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" maxlength="6" aria-label="Type DELETE to confirm">
+        <button class="btn btn-danger btn-block" type="button" data-act="confirm-delete-this-account" id="confirm-delete-btn" disabled>${icon("i-trash")} Delete this account</button>
+        <button class="btn btn-ghost btn-block" type="button" data-act="close-sheet">Cancel</button>
+      </div>`
+    });
+    // One-shot typed confirmation for the delete button.
+    const input = document.getElementById("confirm-delete-account");
+    const button = document.getElementById("confirm-delete-btn");
+    input?.addEventListener("input", () => {
+      if (button) button.disabled = String(input.value || "").trim().toUpperCase() !== "DELETE";
+    });
+  }
+
   /** Open the staff gate when blocked; close it when it is no longer needed;
       refresh it in between. */
   function refreshStaffGate() {
@@ -3120,6 +3159,7 @@
     openDebtCheckout, openCustomerPayment, openDebtReminder, openSellSort,
     openStaffPicker,
     openStaffGate, refreshStaffGate,
+    openDeleteAccount,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
     openVariantPicker, openPackPicker,

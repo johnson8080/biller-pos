@@ -1376,6 +1376,31 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 .staff-pick.is-active .staff-pick-avatar { background: #16a34a; }
 
+/* Shared field label used on sheets and inline forms */
+.field-label {
+  display: block;
+  font-size: calc(10px * var(--fs));
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+/* Delete-account confirmation sheet */
+.danger-confirm { display: flex; flex-direction: column; gap: 8px; }
+.danger-confirm-body { color: var(--ink); }
+.danger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 18px;
+  margin: 2px 0 8px;
+  color: var(--ink-2);
+  font-size: calc(11.5px * var(--fs));
+  line-height: 1.45;
+}
+
 /* Staff gate: the modal that stands between a signed-in device with no
    free shopkeeper and the till itself. */
 .staff-gate { display: flex; flex-direction: column; gap: 2px; }
