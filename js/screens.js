@@ -1898,11 +1898,12 @@
     const session = T.getSession();
     const themeName = T.THEMES.find((theme) => theme.id === T.themeId())?.name || "Forest";
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
-    const settingsGroup = (id, iconName, title, sub, body) => `
+    const settingsGroup = (id, iconName, title, sub, body, badge) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}" data-group="${esc(id)}">
-        <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}">
+        <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}" aria-label="${esc(title)}${badge ? ` — ${esc(sub)}` : ""}">
           <span class="data-icon">${icon(iconName)}</span>
           <span class="data-copy"><strong>${esc(title)}</strong><small>${esc(sub)}</small></span>
+          ${badge ? `<span class="count-badge" aria-hidden="true">${badge > 9 ? "9+" : badge}</span>` : ""}
           <span class="chev">${icon("i-chevron")}</span>
         </button>
         <div class="settings-group-body" ${openGroups[id] ? "" : "hidden"}>${body}</div>
@@ -2083,7 +2084,7 @@
 
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
-        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting for a decision` : "Every shop, codes, payments and announcements", planBody) : ""}
+        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting for a decision` : "Every shop, codes, payments and announcements", planBody, planCount) : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
