@@ -779,6 +779,8 @@
               window.Till.state.store.subscription.lastConfirmedAt = confirmedAt;
               window.Till.save?.({ quiet: true });
             }
+            // The lock is a paint — the shop must not have to reload to see it vanish.
+            window.render?.();
           }
         }
         if (data.status === "reverted") {
@@ -787,6 +789,8 @@
           const applied = Number(sub.revertedAt || 0);
           if (revertedAt > applied) {
             window.Till?.revertSubscription?.({ revertedAt, reason: data.reason || "" });
+            // The lock is a paint — the shop must see it come back too.
+            window.render?.();
           }
         }
       }, () => { /* the rules may not allow it yet */ });
