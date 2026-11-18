@@ -1841,9 +1841,12 @@ function render() {
     T.ui.searchOpen = false;
     T.ui.search = "";
   }
-  // Leaving Audit locks it again — the PIN is asked next time it opens.
+  // Leaving Audit or M-Pesa locks it again — the PIN is asked next time it opens.
   if (route.name !== "audit" && T.ui.auditUnlocked) {
     T.ui.auditUnlocked = false;
+  }
+  if (route.name !== "mpesa" && T.ui.mpesaUnlocked) {
+    T.ui.mpesaUnlocked = false;
   }
 
   // The "payment complete" state belongs to the receipt that was just paid.
@@ -1900,7 +1903,17 @@ function render() {
   else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
-  else if (screenName === "mpesa") html = T.screens.mpesaSettings();
+  else if (screenName === "mpesa") {
+    if (T.pinEnabled?.() && !T.ui.mpesaUnlocked) {
+      T.sheets?.openPinSheet?.({
+        caption: "M-Pesa settings are protected — enter the shop PIN to continue.",
+        onSuccess: () => { T.ui.mpesaUnlocked = true; render(); }
+      });
+      html = `<section class="screen audit-locked" style="padding:48px 20px;text-align:center;color:var(--muted)"><span class="data-icon" style="display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--surface-2);margin:0 auto 12px;color:var(--forest)">${icon("i-lock")}</span><h1 style="font-size:16px;font-weight:750;color:var(--ink)">M-Pesa settings are locked</h1><p>Enter the shop PIN to open them.</p></section>`;
+    } else {
+      html = T.screens.mpesaSettings();
+    }
+  }
   else if (screenName === "account") html = T.screens.accountSettings();
   else if (screenName === "cart") html = T.screens.cart();
   else if (screenName === "payment") html = T.screens.payment();
