@@ -353,10 +353,13 @@
             // on. Put that copy in place instead of overwriting it — the
             // cloud keeps every change; this till's unpushed local edits
             // are superseded, and the shopkeeper re-applies them.
+            const carriedUserWork = stateHash() !== lastSyncedHash();
             applyRemote(fenceData.state, remoteAt);
             lastError = "";
             setPhase("synced");
-            T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+            if (carriedUserWork) {
+              T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+            }
             return false;
           }
         }
