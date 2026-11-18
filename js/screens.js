@@ -2040,7 +2040,32 @@
           <span class="about-mark">${icon("i-store")}</span>
           <div><div class="about-name">BILLER POS</div><div class="about-version">${VERSION ? `V ${esc(VERSION)} · ` : ""}cloud-synced till</div></div>
         </div>
-        <p><strong>Cash is recorded on this device.</strong> M-Pesa sends a real PIN prompt to the customer once your Paybill or Till is connected in Store &amp; receipts. The card reader is a demo and moves no money.</p>
+        <p class="about-oneliner"><strong>Biller POS is an offline-capable, cloud-synced point-of-sale app for small shops — built to scan, sell and track stock from a single phone or till, for cash, M-Pesa and card.</strong></p>
+        <div class="about-points">
+          <section><h3>Who it&rsquo;s for</h3><ul>
+            <li>Neighborhood dukas, kiosks and small retailers selling daily goods</li>
+            <li>Shops that need cash, M-Pesa and card at the till, in shillings</li>
+            <li>Owners who want the whole shop on one device — no separate accounting suite</li>
+          </ul></section>
+          <section><h3>What it does</h3><ul>
+            <li><strong>Selling</strong> — barcode scanning or search, tap-to-add cart, variants and bundles (dozen, packet, box, crate — sold by the piece), discounts, shareable receipts</li>
+            <li><strong>Inventory</strong> — category catalog, low-stock alerts, stock-in tracking, wastage logging, stock audits (counted vs recorded)</li>
+            <li><strong>Money</strong> — cash, card and M-Pesa (Daraja) at checkout; supplier ledger with balances and payments; customer debt ledger with due dates and reminders</li>
+            <li><strong>Security</strong> — shop PIN on every edit, delete and stock change; checkout payment-mode restriction (cash / M-Pesa / card only); optional &ldquo;No debt allowed&rdquo; lock; locked audit and M-Pesa pages; activity history log</li>
+            <li><strong>Works anywhere</strong> — sells and saves locally with no connection; syncs to Firebase when back online; light and dark interface</li>
+          </ul></section>
+          <section><h3>Business model</h3><ul>
+            <li>Subscription-based monthly plan per shop</li>
+          </ul></section>
+          <section><h3>What it is not</h3><ul>
+            <li>Not a supermarket enterprise ERP or full accounting suite — no payroll, no eTIMS filing, no double-entry bookkeeping</li>
+            <li>Not a payment processor — the card reader is a demo; real M-Pesa requires a connected Paybill or Till</li>
+          </ul></section>
+          <section><h3>Good to know</h3><ul>
+            <li>M-Pesa charging is wired to Safaricom Daraja sandbox by default; production requires the shop&rsquo;s own Paybill/Till credentials</li>
+            <li>Debt is tracked in-app — reminders are prompts on the till, not SMS messages</li>
+          </ul></section>
+        </div>
       </div>`;
     return `<section class="screen">
       <div class="screen-head">
@@ -2069,7 +2094,7 @@
       </button>
 
       <div class="settings-groups" style="margin-top:10px">
-        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)}` : "", aboutBody)}
+        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)} · what this app is for` : "What this app is for", aboutBody)}
       </div>
     </section>`;
   }
