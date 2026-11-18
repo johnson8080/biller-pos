@@ -2084,7 +2084,7 @@
 
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
-        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting for a decision` : "Every shop, codes, payments and announcements", planBody, planCount) : ""}
+        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting` : "Payment and announcement", planBody, planCount) : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
@@ -2096,7 +2096,7 @@
         <span class="data-icon">${icon("i-bell")}</span>
         <span class="account-card-copy">
           <strong>ANNOUNCEMENTS</strong>
-          <small>${announceCount ? `${announceCount} new from the developer — tap to read` : "Messages from the developer for every till"}</small>
+          <small>${announceCount ? `${announceCount} new — tap to read` : "Announcement from the developer"}</small>
         </span>
         ${announceCount ? `<span class="count-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
       </button>
@@ -2105,7 +2105,7 @@
         <span class="data-icon">${icon("i-chat")}</span>
         <span class="account-card-copy">
           <strong>CHAT DEVELOPER</strong>
-          <small>Spotted a bug or need help setting up? Send a message.</small>
+          <small>Spotted a bug or need help setting up?</small>
         </span>
         <span class="chev">${icon("i-chevron")}</span>
       </button>
