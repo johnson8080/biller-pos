@@ -2528,16 +2528,26 @@
           <div class="field" style="margin-top:14px">
             <label for="subscription-mpesa-code">M-Pesa transaction code</label>
             <input class="input" id="subscription-mpesa-code" name="mpesaCode" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="e.g. QK12345678">
-            <p class="field-small">From the confirmation SMS. Optional, but it helps the developer confirm faster.</p>
+            <p class="field-small">From the confirmation SMS. Required — the developer checks it against Safaricom's records before switching the till on.</p>
           </div>
           <p class="field-small" style="margin-top:12px">Activation usually takes up to 5 minutes. If it takes longer, call us and we will switch you on straight away.</p>
           <div class="sheet-actions">
-            <button class="btn btn-primary btn-block" data-act="subscription-sent" data-ref="${esc(reference)}">${icon("i-check")} I have sent the payment</button>
+            <button class="btn btn-primary btn-block" id="subscription-sent" data-act="subscription-sent" data-ref="${esc(reference)}" disabled>${icon("i-check")} I have sent the payment</button>
             ${fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
             <button class="btn btn-ghost" data-act="open-developer-chat" data-code="${esc(code)}" data-amount="${esc(String(amount))}" data-mpesa="${esc(mpesaCode)}">${icon("i-chat")} Tell the developer</button>
             <button class="btn btn-ghost" data-act="close-sheet">${icon("i-close")} Not now</button>
           </div>`
       });
+      // The send-payment button stays disabled until a transaction code is
+      // typed — a claim without a code cannot be verified against Safaricom.
+      const codeInput = document.getElementById("subscription-mpesa-code");
+      const sentBtn = document.getElementById("subscription-sent");
+      if (codeInput && sentBtn) {
+        const sync = () => { sentBtn.disabled = !String(codeInput.value || "").trim(); };
+        codeInput.addEventListener("input", sync);
+        codeInput.addEventListener("change", sync);
+        sync();
+      }
       return;
     }
 

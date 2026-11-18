@@ -981,6 +981,8 @@ h1, h2, h3, h4, p { margin: 0; }
 .btn:disabled { opacity: .5; transform: none; cursor: default; }
 .btn-primary { background: var(--forest); color: #fbf9f1; box-shadow: 0 12px 26px -16px rgba(var(--forest-rgb),.8); }
 .btn-primary:hover { background: var(--forest-2); }
+.btn[disabled], .btn:disabled { opacity: .42; filter: grayscale(1); cursor: not-allowed; box-shadow: none; }
+.btn[disabled]:active { transform: none; }
 .btn-lime { background: var(--lime); color: var(--lime-ink); box-shadow: 0 12px 24px -18px rgba(90,110,20,.7); }
 .btn-lime:hover { background: var(--lime); filter: brightness(1.05); }
 .btn-ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--ui-line); box-shadow: var(--shadow-card); }

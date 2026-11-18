@@ -1219,6 +1219,11 @@ function runAction(btn, opts = {}) {
     const ref = btn.dataset.ref || T.subscriptionReference();
     const codeField = document.getElementById("subscription-mpesa-code");
     const mpesaCode = String(codeField?.value || "").trim().toUpperCase();
+    if (!mpesaCode) {
+      T.toast("Enter the M-Pesa transaction code first", "i-alert");
+      try { codeField?.focus({ preventScroll: true }); } catch { /* ignore */ }
+      return;
+    }
     const submitPayment = () => {
       T.state.store.subscription = { ...(T.state.store.subscription || {}), mpesaCode: mpesaCode || T.state.store.subscription?.mpesaCode || "" };
       T.setSubscriptionAwaiting(ref);
