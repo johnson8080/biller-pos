@@ -138,7 +138,28 @@
   }
   function stateHashOf(obj) {
     try {
-      const raw = JSON.stringify(obj);
+      if (!obj || typeof obj !== "object") return "";
+      const clean = JSON.parse(JSON.stringify(obj));
+      // Every save rewrites these clocks: the day's stock-book stamp and
+      // the shopkeeper claim heartbeat. They are not user edits, and two
+      // online devices can never hold them byte-equal — excluding them is
+      // what keeps "is the cloud different?" honest.
+      if (clean.stockDays && typeof clean.stockDays === "object") {
+        for (const day of Object.keys(clean.stockDays)) {
+          const record = clean.stockDays[day];
+          if (!record || typeof record !== "object") continue;
+          delete record.openingAt;
+          delete record.latestAt;
+          delete record.closingAt;
+        }
+      }
+      const claims = clean.store && clean.store.staffClaims;
+      if (claims && typeof claims === "object") {
+        for (const name of Object.keys(claims)) {
+          if (claims[name] && typeof claims[name] === "object") delete claims[name].at;
+        }
+      }
+      const raw = JSON.stringify(clean);
       let h = 5381;
       for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) >>> 0;
       return raw.length + ":" + h.toString(36);
