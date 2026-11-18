@@ -195,6 +195,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       pinHash: "",
       paymentMode: "all",
       debtBlocked: false,
+      readAnnouncements: [],
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -325,6 +326,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     store.paymentMode = ["all", "cash", "mpesa", "card"].includes(String(store.paymentMode)) ? store.paymentMode : "all";
     // When the shop bans selling on credit, this stays true.
     store.debtBlocked = store.debtBlocked === true;
+    // Which developer announcements this shop has already opened.
+    store.readAnnouncements = Array.isArray(store.readAnnouncements)
+      ? [...new Set(store.readAnnouncements.map((id) => String(id || "").trim()).filter(Boolean))].slice(0, 100)
+      : [];
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // Shopkeepers: a synced list of names. Older saves only carry the single
@@ -898,6 +903,26 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       T.save();
       T.logActivity("security", allowed ? "Debt allowed at checkout" : "No debt allowed — credit banned");
       return true;
+    },
+    readAnnouncementIds: () => [...(T.state?.store?.readAnnouncements || [])],
+    markAnnouncementsRead: (ids) => {
+      const incoming = (Array.isArray(ids) ? ids : [ids]).map((id) => String(id || "").trim()).filter(Boolean);
+      if (!incoming.length) return false;
+      if (!T.state.store) T.state.store = {};
+      const current = new Set(T.state.store.readAnnouncements || []);
+      let changed = false;
+      for (const id of incoming) {
+        if (!current.has(id)) { current.add(id); changed = true; }
+      }
+      if (!changed) return false;
+      T.state.store.readAnnouncements = [...current].slice(-100);
+      T.save({ quiet: true });
+      return true;
+    },
+    announcementUnreadCount: () => {
+      const all = window.Till?.cloud?.announcements?.() || [];
+      const read = new Set(T.state?.store?.readAnnouncements || []);
+      return all.filter((item) => item && item.id && !read.has(item.id)).length;
     },
     currencySymbol: () => {
       const key = T.currencyCode();

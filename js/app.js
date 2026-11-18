@@ -867,6 +867,46 @@ function runAction(btn, opts = {}) {
     T.toast("History cleared", "i-trash");
     render();
   }
+  else if (act === "send-announcement") {
+    if (!T.isDeveloperAccount?.()) { T.toast("Only the developer account can send announcements", "i-alert"); return; }
+    const titleEl = document.getElementById("announce-title");
+    const bodyEl = document.getElementById("announce-body");
+    const errorEl = document.getElementById("announce-error");
+    const fail = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; } };
+    if (errorEl) errorEl.hidden = true;
+    T.cloud?.sendAnnouncement?.(titleEl?.value, bodyEl?.value).then((result) => {
+      if (!result?.ok) { fail(result?.error || "Could not send the announcement."); return; }
+      if (titleEl) titleEl.value = "";
+      if (bodyEl) bodyEl.value = "";
+      T.toast("Announcement sent to every shop", "i-bell");
+      render();
+    });
+  }
+  else if (act === "delete-announcement" && id) {
+    if (!T.isDeveloperAccount?.()) { T.toast("Only the developer account can delete announcements", "i-alert"); return; }
+    T.sheets?.confirm?.({
+      title: "Delete this announcement?",
+      message: "It disappears from every shop's Announcements page. Shops that already opened it keep their receipt.",
+      confirmLabel: "Delete announcement",
+      danger: true,
+      onConfirm: () => { T.cloud?.deleteAnnouncement?.(id).then(() => render()); }
+    });
+  }
+  else if (act === "toggle-announce-reads" && value) {
+    T.ui.announcementOpen = T.ui.announcementOpen || {};
+    T.ui.announcementOpen[value] = !T.ui.announcementOpen[value];
+    if (T.ui.announcementOpen[value]) {
+      T.ui.announcementReads = T.ui.announcementReads || {};
+      if (!Object.prototype.hasOwnProperty.call(T.ui.announcementReads, value)) {
+        T.ui.announcementReads[value] = null; // loading
+        T.cloud?.announcementReaders?.(value).then((result) => {
+          T.ui.announcementReads[value] = result?.ok ? result.readers : [];
+          render();
+        });
+      }
+    }
+    render();
+  }
   else if (act === "confirm-sheet") {
     T.sheets?.runConfirm?.();
   }
@@ -1806,6 +1846,20 @@ function updateSyncDot() {
 // Keep the ring honest even when the Firebase SDK never loads.
 setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
 
+/** Rebuild just the bottom tab bar — used when the cloud moves and only the
+ *  Settings badge on it can change (e.g. a new developer announcement lands
+ *  while the shopkeeper is mid-sale). */
+function refreshTabBadge() {
+  const tabbarEl = document.getElementById("tabbar");
+  if (!tabbarEl) return;
+  const route = window.Till?.ui?.route || { name: "sell" };
+  const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
+  tabbarEl.innerHTML = showTabs ? window.Till.screens.tabbar(route) : "";
+  tabbarEl.classList.toggle("is-hidden", !showTabs);
+  wireNav(tabbarEl);
+  wireActions(tabbarEl);
+}
+
 // Clearing the search query after an item is added to the sale, so the
 // shopkeeper can scan/type the next item right away. The search bar stays
 // open until they close it themselves (the search button toggles it).
@@ -1957,6 +2011,17 @@ function render() {
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
   else if (screenName === "history") html = T.screens.history();
+  else if (screenName === "announcements") {
+    // Capture what was unread *before* this page marks it — the shop sees
+    // the NEW badge on exactly those entries, once.
+    const alreadyRead = new Set(T.readAnnouncementIds?.() || []);
+    const freshIds = (T.cloud?.announcements?.() || []).map((item) => item.id).filter((id) => id && !alreadyRead.has(id));
+    html = T.screens.announcements(freshIds);
+    if (freshIds.length) {
+      T.markAnnouncementsRead?.(freshIds);
+      freshIds.forEach((id) => { T.cloud?.markAnnouncementRead?.(id); });
+    }
+  }
   else if (screenName === "audit") {
     // No PIN sheet here on purpose: it opens only from the "Enter PIN" button
     // below, so someone who does not want to enter the PIN can just leave.
@@ -1985,7 +2050,7 @@ function render() {
 
   // Plan gating: an unpaid shop sees only the "Your plan is due" page
   // everywhere, except the screens needed to pay, sync and sign out.
-  const LOCKED_SCREENS_EXCEPT = new Set(["auth", "account"]);
+  const LOCKED_SCREENS_EXCEPT = new Set(["auth", "account", "announcements"]);
   if (T.subscriptionLocked?.() && !LOCKED_SCREENS_EXCEPT.has(screenName)) {
     html = T.screens.lockedScreen();
   }
@@ -2260,7 +2325,9 @@ function boot() {
   // When the cloud reports something new, the Account screen follows it.
   window.Till?.cloud?.onChange?.(() => {
     updateSyncDot();
-    if (window.Till?.ui?.route?.name === "account") render();
+    const name = window.Till?.ui?.route?.name;
+    if (["account", "more", "plans", "announcements"].includes(name)) render();
+    else refreshTabBadge();
   });
   // Start the connectivity probe even if the Firebase SDK never loads.
   window.Till?.cloud?.init?.();

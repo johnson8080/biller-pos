@@ -17,6 +17,8 @@
   const SHOP_COLLECTION = "billerShops";
   const PRESENCE_COLLECTION = "billerPresence";
   const PAYMENT_COLLECTION = "billerPayments";
+  const ANNOUNCEMENTS_COLLECTION = "billerAnnouncements";
+  const ANNOUNCEMENT_READS_COLLECTION = "billerAnnouncementReads";
   const SAVED_AT_KEY = "biller.pos.savedAt";
 
   // The one account that sees the developer tools: the shop owner.
@@ -38,6 +40,10 @@
   let paymentUnsub = null;
   let paymentRulesError = "";
   let onPaymentPrompt = null;
+  // Developer announcements for every shop. Kept in memory; read receipts
+  // (which shop opened which announcement) live in ANNOUNCEMENT_READS_COLLECTION.
+  let announcements = [];
+  let notifiedUnread = new Set();
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
@@ -199,6 +205,7 @@
       if (isOwner()) watchPresence();
       if (isOwner()) watchPayments();
       watchMyPayment();
+      watchAnnouncements();
       notify();
     });
   }
@@ -213,6 +220,8 @@
     unsubscribers = [];
     accounts = [];
     accountsError = "";
+    announcements = [];
+    notifiedUnread = new Set();
     if (user && fs) beatOff();
     user = null;
     setPhase("signed-out");
@@ -733,6 +742,134 @@
     }
   }
 
+  /* ---------- Announcements (developer -> every shop) ---------- */
+
+  /**
+   * Watch the developer announcements. Every signed-in shop watches the
+   * same list; the developer writes it. Toasts ping each shop exactly once
+   * per announcement it has not read yet.
+   */
+  function watchAnnouncements() {
+    if (!fs) return;
+    try {
+      const unsub = fs.collection(ANNOUNCEMENTS_COLLECTION).onSnapshot((snap) => {
+        const list = [];
+        snap.forEach((doc) => {
+          const data = doc.data() || {};
+          list.push({
+            id: doc.id,
+            title: String(data.title || "Announcement").slice(0, 80),
+            body: String(data.body || "").slice(0, 600),
+            at: Number(data.at) || 0,
+            createdBy: String(data.createdBy || ""),
+            v: String(data.v || "")
+          });
+        });
+        list.sort((a, b) => (b.at || 0) - (a.at || 0));
+        announcements = list;
+        notify();
+        const unread = list.filter((item) => !notifiedUnread.has(item.id) && !(window.Till?.readAnnouncementIds?.() || []).includes(item.id));
+        if (unread.length) {
+          const count = unread.length;
+          window.Till?.toast?.(count === 1 ? "New announcement from the developer" : `${count} new announcements from the developer`, "i-bell");
+          for (const item of unread) notifiedUnread.add(item.id);
+        }
+      }, (error) => {
+        // The rules may not be deployed yet; announcements simply stay hidden.
+        console.warn("Announcement watch failed:", friendlyError(error));
+      });
+      unsubscribers.push(unsub);
+    } catch (error) {
+      console.warn("Announcements unavailable:", error);
+    }
+  }
+
+  /** The developer publishes an announcement every shop can see. */
+  async function sendAnnouncement(title, body) {
+    if (!fs || !user || !isOwner()) return { ok: false, error: "Only the developer account can send announcements." };
+    const cleanTitle = String(title || "").trim().slice(0, 80);
+    const cleanBody = String(body || "").trim().slice(0, 600);
+    if (!cleanTitle) return { ok: false, error: "Give the announcement a title." };
+    if (!cleanBody) return { ok: false, error: "Write the message shops should see." };
+    try {
+      await fs.collection(ANNOUNCEMENTS_COLLECTION).add({
+        title: cleanTitle,
+        body: cleanBody,
+        at: Date.now(),
+        createdBy: user.email || "",
+        v: window.ASSET_VERSION || ""
+      });
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: friendlyError(error) };
+    }
+  }
+
+  /** The developer removes an announcement. Read receipts are kept. */
+  async function deleteAnnouncement(id) {
+    if (!fs || !user || !isOwner()) return { ok: false, error: "Only the developer account can delete announcements." };
+    const cleanId = String(id || "").trim();
+    if (!cleanId) return { ok: false };
+    try {
+      await fs.collection(ANNOUNCEMENTS_COLLECTION).doc(cleanId).delete();
+      announcements = announcements.filter((item) => item.id !== cleanId);
+      notify();
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: friendlyError(error) };
+    }
+  }
+
+  /** The developer lists which shops opened an announcement. */
+  async function announcementReaders(announcementId) {
+    if (!fs || !user || !isOwner()) return { ok: false, readers: [] };
+    const cleanId = String(announcementId || "").trim();
+    if (!cleanId) return { ok: false, readers: [] };
+    try {
+      const snap = await fs.collection(ANNOUNCEMENT_READS_COLLECTION)
+        .where("announcementId", "==", cleanId)
+        .get();
+      const readers = [];
+      snap.forEach((doc) => {
+        const data = doc.data() || {};
+        readers.push({
+          id: doc.id,
+          uid: String(data.uid || ""),
+          shop: String(data.shop || ""),
+          email: String(data.email || ""),
+          code: String(data.code || ""),
+          at: Number(data.at) || 0
+        });
+      });
+      readers.sort((a, b) => (b.at || 0) - (a.at || 0));
+      return { ok: true, readers };
+    } catch (error) {
+      return { ok: false, error: friendlyError(error), readers: [] };
+    }
+  }
+
+  /** A shop logs that it opened an announcement. One receipt per shop. */
+  async function markAnnouncementRead(announcementId) {
+    if (!fs || !user) return { ok: false };
+    const cleanId = String(announcementId || "").trim();
+    if (!cleanId) return { ok: false };
+    try {
+      await fs.collection(ANNOUNCEMENT_READS_COLLECTION)
+        .doc(`${cleanId}_${user.uid}`)
+        .set({
+          announcementId: cleanId,
+          uid: user.uid,
+          shop: window.Till?.state?.store?.name || "",
+          email: user.email || "",
+          code: window.Till?.shopCode?.() || "",
+          at: Date.now()
+        }, { merge: true });
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: friendlyError(error) };
+    }
+  }
+
   /** Is this account online right now? */
   function isOnline(account) {
     if (!account || !account.t) return false;
@@ -753,6 +890,11 @@
     isOnline,
     accounts: () => accounts.slice(),
     paymentRequests: () => paymentRequests.slice(),
+    announcements: () => announcements.slice(),
+    sendAnnouncement,
+    deleteAnnouncement,
+    announcementReaders,
+    markAnnouncementRead,
     paymentRulesError: () => paymentRulesError,
     myPayment: () => myPayment,
     requestPayment,

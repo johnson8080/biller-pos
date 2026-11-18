@@ -108,7 +108,7 @@
         <div class="appbar-context"><div class="appbar-title">Subscriptions</div></div>
         <div class="appbar-right"></div>`;
     }
-    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history"].includes(route.name)) {
+    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history", "announcements"].includes(route.name)) {
       const supplier = route.name === "supplier" ? T.findSupplier(route.param) : null;
       const config = {
         cart: { title: "Checkout", back: "#/sell", action: `<button class="text-btn danger" data-act="clear-cart">Clear</button>` },
@@ -118,6 +118,7 @@
         store: { title: "Store & receipts", back: "#/more", action: "" },
         mpesa: { title: "M-Pesa", back: "#/more", action: "" },
         history: { title: "History log", back: "#/more", action: "" },
+        announcements: { title: "Announcements", back: "#/more", action: "" },
         supplier: { title: supplier?.name || "Supplier", back: "#/suppliers", action: supplier ? `<button class="text-btn" data-act="edit-supplier" data-id="${esc(supplier.id)}">Edit</button>` : "" }
       }[route.name];
       return `
@@ -171,12 +172,17 @@
 
   function tabbar(route) {
     const dueCount = T.debtDueCount?.() || 0;
+    const announceCount = T.announcementUnreadCount?.() || 0;
+    const badgeFor = (tab) => {
+      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? announceCount : 0;
+      if (!count) return "";
+      return `<span class="tab-badge" aria-hidden="true">${count > 9 ? "9+" : count}</span>`;
+    };
     return TABS.map((tab) => {
       const active = route.name === tab.id;
-      const badge = tab.id === "debt" && dueCount
-        ? `<span class="tab-badge" aria-hidden="true">${dueCount > 9 ? "9+" : dueCount}</span>`
-        : "";
-      return `<button class="tab ${active ? "is-active" : ""}" data-nav="${tab.path}" ${active ? 'aria-current="page"' : ""} aria-label="${tab.label}${tab.id === "debt" && dueCount ? `, ${dueCount} due` : ""}">
+      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? announceCount : 0;
+      const badge = badgeFor(tab);
+      return `<button class="tab ${active ? "is-active" : ""}" data-nav="${tab.path}" ${active ? 'aria-current="page"' : ""} aria-label="${tab.label}${count ? `, ${count} unread` : ""}">
         <span class="tab-icon">${icon(tab.icon)}${badge}</span><span class="tab-label">${tab.label}</span>
       </button>`;
     }).join("");
@@ -1723,12 +1729,46 @@
         : `<p class="report-note" style="margin:6px 0 0">No suspicious shops right now.</p>`}
     </div>`;
 
+    const developerAnnouncements = T.cloud?.announcements?.() || [];
+    const announceReads = T.ui.announcementReads || {};
+    const announceOpen = T.ui.announcementOpen || {};
+    const announceCard = `<div class="settings-card announce-card">
+      <div class="report-card-head"><h2>Announcements</h2><span class="report-total">${developerAnnouncements.length}</span></div>
+      <p class="report-note" style="margin-top:4px">Send a message to every shop. They see a red count on the announcement card in Settings — and on the Settings tab — until they open it. Opening it writes you a receipt with that till.</p>
+      <div class="field" style="margin-top:8px">
+        <label for="announce-title">Title</label>
+        <input class="input" id="announce-title" maxlength="80" placeholder="e.g. Maintenance Sunday 6am" autocomplete="off">
+      </div>
+      <div class="field" style="margin-top:6px">
+        <label for="announce-body">Message</label>
+        <textarea class="input" id="announce-body" rows="2" maxlength="600" placeholder="What every shop should know" style="resize:vertical;min-height:56px"></textarea>
+      </div>
+      <p class="form-error" id="announce-error" role="alert" hidden></p>
+      <div class="sheet-actions" style="margin-top:8px"><button class="btn btn-primary btn-block" data-act="send-announcement">${icon("i-bell")} Send to all shops</button></div>
+      ${developerAnnouncements.length ? `<div class="announce-dev-list">${developerAnnouncements.map((item) => {
+        const id = esc(item.id);
+        const cached = announceReads[item.id];
+        const open = Boolean(announceOpen[item.id]);
+        const readers = Array.isArray(cached) ? cached : null;
+        return `<div class="announce-dev-row">
+          <div class="announce-dev-head">
+            <div class="announce-dev-copy"><strong>${esc(item.title)}</strong><small>${esc(announceWhen(item.at))}</small></div>
+            <button class="text-btn" data-act="delete-announcement" data-id="${id}">Delete</button>
+          </div>
+          <p class="card-sub" style="margin:4px 0 0;overflow-wrap:anywhere">${esc(item.body)}</p>
+          <button class="chip announce-reads-toggle" data-act="toggle-announce-reads" data-value="${id}" aria-expanded="${open}">${readers ? `${readers.length} ${readers.length === 1 ? "shop" : "shops"} opened` : "Who opened it"} ${icon("i-chevron")}</button>
+          ${open ? `<div class="announce-readers">${cached === null ? `<p class="report-note">Loading…</p>` : readers.length ? readers.map((reader) => `<div class="reader-row"><span class="reader-dot"></span><span class="reader-copy"><strong>${esc(reader.shop || reader.email || "Shop")}</strong><small>${esc(reader.code ? `${reader.code} · ` : "")}${esc(reader.email)} · ${esc(announceWhen(reader.at))}</small></span></div>`).join("") : `<p class="report-note">No shop has opened it yet.</p>`}</div>` : ""}
+        </div>`;
+      }).join("")}</div>` : `<p class="report-note" style="margin-top:8px">Nothing sent yet.</p>`}
+    </div>`;
+
     return `<section class="screen" aria-labelledby="plans-title">
       <div class="screen-head">
         <p class="eyebrow">Developer</p>
         <h1 id="plans-title">Subscriptions</h1>
         <p class="sub">Every shop, its code, and what has been paid.</p>
       </div>
+      ${announceCard}
       ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
@@ -1984,6 +2024,7 @@
         </button>
       </div>`;
     const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
+    const announceCount = T.announcementUnreadCount?.() || 0;
     const dataBody = `
       <div class="data-list">
         <button class="data-row" data-act="export-data">
@@ -2062,6 +2103,15 @@
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
       </div>
+
+      <button type="button" class="account-card announcement-card" data-nav="#/announcements" style="margin-top:10px" aria-label="Announcements${announceCount ? `, ${announceCount} unread` : ""}">
+        <span class="data-icon">${icon("i-bell")}</span>
+        <span class="account-card-copy">
+          <strong>ANNOUNCEMENTS</strong>
+          <small>${announceCount ? `${announceCount} new from the developer — tap to read` : "Messages from the developer for every till"}</small>
+        </span>
+        ${announceCount ? `<span class="count-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
+      </button>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
         <span class="data-icon">${icon("i-chat")}</span>
@@ -2968,6 +3018,13 @@
     </section>`;
   }
 
+  /** Date label for announcement entries and read receipts. */
+  const announceWhen = (at) => {
+    const ts = Number(at);
+    if (!Number.isFinite(ts) || ts <= 0) return "";
+    return new Date(ts).toLocaleDateString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+
   const logTimeAgo = (iso) => {
     const ts = Date.parse(iso);
     if (!Number.isFinite(ts)) return "";
@@ -3013,5 +3070,42 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, pinLocked, history, icon };
+  /**
+   * Announcements from the developer. Every signed-in shop sees the same
+   * list. A shop gets a red count on this page until it opens it, and the
+   * developer sees exactly which shop opened what.
+   */
+  function announcements(freshIds = []) {
+    const fresh = new Set((freshIds || []).map(String));
+    const items = T.cloud?.announcements?.() || [];
+    const rows = items.map((item) => {
+      const isNew = fresh.has(item.id);
+      return `<article class="announce-item${isNew ? " is-new" : ""}">
+        <div class="announce-item-head">
+          <span class="announce-item-icon">${icon("i-bell")}</span>
+          <div class="announce-item-meta">
+            <strong>${esc(item.title)}</strong>
+            <small>${esc(announceWhen(item.at))}</small>
+          </div>
+          ${isNew ? `<span class="new-pill">NEW</span>` : ""}
+        </div>
+        <p class="announce-item-body">${esc(item.body)}</p>
+      </article>`;
+    }).join("");
+    return `<section class="screen" aria-labelledby="announcements-title">
+      <div class="screen-head">
+        <h1 id="announcements-title">ANNOUNCEMENTS</h1>
+        <p class="sub">Messages from the developer for every till.</p>
+      </div>
+      ${items.length
+        ? `<div class="announce-list">${rows}</div>`
+        : `<div class="empty-state">
+             <div class="empty-icon">${icon("i-bell")}</div>
+             <h3>No announcements yet</h3>
+             <p>When the developer sends a message to every shop, it will show up here.</p>
+           </div>`}
+    </section>`;
+  }
+
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, pinLocked, history, announcements, icon };
 })();

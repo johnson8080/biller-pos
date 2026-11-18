@@ -37,5 +37,20 @@ service cloud.firestore {
       );
       allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
     }
+
+    // --- Announcements (developer -> every shop) -------------------------
+    // The developer publishes; every signed-in shop can read the list.
+    match /billerAnnouncements/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && isOwner();
+    }
+    // One read receipt per shop per announcement, written the moment the
+    // shop opens the announcements page. Immutable: the developer audits
+    // who opened what, and shops never edit each other's receipts.
+    match /billerAnnouncementReads/{id} {
+      allow read: if signedIn() && isOwner();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
   }
 }
