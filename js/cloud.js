@@ -608,8 +608,12 @@
           // before this guard existed.
           if (confirmedAt > applied) {
             if (confirmedAt > lastPaid + 60000) {
-              window.Till?.markSubscriptionPaid?.({ method: "manual", reference: data.reference || "" });
-              window.Till?.toast?.("Your plan is on. Welcome back.", "i-check");
+              const paid = window.Till?.markSubscriptionPaid?.({ method: "manual", reference: data.reference || "", mpesaCode: data.mpesaCode || "" });
+              if (paid?.skipped) {
+                window.Till?.toast?.("That claim was already applied — no second month is added.", "i-info");
+              } else {
+                window.Till?.toast?.("Your plan is on. Welcome back.", "i-check");
+              }
             }
             if (window.Till?.state?.store?.subscription) {
               window.Till.state.store.subscription.lastConfirmedAt = confirmedAt;

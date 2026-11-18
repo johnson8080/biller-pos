@@ -2098,8 +2098,16 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   };
 
   /** Record a payment and move the plan forward by a month. */
-  T.markSubscriptionPaid = ({ method = "mpesa", reference = "" } = {}) => {
+  T.markSubscriptionPaid = ({ method = "mpesa", reference = "", mpesaCode = "" } = {}) => {
     const sub = T.subscription();
+    const code = String(mpesaCode || "").trim().toUpperCase().slice(0, 24);
+    // A claim is an M-Pesa code — unique per transaction. The developer
+    // flips confirm → revert → confirm on the same document, and a reconnect
+    // can deliver the states out of order. Without this check, each flip
+    // would buy another month; with it, one code buys exactly one month.
+    if (code && (sub.payments || []).some((entry) => String(entry?.mpesaCode || "").trim().toUpperCase() === code)) {
+      return { ...sub, alreadyApplied: true, skipped: true };
+    }
     const base = sub.paidUntil ? new Date(sub.paidUntil) : new Date();
     if (!Number.isFinite(base.getTime())) base.setTime(Date.now());
     // One month from the current end date (or today), so a payment keeps the
@@ -2110,6 +2118,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       at: new Date().toISOString(),
       method: String(method || "").slice(0, 20),
       reference: String(reference || "").slice(0, 60),
+      mpesaCode: code,
       amountCents: sub.amountCents || planConfig().amountCents
     };
     T.state.store.subscription = {
