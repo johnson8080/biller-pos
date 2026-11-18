@@ -2370,9 +2370,15 @@ function boot() {
   // The trail starts on the screen the app opens on.
   navTrail = [location.hash || "#/sell"];
   // When the cloud reports something new, the Account screen follows it.
+  // Never re-render while the shopkeeper is typing — a re-render replaces
+  // the viewport and wipes whatever they were writing (the announcement
+  // composer was losing its text mid-sentence). Refresh only the badge.
   window.Till?.cloud?.onChange?.(() => {
     updateSyncDot();
     const name = window.Till?.ui?.route?.name;
+    const active = document.activeElement;
+    const editing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
+    if (editing) { refreshTabBadge(); return; }
     if (["account", "more", "plans", "announcements"].includes(name)) render();
     else refreshTabBadge();
   });
