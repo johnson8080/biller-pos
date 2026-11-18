@@ -1920,7 +1920,7 @@
     const securityBody = `
       <div class="about-card">
         <div class="report-card-head"><h2>Shop PIN</h2><span class="status-pill ${T.pinEnabled() ? "is-good" : "is-warn"}"><span class="dot"></span>${T.pinEnabled() ? "On" : "Off"}</span></div>
-        <p class="card-sub">${T.pinEnabled() ? "A 4-digit PIN is required before anyone can edit or delete orders, products, suppliers or shop data." : "No PIN is set — anyone with this till can edit or delete orders, products, suppliers and shop data."}</p>
+        <p class="card-sub">${T.pinEnabled() ? "A 4-digit PIN is required every time staff edit stock, edit or delete orders, products, suppliers or shop data — and every write-off and restore." : "No PIN is set — anyone with this till can edit stock, edit or delete records, write off wastage and restore backups."}</p>
         <div class="sheet-actions" style="margin-top:10px">
           ${T.pinEnabled()
             ? `<button class="btn btn-ghost btn-block" data-act="remove-pin">${icon("i-trash")} Remove PIN</button>

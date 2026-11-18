@@ -546,12 +546,13 @@ function runAction(btn) {
   const PIN_GUARDED = new Set([
     "edit-product", "delete-product", "delete-order", "delete-customer",
     "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
+    "add-stock", "stock-dec", "restock-product", "open-wastage", "start-audit",
     "reset-data", "import-data"
   ]);
-  if (PIN_GUARDED.has(act) && T.pinEnabled?.() && !T.ui.pinVerified) {
+  if (PIN_GUARDED.has(act) && T.pinEnabled?.()) {
     T.sheets?.openPinSheet?.({
-      caption: "Till is secured — enter the shop PIN to continue.",
-      onSuccess: () => { T.ui.pinVerified = true; runAction(btn); }
+      caption: "Records are secured — enter the shop PIN to continue.",
+      onSuccess: () => runAction(btn)
     });
     return;
   }
@@ -1840,6 +1841,10 @@ function render() {
     T.ui.searchOpen = false;
     T.ui.search = "";
   }
+  // Leaving Audit locks it again — the PIN is asked next time it opens.
+  if (route.name !== "audit" && T.ui.auditUnlocked) {
+    T.ui.auditUnlocked = false;
+  }
 
   // The "payment complete" state belongs to the receipt that was just paid.
   if (route.name !== "receipt" || route.param !== T.ui.justPaidId) {
@@ -1881,7 +1886,17 @@ function render() {
   else if (screenName === "debt") html = route.param ? T.screens.customerDebt(route.param) : T.screens.debt();
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
-  else if (screenName === "audit") html = T.screens.audit();
+  else if (screenName === "audit") {
+    if (T.pinEnabled?.() && !T.ui.auditUnlocked) {
+      T.sheets?.openPinSheet?.({
+        caption: "Audit report is protected — enter the shop PIN to continue.",
+        onSuccess: () => { T.ui.auditUnlocked = true; render(); }
+      });
+      html = `<section class="screen audit-locked" style="padding:48px 20px;text-align:center;color:var(--muted)"><span class="data-icon" style="display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--surface-2);margin:0 auto 12px;color:var(--forest)">${icon("i-lock")}</span><h1 style="font-size:16px;font-weight:750;color:var(--ink)">Audit report is locked</h1><p>Enter the shop PIN to open it.</p></section>`;
+    } else {
+      html = T.screens.audit();
+    }
+  }
   else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
