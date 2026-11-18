@@ -133,7 +133,12 @@
   }
   function stateHash() {
     try {
-      const raw = JSON.stringify(T.state);
+      return stateHashOf(T.state);
+    } catch { return ""; }
+  }
+  function stateHashOf(obj) {
+    try {
+      const raw = JSON.stringify(obj);
       let h = 5381;
       for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) >>> 0;
       return raw.length + ":" + h.toString(36);
@@ -302,6 +307,36 @@
     clearTimeout(pushTimer);
     const run = async () => {
       try {
+        // Never write on top of changes this device has not seen. Reading
+        // the cloud copy first — exactly what pull does — is the difference
+        // between "local wins because it was saved later" (which silently
+        // erases another device's PIN, sales or shopkeepers, as happened
+        // with one account this week) and "local wins because the cloud
+        // genuinely did not move". Comparing clock stamps is not enough:
+        // any local save bumps savedAt, so a stale till can look newer
+        // than a fresh remote. Compare the CONTENT with the state this
+        // device based its edits on.
+        const fence = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
+        const fenceData = fence.exists ? fence.data() : null;
+        if (fenceData && fenceData.state) {
+          const remoteAt = Number(fenceData.updatedAt) || (fenceData.serverAt?.toMillis?.() || 0);
+          const storedHash = lastSyncedHash();
+          const remoteHash = T.normalizeState ? stateHashOf(T.normalizeState(fenceData.state)) : "";
+          const remoteMoved = storedHash
+            ? Boolean(remoteHash) && remoteHash !== storedHash
+            : remoteAt > localSavedAt();
+          if (remoteMoved) {
+            // Another device advanced the shop since this copy was based
+            // on. Put that copy in place instead of overwriting it — the
+            // cloud keeps every change; this till's unpushed local edits
+            // are superseded, and the shopkeeper re-applies them.
+            applyRemote(fenceData.state, remoteAt);
+            lastError = "";
+            setPhase("synced");
+            T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+            return false;
+          }
+        }
         // Refresh this device's shopkeeper claim so it does not expire while
         // the shop is open.
         if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
@@ -367,7 +402,18 @@
       }
       const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
       const localAt = localSavedAt();
-      if (!force && remoteAt && remoteAt <= localAt) {
+      // Content decides whether the cloud moved under this till, not the
+      // clock: a local edit stamps savedAt on every save, so a stale till can
+      // look newer than the remote copy. If anything in the cloud changed
+      // since this till based its edits on it, the remote wins.
+      let drift = false;
+      try {
+        const stored = lastSyncedHash();
+        if (stored && T.normalizeState) {
+          drift = stateHashOf(T.normalizeState(data.state)) !== stored;
+        }
+      } catch { drift = false; }
+      if (!force && !drift && remoteAt && remoteAt <= localAt) {
         lastSyncAt = Date.now();
         pulledOnce = true;
         setPhase("synced");
@@ -381,7 +427,7 @@
       pulledOnce = true;
       lastSyncAt = Date.now();
       setPhase("synced");
-      return { ok: true, applied: true };
+      return { ok: true, applied: true, reason: drift ? "remote-moved" : "applied-newer" };
     } catch (error) {
       lastError = friendlyError(error);
       if (serviceDisabled(error)) {
