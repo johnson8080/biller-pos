@@ -160,7 +160,6 @@
     { id: "stock", label: "STOCK", icon: "i-box", path: "#/stock" },
     { id: "suppliers", label: "SUPPLIERS", icon: "i-truck", path: "#/suppliers" },
     { id: "reports", label: "REPORTS", icon: "i-chart", path: "#/reports" },
-    { id: "plans", label: "PLAN", icon: "i-card", path: "#/plans", devOnly: true },
     { id: "more", label: "SETTINGS", icon: "i-more", path: "#/more" }
   ];
 
@@ -174,9 +173,7 @@
       if (!count) return "";
       return `<span class="tab-badge" aria-hidden="true">${count > 9 ? "9+" : count}</span>`;
     };
-    const isDeveloper = T.isDeveloperAccount?.() || false;
-    const visibleTabs = TABS.filter((tab) => !tab.devOnly || isDeveloper);
-    const tabbar = visibleTabs.map((tab) => {
+    return TABS.map((tab) => {
       const active = route.name === tab.id;
       const count = tab.id === "debt" ? dueCount : tab.id === "more" ? moreCount : 0;
       const badge = badgeFor(tab);
@@ -187,7 +184,6 @@
         <span class="tab-icon">${icon(tab.icon)}${badge}</span><span class="tab-label">${tab.label}</span>
       </button>`;
     }).join("");
-    return tabbar;
   }
 
   function dock() {
@@ -1567,30 +1563,8 @@
    * The developer's subscription panel: every shop, its code and its plan
    * state, with the payment requests waiting for an answer.
    */
-  function plans() {
-    if (!T.isDeveloperAccount()) {
-      const session = T.getSession();
-      const email = session?.email || "";
-      return `<section class="screen">
-        <div class="screen-head">
-          <p class="eyebrow">Developer</p>
-          <h1>Subscriptions</h1>
-          <p class="sub">The developer tools open only for the owner account.</p>
-        </div>
-        <div class="empty-state">
-          <div class="empty-icon">${icon("i-lock")}</div>
-          <h3>${email ? `Signed in as ${esc(email)}` : "This device is not signed in"}</h3>
-          <p>${email
-            ? "That is a shop account, not the owner account. The developer panel shows plans, payment confirmations and the shop announcement tool."
-            : "The developer panel shows plans, payment confirmations and the shop announcement tool, and only opens once you sign in with the owner account."}</p>
-          <div class="sheet-actions" style="margin-top:12px">
-            ${email
-              ? `<button class="btn btn-primary btn-block" data-act="sign-out">${icon("i-user")} Sign out and switch accounts</button>`
-              : `<button class="btn btn-primary btn-block" data-nav="#/auth">${icon("i-user")} Sign in</button>`}
-          </div>
-        </div>
-      </section>`;
-    }
+  function plansInner() {
+    if (!T.isDeveloperAccount()) return "";
 
     const requests = T.cloud.paymentRequests?.() || [];
     const accounts = T.cloud.accounts?.() || [];
@@ -1754,13 +1728,7 @@
       </button>
     </div>`;
 
-    return `<section class="screen" aria-labelledby="plans-title">
-      <div class="screen-head">
-        <p class="eyebrow">Developer</p>
-        <h1 id="plans-title">Subscriptions</h1>
-        <p class="sub">Every shop, its code, and what has been paid.</p>
-      </div>
-      ${announceDoorway}
+    return `${announceDoorway}
       ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
@@ -1773,7 +1741,40 @@
         <strong>${esc(T.money(monthly))}</strong>
       </div>
       ${rows.length ? `<div class="plan-list">${rows.join("")}</div>` : `<p class="report-empty">No shops yet. They show up here as soon as they sign in.</p>`}
-      <p class="field-small" style="margin-top:12px">A shop that says it has paid appears at the top as "Waiting". Tap Confirm and their app unlocks by itself.</p>
+      <p class="field-small" style="margin-top:12px">A shop that says it has paid appears at the top as "Waiting". Tap Confirm and their app unlocks by itself.</p>`;
+  }
+
+  function plans() {
+    if (!T.isDeveloperAccount()) {
+      const session = T.getSession();
+      const email = session?.email || "";
+      return `<section class="screen">
+        <div class="screen-head">
+          <p class="eyebrow">Developer</p>
+          <h1>Subscriptions</h1>
+          <p class="sub">The developer tools open only for the owner account.</p>
+        </div>
+        <div class="empty-state">
+          <div class="empty-icon">${icon("i-lock")}</div>
+          <h3>${email ? `Signed in as ${esc(email)}` : "This device is not signed in"}</h3>
+          <p>${email
+            ? "That is a shop account, not the owner account. The developer panel shows plans, payment confirmations and the shop announcement tool."
+            : "The developer panel shows plans, payment confirmations and the shop announcement tool, and only opens once you sign in with the owner account."}</p>
+          <div class="sheet-actions" style="margin-top:12px">
+            ${email
+              ? `<button class="btn btn-primary btn-block" data-act="sign-out">${icon("i-user")} Sign out and switch accounts</button>`
+              : `<button class="btn btn-primary btn-block" data-nav="#/auth">${icon("i-user")} Sign in</button>`}
+          </div>
+        </div>
+      </section>`;
+    }
+    return `<section class="screen" aria-labelledby="plans-title">
+      <div class="screen-head">
+        <p class="eyebrow">Developer</p>
+        <h1 id="plans-title">Subscriptions</h1>
+        <p class="sub">Every shop, its code, and what has been paid.</p>
+      </div>
+      ${plansInner()}
     </section>`;
   }
 
@@ -2008,6 +2009,9 @@
       </div>`;
     const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
     const announceCount = T.announcementUnreadCount?.() || 0;
+    const planCount = T.pendingPaymentCount?.() || 0;
+    const developerMode = Boolean(T.isDeveloperAccount?.());
+    const planBody = `<div class="plan-inline">${plansInner()}</div>`;
     const dataBody = `
       <div class="data-list">
         <button class="data-row" data-act="export-data">
@@ -2079,6 +2083,7 @@
 
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
+        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting for a decision` : "Every shop, codes, payments and announcements", planBody) : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}

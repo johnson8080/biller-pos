@@ -1923,7 +1923,7 @@ function refreshTabBadge() {
   const tabbarEl = document.getElementById("tabbar");
   if (!tabbarEl) return;
   const route = window.Till?.ui?.route || { name: "sell" };
-  const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more", "plans"].includes(route.name) && !(route.name === "debt" && route.param);
+  const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
   const html = showTabs ? window.Till.screens.tabbar(route) : "";
   if (tabbarEl.innerHTML !== html) {
     tabbarEl.innerHTML = html;
@@ -2072,7 +2072,7 @@ function render() {
   if (tabbarEl) {
     // The bottom tabs stay on the four main screens, and get out of the way
     // on the one-off flows (login, cart, payment, receipt, scanner).
-    const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more", "plans"].includes(route.name) && !(route.name === "debt" && route.param);
+    const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
 
     tabbarEl.innerHTML = showTabs ? T.screens.tabbar(route) : "";
     tabbarEl.classList.toggle("is-hidden", !showTabs);

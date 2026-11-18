@@ -2576,6 +2576,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .about-points li::before { content: ""; position: absolute; left: 1px; top: .42em; width: 5px; height: 5px; border-radius: 50%; background: var(--forest); }
 .about-points li strong { color: var(--ink); font-weight: 700; }
 .settings-group { scroll-margin-top: 66px; }
+.plan-inline .settings-card { margin: 2px 0 10px; }
 .security-divider { height: 1px; background: var(--ui-line); margin: 14px 0; border: 0; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 0 4px; }
 .switch-copy { flex: 1; min-width: 0; }
