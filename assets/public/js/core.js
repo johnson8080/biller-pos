@@ -2249,6 +2249,35 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return tx;
   };
 
+  /**
+   * Remove an order entirely: the receipt is deleted, its units go back on the
+   * shelf, and any debt entry the credit sale wrote is removed.
+   */
+  T.deleteOrder = (id) => {
+    const list = T.state.transactions || [];
+    const index = list.findIndex((tx) => tx.id === id);
+    if (index < 0) return { ok: false, error: "That order no longer exists." };
+    const [tx] = list.splice(index, 1);
+    for (const item of tx.items || []) {
+      const product = T.findProduct(item.productId);
+      if (!product) continue;
+      const restore = Number(item.qty) || 0;
+      if (item.variantId) {
+        const variant = T.findVariant(product, item.variantId);
+        if (variant) variant.stock = Math.min(1000000, (variant.stock || 0) + restore);
+        continue;
+      }
+      product.stock = Math.min(1000000, (product.stock || 0) + restore);
+    }
+    // A credit sale wrote a debt entry linked to this receipt on the customer.
+    const customer = tx.payment?.customerId && T.findCustomer(tx.payment.customerId);
+    if (customer && Array.isArray(customer.entries)) {
+      customer.entries = customer.entries.filter((entry) => String(entry?.txId || "") !== String(tx.id));
+    }
+    T.save();
+    return { ok: true, tx };
+  };
+
   T.setSaveState = (mode) => {
     const el = document.getElementById("saveState");
     if (!el) return;

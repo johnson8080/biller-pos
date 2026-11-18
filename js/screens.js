@@ -2828,6 +2828,7 @@
       <div class="receipt-actions">
         <button class="btn btn-ghost" data-act="share-receipt" data-id="${esc(tx.id)}">${icon("i-share")} Share</button>
         <button class="btn btn-primary" data-act="download-receipt" data-id="${esc(tx.id)}">${icon("i-download")} Download</button>
+        ${justPaid ? "" : `<button class="btn btn-ghost delete-product" data-act="delete-order" data-id="${esc(tx.id)}">${icon("i-trash")} Delete</button>`}
       </div>
       <div class="receipt-primary">
         <button class="btn btn-primary btn-block" data-act="new-sale">${icon("i-plus")} New sale</button>

@@ -761,6 +761,20 @@ function runAction(btn) {
   else if (act === "edit-product" && id) {
     T.sheets?.openProductEditor?.(id, { source: "inventory" });
   }
+  else if (act === "delete-order" && id) {
+    T.sheets?.confirm?.({
+      title: "Delete this order?",
+      message: "The receipt is removed and every unit goes back on the shelf. A credit linked to this sale is also cleared. This cannot be undone.",
+      confirmLabel: "Delete order",
+      danger: true,
+      onConfirm: () => {
+        const result = T.deleteOrder(id);
+        if (!result.ok) { T.toast(result.error, "i-alert"); render(); return; }
+        T.toast("Order deleted", "i-check");
+        go("#/orders");
+      }
+    });
+  }
   else if (act === "delete-product" && id) {
     T.sheets?.confirm?.({
       title: "Delete this product?",

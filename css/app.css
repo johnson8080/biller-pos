@@ -2450,7 +2450,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .receipt-bar { height: 1px; background: var(--ui-line); margin: 11px 0; }
 .receipt-code { font-size: calc(8.5px * var(--fs)); letter-spacing: .22em; color: var(--muted); text-align: center; }
 .receipt-thanks { margin-top: 5px; font-size: calc(9px * var(--fs)); line-height: 1.5; color: var(--muted); text-align: center; }
-.receipt-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 11px; }
+.receipt-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 7px; margin-top: 11px; }
 .receipt-actions .btn { min-height: 44px; font-size: calc(11.5px * var(--fs)); }
 .receipt-primary { margin-top: 8px; }
 
