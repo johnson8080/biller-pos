@@ -837,6 +837,8 @@ function runAction(btn) {
   else if (act === "set-pin") { T.sheets?.openPinSheet?.({ mode: "set", onSuccess: () => { T.toast("PIN set", "i-lock"); render(); } }); }
   else if (act === "change-pin") { T.sheets?.openPinSheet?.({ mode: "change", onSuccess: () => { T.toast("PIN changed", "i-lock"); render(); } }); }
   else if (act === "remove-pin") { T.sheets?.openPinSheet?.({ mode: "remove", onSuccess: () => { T.toast("PIN removed", "i-info"); render(); } }); }
+  else if (act === "unlock-audit") { T.sheets?.openPinSheet?.({ caption: "Audit report is protected — enter the shop PIN to continue.", onSuccess: () => { T.ui.auditUnlocked = true; render(); } }); }
+  else if (act === "unlock-mpesa") { T.sheets?.openPinSheet?.({ caption: "M-Pesa settings are protected — enter the shop PIN to continue.", onSuccess: () => { T.ui.mpesaUnlocked = true; render(); } }); }
   else if (act === "confirm-sheet") {
     T.sheets?.runConfirm?.();
   }
@@ -1925,29 +1927,19 @@ function render() {
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
   else if (screenName === "audit") {
-    if (T.pinEnabled?.() && !T.ui.auditUnlocked) {
-      T.sheets?.openPinSheet?.({
-        caption: "Audit report is protected — enter the shop PIN to continue.",
-        onSuccess: () => { T.ui.auditUnlocked = true; render(); }
-      });
-      html = `<section class="screen audit-locked" style="padding:48px 20px;text-align:center;color:var(--muted)"><span class="data-icon" style="display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--surface-2);margin:0 auto 12px;color:var(--forest)">${icon("i-lock")}</span><h1 style="font-size:16px;font-weight:750;color:var(--ink)">Audit report is locked</h1><p>Enter the shop PIN to open it.</p></section>`;
-    } else {
-      html = T.screens.audit();
-    }
+    // No PIN sheet here on purpose: it opens only from the "Enter PIN" button
+    // below, so someone who does not want to enter the PIN can just leave.
+    html = (T.pinEnabled?.() && !T.ui.auditUnlocked)
+      ? T.screens.pinLocked("Audit report", "unlock-audit")
+      : T.screens.audit();
   }
   else if (screenName === "more") html = T.screens.more();
   else if (screenName === "plans") html = T.screens.plans();
   else if (screenName === "store") html = T.screens.storeSettings();
   else if (screenName === "mpesa") {
-    if (T.pinEnabled?.() && !T.ui.mpesaUnlocked) {
-      T.sheets?.openPinSheet?.({
-        caption: "M-Pesa settings are protected — enter the shop PIN to continue.",
-        onSuccess: () => { T.ui.mpesaUnlocked = true; render(); }
-      });
-      html = `<section class="screen audit-locked" style="padding:48px 20px;text-align:center;color:var(--muted)"><span class="data-icon" style="display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--surface-2);margin:0 auto 12px;color:var(--forest)">${icon("i-lock")}</span><h1 style="font-size:16px;font-weight:750;color:var(--ink)">M-Pesa settings are locked</h1><p>Enter the shop PIN to open them.</p></section>`;
-    } else {
-      html = T.screens.mpesaSettings();
-    }
+    html = (T.pinEnabled?.() && !T.ui.mpesaUnlocked)
+      ? T.screens.pinLocked("M-Pesa settings", "unlock-mpesa")
+      : T.screens.mpesaSettings();
   }
   else if (screenName === "account") html = T.screens.accountSettings();
   else if (screenName === "cart") html = T.screens.cart();

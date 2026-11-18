@@ -1537,6 +1537,24 @@
   }
 
   /**
+   * A page protected by the shop PIN. Rendered instead of the page itself;
+   * the PIN sheet opens only from the explicit "Enter PIN" button — never as
+   * a side effect of a re-render — so someone who does not want to enter the
+   * PIN can still leave the page with the bottom tabs or the back button.
+   */
+  function pinLocked(title, unlockAct) {
+    return `<section class="screen audit-locked" style="padding:48px 20px;text-align:center;color:var(--muted)">
+      <span class="data-icon" style="display:inline-grid;place-items:center;width:46px;height:46px;border-radius:12px;background:var(--surface-2);margin:0 auto 12px;color:var(--forest)">${icon("i-lock")}</span>
+      <h1 style="font-size:16px;font-weight:750;color:var(--ink)">${esc(title)} is locked</h1>
+      <p>Enter the shop PIN to open it.</p>
+      <div class="sheet-actions" style="margin-top:14px">
+        <button class="btn btn-primary btn-block" data-act="${esc(unlockAct)}">${icon("i-lock")} Enter PIN</button>
+        <button class="btn btn-quiet btn-block" data-nav="#/more">Go back to Settings</button>
+      </div>
+    </section>`;
+  }
+
+  /**
    * The developer's subscription panel: every shop, its code and its plan
    * state, with the payment requests waiting for an answer.
    */
@@ -2907,5 +2925,5 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, icon };
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, pinLocked, icon };
 })();
