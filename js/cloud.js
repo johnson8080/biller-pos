@@ -44,6 +44,10 @@
   // (which shop opened which announcement) live in ANNOUNCEMENT_READS_COLLECTION.
   let announcements = [];
   let notifiedUnread = new Set();
+  // A device may not push its state up until a pull has completed — an
+  // empty locally-seeded till (pinHash blank, no products, My Store) must
+  // never be allowed to overwrite a populated cloud shop on first sync.
+  let pulledOnce = false;
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
@@ -201,7 +205,10 @@
     presenceTimer = setInterval(beat, HEARTBEAT);
     document.addEventListener("visibilitychange", onVisible);
     // Pull the cloud copy down, then keep the device in step.
-    pull({ silent: true }).finally(() => {
+    pull({ silent: true }).then((result) => {
+      if (result?.ok) pulledOnce = true;
+      notify();
+    }).finally(() => {
       if (isOwner()) watchPresence();
       if (isOwner()) watchPayments();
       watchMyPayment();
@@ -222,6 +229,7 @@
     accountsError = "";
     announcements = [];
     notifiedUnread = new Set();
+    pulledOnce = false;
     if (user && fs) beatOff();
     user = null;
     setPhase("signed-out");
@@ -230,7 +238,7 @@
   function onVisible() {
     if (document.visibilityState !== "visible") return;
     beat();
-    if (isOwner()) pull({ silent: true });
+    pull({ silent: true }).then((result) => { if (result?.ok) pulledOnce = true; });
   }
 
   /* ---------- Saving and loading ---------- */
@@ -240,7 +248,7 @@
    * changes travels as one write.
    */
   function push({ immediate = false } = {}) {
-    if (!fs || !user) return Promise.resolve(false);
+    if (!fs || !user || !pulledOnce) return Promise.resolve(false);
     clearTimeout(pushTimer);
     const run = async () => {
       try {
