@@ -502,8 +502,49 @@ async function confirmDeleteThisAccount() {
   const T = window.Till;
   const session = T.getSession?.() || {};
   const uid = String(session.uid || "").trim();
-  const authDeleted = { ok: false };
-  // 1) Delete the shop's Firestore documents — best-effort, never hostage to one failure.
+  const email = String(session.email || "").trim();
+  const password = String(document.getElementById("confirm-delete-password")?.value || "");
+  const button = document.getElementById("confirm-delete-btn");
+  const errorEl = document.getElementById("delete-account-error");
+  const sayError = (message) => {
+    if (errorEl) {
+      errorEl.textContent = message || "";
+      errorEl.classList.toggle("show", Boolean(message));
+    }
+  };
+  const setBusy = (busy) => {
+    if (!button) return;
+    if (busy) {
+      button.disabled = true;
+      button.textContent = "Deleting…";
+    } else {
+      const typed = String(document.getElementById("confirm-delete-account")?.value || "").trim().toUpperCase() === "DELETE";
+      button.disabled = !(typed && String(document.getElementById("confirm-delete-password")?.value || "").length > 0);
+      button.textContent = "Delete this account";
+    }
+  };
+  if (!email || !password) { sayError("Enter your password — Firebase will not delete without it."); return; }
+  setBusy(true);
+  // Prove it is you before anything else: a wrong password aborts everything,
+  // no shop is touched and nothing is wiped.
+  try {
+    const auth = window.firebase?.auth?.();
+    const user = auth?.currentUser;
+    if (!user) throw { code: "auth/user-not-found" };
+    const credential = window.firebase.auth.EmailAuthProvider.credential(email, password);
+    await user.reauthenticateWithCredential(credential);
+  } catch (error) {
+    const code = String(error?.code || "");
+    sayError(
+      code === "auth/wrong-password" || code === "auth/invalid-credential" || code === "auth/invalid-login-credentials"
+        ? "That password is not correct. Nothing has been deleted."
+        : "Could not verify your sign-in — check your password and your connection. Nothing has been deleted."
+    );
+    setBusy(false);
+    return;
+  }
+  // 1) Delete the shop's Firestore documents — best-effort, kept separate so
+  //    one failure never stops the rest.
   try {
     const fs = window.firebase?.firestore?.();
     if (fs && uid) {
@@ -518,11 +559,11 @@ async function confirmDeleteThisAccount() {
       } catch {}
     }
   } catch {}
-  // 2) Delete this account's Auth user. Firebase requires a recent sign-in for
-  //    it — failure is reported, but the wipe continues.
+  // 2) Delete this account's Auth user — the account ceases to exist.
+  let authDeleted = false;
   try {
     const user = window.firebase?.auth?.()?.currentUser;
-    if (user) { await user.delete(); authDeleted.ok = true; }
+    if (user) { await user.delete(); authDeleted = true; }
   } catch {}
   // 3) Wipe every local artefact this app has ever written on this device.
   try {
@@ -532,10 +573,10 @@ async function confirmDeleteThisAccount() {
   } catch {}
   try { await window.firebase?.auth?.()?.signOut?.(); } catch {}
   try { await T.cloud?.detach?.(); } catch {}
-  if (!authDeleted.ok) {
+  if (!authDeleted) {
     T.sheets?.confirm?.({
-      title: "Sign-in user stays in Firebase",
-      message: "This device was wiped and your shop is gone everywhere, but Firebase would not delete your sign-in user (it usually needs a fresh sign-in). Remove it in the Firebase console under Authentication → Users, or sign in again and delete from there.",
+      title: "Cloud wiped, sign-in user remains",
+      message: "Your shop, plan, staff and every setting are gone from Firestore and from this device. Firebase refused to delete the sign-in account itself (a server-side error) — remove it in the Firebase console under Authentication → Users, or try again later.",
       confirmLabel: "Got it — reload",
       danger: true,
       onConfirm: () => location.reload()
@@ -2546,6 +2587,8 @@ function boot() {
 }
 
 window.render = render;
+window.Till = window.Till || {};
+window.Till.confirmDeleteThisAccount = confirmDeleteThisAccount;
 
 // The search bar stays open until the shopkeeper closes it themselves
 // (the search button toggles it). Tapping outside no longer dismisses it.

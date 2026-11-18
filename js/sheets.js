@@ -2522,9 +2522,11 @@
   }
 
   /**
-   * Delete the account from this device and from Firestore for good.
-   * The PIN gate has already run by the time this opens (delete-this-account
-   * is PIN-guarded); typing DELETE is the second lock — there is no undo.
+   * Delete the account from Firebase for good. The PIN gate has already
+   * run by the time this opens (open-delete-account is PIN-guarded);
+   * typing DELETE proves the shop owner asked, and the account password
+   * proves Firebase will honour the delete — the safest order: verify
+   * first, delete after, touch nothing if either step fails.
    */
   function openDeleteAccount() {
     const uid = T.getSession?.()?.uid || "";
@@ -2533,7 +2535,7 @@
     open({
       locked: true,
       title: "Delete this account?",
-      subtitle: "Everything on this till and in Firestore goes with it — permanent",
+      subtitle: "Everything on this till and in Firebase goes with it — permanent",
       iconName: "i-trash",
       tone: "warn",
       body: `<div class="danger-confirm">
@@ -2546,18 +2548,33 @@
           <li>Your Firestore documents — shop, payments, presence, receipts</li>
           <li>Your sign-in account itself — nobody can sign in with it again</li>
         </ul>
-        <label class="field-label" for="confirm-delete-account">Type DELETE to confirm</label>
-        <input class="input" id="confirm-delete-account" name="confirm-delete-account" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" maxlength="6" aria-label="Type DELETE to confirm">
-        <button class="btn btn-danger btn-block" type="button" data-act="confirm-delete-this-account" id="confirm-delete-btn" disabled>${icon("i-trash")} Delete this account</button>
-        <button class="btn btn-ghost btn-block" type="button" data-act="close-sheet">Cancel</button>
+        <form id="delete-account-form" novalidate>
+          <label class="field-label" for="confirm-delete-account">Type DELETE to confirm</label>
+          <input class="input" id="confirm-delete-account" name="confirm-delete-account" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DELETE" maxlength="6" aria-label="Type DELETE to confirm" required>
+          <label class="field-label" for="confirm-delete-password" style="margin-top:10px">Your account password</label>
+          <input class="input" id="confirm-delete-password" name="confirm-delete-password" type="password" autocomplete="current-password" placeholder="Your password" maxlength="72" required aria-label="Your account password">
+          <p class="field-small" style="margin-top:4px">Firebase asks for your password before an account can delete itself — it proves it is you.</p>
+          <button class="btn btn-danger btn-block" type="submit" id="confirm-delete-btn" disabled style="margin-top:8px">${icon("i-trash")} Delete this account</button>
+          <div class="form-error" id="delete-account-error" role="alert"></div>
+          <button class="btn btn-ghost btn-block" type="button" data-act="close-sheet" style="margin-top:8px">Cancel</button>
+        </form>
       </div>`
     });
-    // One-shot typed confirmation for the delete button.
-    const input = document.getElementById("confirm-delete-account");
+    // Both locks must be satisfied before the delete button wakes up.
+    const typed = document.getElementById("confirm-delete-account");
+    const password = document.getElementById("confirm-delete-password");
     const button = document.getElementById("confirm-delete-btn");
-    input?.addEventListener("input", () => {
-      if (button) button.disabled = String(input.value || "").trim().toUpperCase() !== "DELETE";
+    const form = document.getElementById("delete-account-form");
+    const sync = () => {
+      if (button) button.disabled = !(String(typed?.value || "").trim().toUpperCase() === "DELETE" && String(password?.value || "").length > 0);
+    };
+    typed?.addEventListener("input", sync);
+    password?.addEventListener("input", sync);
+    form?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      window.Till?.confirmDeleteThisAccount?.();
     });
+    sync();
   }
 
   /** Open the staff gate when blocked; close it when it is no longer needed;
