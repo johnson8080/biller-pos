@@ -1719,16 +1719,7 @@
         : `<p class="report-note" style="margin:6px 0 0">No suspicious shops right now.</p>`}
     </div>`;
 
-    const developerAnnouncements = T.cloud?.announcements?.() || [];
-    const announceDoorway = `<div class="settings-card announce-doorway">
-      <button class="data-row" data-nav="#/announcements" style="border:0;margin:0">
-        <span class="data-icon">${icon("i-bell")}</span>
-        <span class="data-copy"><strong>Announcements</strong><small>${developerAnnouncements.length} sent — write a message to every till and see who opened it</small></span>
-        <span class="chev">${icon("i-chevron")}</span>
-      </button>
-    </div>`;
-
-    return `${announceDoorway}
+    return `${authCard}
       ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
