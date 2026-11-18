@@ -924,6 +924,12 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       const read = new Set(T.state?.store?.readAnnouncements || []);
       return all.filter((item) => item && item.id && !read.has(item.id)).length;
     },
+    // Payment claims waiting for the developer to confirm — the same kind
+    // of badge count the announcement uses, so an unread claim never hides.
+    pendingPaymentCount: () => {
+      const list = window.Till?.cloud?.paymentRequests?.() || [];
+      return list.filter((item) => String(item?.status || "").trim().toLowerCase() === "pending").length;
+    },
     currencySymbol: () => {
       const key = T.currencyCode();
       if (!moneyFmtCache[key]) moneyFmtCache[key] = moneyFmtFor(key);

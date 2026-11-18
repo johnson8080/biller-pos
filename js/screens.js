@@ -173,16 +173,21 @@
   function tabbar(route) {
     const dueCount = T.debtDueCount?.() || 0;
     const announceCount = T.announcementUnreadCount?.() || 0;
+    const pendingCount = T.isDeveloperAccount?.() ? (T.pendingPaymentCount?.() || 0) : 0;
+    const moreCount = announceCount + pendingCount;
     const badgeFor = (tab) => {
-      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? announceCount : 0;
+      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? moreCount : 0;
       if (!count) return "";
       return `<span class="tab-badge" aria-hidden="true">${count > 9 ? "9+" : count}</span>`;
     };
     return TABS.map((tab) => {
       const active = route.name === tab.id;
-      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? announceCount : 0;
+      const count = tab.id === "debt" ? dueCount : tab.id === "more" ? moreCount : 0;
       const badge = badgeFor(tab);
-      return `<button class="tab ${active ? "is-active" : ""}" data-nav="${tab.path}" ${active ? 'aria-current="page"' : ""} aria-label="${tab.label}${count ? `, ${count} unread` : ""}">
+      const label = tab.id === "more" && count
+        ? `${tab.label}, ${count} ${count === 1 ? "notification" : "notifications"}`
+        : tab.label;
+      return `<button class="tab ${active ? "is-active" : ""}" data-nav="${tab.path}" ${active ? 'aria-current="page"' : ""} aria-label="${label}">
         <span class="tab-icon">${icon(tab.icon)}${badge}</span><span class="tab-label">${tab.label}</span>
       </button>`;
     }).join("");
@@ -2005,11 +2010,13 @@
           <button class="switch${debtBlocked ? " is-on" : ""}" type="button" role="switch" aria-checked="${debtBlocked}" data-act="toggle-no-debt" aria-label="No debt allowed"><span class="switch-thumb"></span></button>
         </div>
       </div>`;
+    const pendingPayments = T.pendingPaymentCount?.() || 0;
     const developerBody = `
       <div class="data-list">
-        <button class="data-row" data-nav="#/plans">
+        <button class="data-row" data-nav="#/plans" aria-label="Subscription panel${pendingPayments ? `, ${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting` : ""}">
           <span class="data-icon">${icon("i-card")}</span>
-          <span class="data-copy"><strong>Subscription panel</strong><small>Shops, codes, payments — and Announcements: send a message to every till</small></span>
+          <span class="data-copy"><strong>Subscription panel</strong><small>${pendingPayments ? `${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting for a decision` : "Shops, codes, payments — and Announcements: send a message to every till"}</small></span>
+          ${pendingPayments ? `<span class="count-badge">${pendingPayments > 9 ? "9+" : pendingPayments}</span>` : ""}
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
@@ -2089,7 +2096,7 @@
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
-        ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscription & shop announcements", developerBody) : ""}
+        ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", pendingPayments ? `${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting for a decision` : "Subscription & shop announcements", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
       </div>
