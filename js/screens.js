@@ -211,23 +211,6 @@
     return matched;
   }
 
-  function productCard(product) {
-    const qty = qtyInCart(product.id);
-    const out = T.productStock(product) === 0;
-    const badge = qtyBadgeText(product, qty);
-    const price = priceTag(product);
-    return `<button class="product-card ${out ? "is-out" : ""}" data-act="add-to-cart" data-id="${esc(product.id)}"
-      aria-label="${out ? "Out of stock: " : "Add "}${esc(product.name)}, ${esc(price)}">
-      <span class="card-top">${productTile(product)}${stockNote(product)}${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}</span>
-      <span class="product-name">${esc(product.name)}</span>
-      ${(() => {
-        const detailLine = variantStockLine(product) || [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" · ");
-        return detailLine ? `<span class="product-detail">${esc(detailLine)}</span>` : `<span class="product-detail is-empty" aria-hidden="true"></span>`;
-      })()}
-      <span class="card-bottom"><span class="product-price">${esc(price)}</span></span>
-    </button>`;
-  }
-
   /** One item per row, for shops that read a long list better. */
   function productRow(product) {
     const qty = qtyInCart(product.id);
@@ -271,14 +254,11 @@
         ${canAdd ? `<button class="btn btn-primary" data-act="new-from-search">Add “${esc(query)}” as a product</button>` : `<button class="btn btn-ghost" data-act="clear-search">Clear search</button>`}
       </div>`;
     } else {
-      const listView = T.sellView?.() === "list";
-      list = listView
-        ? `<div class="product-list">${products.map(productRow).join("")}</div>`
-        : `<div class="product-grid">${products.map(productCard).join("")}</div>`;
+      // The Sell tab is always one item per row.
+      list = `<div class="product-list">${products.map(productRow).join("")}</div>`;
     }
     const sort = T.sellSort?.() || "new";
     const sortLabel = sort === "az" ? "A to Z" : sort === "za" ? "Z to A" : "Newest first";
-    const listView = T.sellView?.() === "list";
     return `
       <div class="chips" id="category-chips" aria-label="Filter by category">
         ${chips.map((category) => {
@@ -292,7 +272,6 @@
         <div class="sell-head-tools">
           <span class="small muted">${products.length} ${products.length === 1 ? "item" : "items"}</span>
           <button class="tool-btn" data-act="open-sell-sort" aria-label="Sort items, currently ${esc(sortLabel)}" title="Sort: ${esc(sortLabel)}">${icon("i-sort")}</button>
-          <button class="tool-btn" data-act="toggle-sell-view" aria-label="${listView ? "Show items as a grid" : "Show items one per row"}" title="${listView ? "Grid view" : "List view"}">${icon(listView ? "i-grid" : "i-list")}</button>
         </div>
       </div>
       ${list}`;

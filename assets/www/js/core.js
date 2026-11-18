@@ -330,7 +330,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     store.readAnnouncements = Array.isArray(store.readAnnouncements)
       ? [...new Set(store.readAnnouncements.map((id) => String(id || "").trim()).filter(Boolean))].slice(0, 100)
       : [];
-    store.sellView = store.sellView === "grid" ? "grid" : "list";
+    // The Sell tab is one item per row, always. Shops that once kept the
+    // three-across grid are brought back to the list.
+    store.sellView = "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // Shopkeepers: a synced list of names. Older saves only carry the single
     // "Staff name" string, which keeps working as the one-name roster.
@@ -988,15 +990,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       T.save({ quiet: true });
       return true;
     },
-    /** How the Sell screen lays out its items: "grid" (3 across) or "list". */
-    sellView: () => (T.state.store.sellView === "grid" ? "grid" : "list"),
-    setSellView: (view) => {
-      const next = view === "grid" ? "grid" : "list";
-      if (T.state.store.sellView === next) return false;
-      T.state.store.sellView = next;
-      T.save({ quiet: true });
-      return true;
-    },
+    /** How the Sell screen lays out its items. Always one item per row. */
+    sellView: () => "list",
+    setSellView: () => false,
     /** How the Sell screen orders its items: "new", "az" or "za". */
     sellSort: () => (["new", "az", "za"].includes(T.state.store.sellSort) ? T.state.store.sellSort : "new"),
     setSellSort: (sort) => {

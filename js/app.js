@@ -1130,13 +1130,6 @@ function runAction(btn, opts = {}) {
     }, 2000);
   }
   else if (act === "set-category" && value) { T.ui.category = value; render(); }
-  else if (act === "toggle-sell-view") {
-    const next = T.sellView?.() === "list" ? "grid" : "list";
-    if (T.setSellView?.(next)) {
-      render();
-      T.toast(next === "list" ? "One item per row" : "Three items per row", "i-check");
-    }
-  }
   else if (act === "open-sell-sort") {
     T.sheets?.openSellSort?.();
   }
