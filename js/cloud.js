@@ -159,6 +159,8 @@
           if (claims[name] && typeof claims[name] === "object") delete claims[name].at;
         }
       }
+      // The cart belongs to the device that built it — never compare it.
+      delete clean.cart;
       const raw = JSON.stringify(clean);
       let h = 5381;
       for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) >>> 0;
@@ -362,6 +364,9 @@
         // the shop is open.
         if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
         const snapshot = JSON.parse(JSON.stringify(T.state));
+        // The cart never leaves this device: two tills ringing up on the
+        // same account must not push each other's unpaid items across.
+        delete snapshot.cart;
         const size = JSON.stringify(snapshot).length;
         if (size > 900000) {
           // Firestore documents stop at 1 MB. The shop keeps working on the
@@ -500,6 +505,10 @@
   /** Put the cloud copy in place on this device. */
   function applyRemote(remote, stamp = 0) {
     const merged = T.normalizeState(remote);
+    // The till keeps its own cart no matter what the cloud copy holds —
+    // another device's cart is none of this device's business.
+    const localCart = T.state && T.state.cart ? T.state.cart : { items: [], discount: null };
+    merged.cart = localCart;
     T.state = merged;
     // The cloud copy won; anything this device wanted to send no longer
     // exists, so forget the marker.
@@ -515,6 +524,9 @@
       console.warn("Could not save the cloud copy locally:", error);
     }
     window.render?.();
+    // A fresh sync may free (or fill) the shopkeeper slots — the gate
+    // re-evaluates whether it is still needed.
+    T.sheets?.refreshStaffGate?.();
   }
 
   /** The shop's payment request, if it is waiting for the developer. */

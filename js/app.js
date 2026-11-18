@@ -58,6 +58,7 @@ function setupAuthObserver() {
           // The cloud copy of this shop belongs to the signed-in account.
           T.cloud?.attach?.(user);
           T.cloud?.onChange?.(() => updateSyncDot());
+          T.sheets?.refreshStaffGate?.();
           if (!location.hash || location.hash === "#/auth") {
             // Sell is the home screen of the app.
             goHome();
@@ -83,6 +84,7 @@ function setupAuthObserver() {
               replace("#/auth");
             }
           }
+          T.sheets?.refreshStaffGate?.();
         }
       } catch (e) { console.warn("Auth observer error:", e); }
       render();
@@ -567,6 +569,18 @@ function runAction(btn, opts = {}) {
   const act = btn.dataset.act;
   const id = btn.dataset.id;
   const value = btn.dataset.value;
+  // Somebody has to ring up the sale. If every shopkeeper name is already
+  // selling on another device, nothing in the till works until this device
+  // names somebody of its own — the gate is not skippable, it is the till.
+  const STAFF_GATE_ALLOW = new Set([
+    "add-staff-gate", "pick-staff", "choose-staff",
+    "sign-out", "retry-connection", "continue-offline",
+    "close-sheet"
+  ]);
+  if (T.staffBlocked?.() && !STAFF_GATE_ALLOW.has(act)) {
+    T.sheets?.openStaffGate?.();
+    return;
+  }
   // A shop that has not settled its plan can only reach the screens that pay,
   // sync, verify and sign out. Every other action bounces straight back to
   // the "Your plan is due" page.
@@ -777,6 +791,32 @@ function runAction(btn, opts = {}) {
     T.save();
     render();
     T.toast(`${value} freed from other device`, "i-check");
+  }
+  else if (act === "add-staff-gate") {
+    // The gate only exists because no free shopkeeper does; a fresh name is
+    // free by definition — this device claims it on the spot.
+    const input = document.getElementById("gate-staff-name");
+    const name = String(input?.value || "").trim().slice(0, 40);
+    if (!name) {
+      T.toast("Type a shopkeeper name first", "i-alert");
+      input?.focus({ preventScroll: true });
+      return;
+    }
+    const list = T.state.store.staffList || [];
+    if (list.some((n) => String(n).trim().toLowerCase() === name.toLowerCase())) {
+      T.toast("That name is already in the list", "i-alert");
+      input?.focus({ preventScroll: true });
+      return;
+    }
+    applyStoreForm(T);
+    T.state.store.staffList = [...list, name];
+    if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
+    T.setActiveStaff?.(name);
+    T.claimStaff?.(name);
+    T.save();
+    T.sheets?.close?.(true);
+    render();
+    T.toast(`Selling as ${name}`, "i-check");
   }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {
@@ -2427,6 +2467,11 @@ function boot() {
   // cheater can roll back freely.
   window.Till?.checkInternetClock?.();
   initFirebase();
+  // Signing in does not authorise work: if every shopkeeper is already
+  // selling on another device, nothing runs until this one names somebody.
+  // The auth observer applies the gate too; this fallback covers a boot in
+  // which Firebase never loads and the observer never settles.
+  setTimeout(() => { try { window.Till?.sheets?.refreshStaffGate?.(); } catch { /* ignore */ } }, 700);
   // This device's shopkeeper announces itself to the other devices.
   const _bootStaff = window.Till?.activeStaff?.();
   if (_bootStaff) window.Till?.claimStaff?.(_bootStaff);

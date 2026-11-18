@@ -2508,25 +2508,31 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return list;
   };
 
-  // Who is selling on THIS device right now. A device pick always wins;
-  // otherwise the legacy single staff name stands in until someone chooses.
+  // Who is selling on THIS device right now. A device pick always wins, but
+  // never a name another device is selling as; with no free shopkeeper the
+  // answer is "nobody yet" — the app asks to add one before any work starts.
   T.activeStaff = () => {
     const roster = T.staffRoster();
     let pick = "";
     try { pick = String(localStorage.getItem(STAFF_KEY) || "").trim(); } catch { /* ignore */ }
-    if (pick && roster.includes(pick)) return pick;
-    const legacy = String(T.state.store.staff || "").trim();
-    // A name already selling on another till is off-limits even as a fallback.
+    if (pick && roster.includes(pick) && !T.staffClaimedBy(pick)) return pick;
     const free = roster.filter((name) => !T.staffClaimedBy(name));
-    if (free.length) return free[0];
-    if (legacy && (!roster.length || roster.includes(legacy))) return legacy;
-    return roster[0] || legacy || "";
+    return free[0] || "";
   };
 
   // Whether this device has an explicit shopkeeper choice (as opposed to a
   // fallback). The Sell tab uses it to offer the picker exactly once.
   T.hasDeviceStaff = () => {
     try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
+  };
+
+  // True when every shopkeeper name is taken by another device (or nobody
+  // is set and there is nothing to sell as). The app blocks all work
+  // behind the "add a shopkeeper" sheet until someone is free to sell.
+  T.staffBlocked = () => {
+    const roster = T.staffRoster();
+    if (!roster.length) return false; // nobody set yet — the first add stays one tap away, never a wall
+    return !roster.some((name) => !T.staffClaimedBy(name));
   };
 
   // This install's own id. Stored on the device, never synced.
@@ -2552,8 +2558,6 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   T.staffClaimedBy = (name) => {
     const key = String(name || "").trim().toLowerCase();
     if (!key) return null;
-    // A single shopkeeper is shared by every device — nothing to enforce.
-    if (T.staffRoster().length <= 1) return null;
     const mine = T.deviceId();
     for (const [staff, claim] of Object.entries(T.staffClaims())) {
       if (String(staff).trim().toLowerCase() !== key) continue;
@@ -2572,8 +2576,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     for (const [staff, claim] of Object.entries(claims)) {
       if (claim?.id === mine) delete claims[staff];
     }
-    // Nothing to enforce with a single shopkeeper — leave claims empty.
-    if (pick && T.staffRoster().length > 1) claims[pick] = { id: mine, at: Date.now() };
+    if (pick) claims[pick] = { id: mine, at: Date.now() };
     T.state.store.staffClaims = claims;
   };
 

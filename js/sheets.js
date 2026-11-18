@@ -49,7 +49,7 @@
     return active;
   }
 
-  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true, size = "default" }) {
+  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true, size = "default", locked = false }) {
     const root = layers();
     if (!root) return;
     close(true);
@@ -58,7 +58,7 @@
     onCloseCallback = onClose;
     const sizeClass = size === "compact" ? "sheet-compact" : "";
     root.innerHTML = `
-      <div class="scrim" data-act="close-sheet"></div>
+      ${locked ? `<div class="scrim"></div>` : `<div class="scrim" data-act="close-sheet"></div>`}
       <section class="sheet ${sizeClass}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">
         <div class="sheet-grabber" aria-hidden="true"></div>
         ${head ? `<div class="sheet-head">
@@ -66,7 +66,7 @@
             <h2 id="sheet-title">${esc(title)}</h2>
             ${subtitle ? `<p>${esc(subtitle)}</p>` : ""}
           </div>
-          <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon("i-close")}</button>
+          ${locked ? "" : `<button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon("i-close")}</button>`}
         </div>` : ""}
         <div class="sheet-body">${body}</div>
       </section>`;
@@ -2486,6 +2486,51 @@
   }
 
   /**
+   * Every shopkeeper name is taken by another device. Nothing reaches the
+   * till — not a sale, not a stock edit — until someone free exists: the
+   * device that signs in first claims a name of its own.
+   */
+  function openStaffGate() {
+    const roster = T.staffRoster ? T.staffRoster() : [];
+    const current = T.activeStaff ? T.activeStaff() : "";
+    open({
+      locked: true,
+      title: "Who is selling on this device?",
+      subtitle: "Every shopkeeper here is already selling on another device — add one to start",
+      iconName: "i-user",
+      body: `<div class="staff-gate">
+        <div class="staff-picker">
+          ${roster.map((name) => {
+            const mine = name === current;
+            const taken = !mine && Boolean(T.staffClaimedBy?.(name));
+            return `<button class="sort-option staff-pick ${mine ? "is-active" : ""} ${taken ? "is-taken" : ""}" data-act="pick-staff" data-value="${esc(name)}" ${taken ? "disabled" : ""} aria-pressed="${mine}">
+              <span class="staff-pick-avatar" aria-hidden="true">${esc(String(name).slice(0, 1).toUpperCase())}</span>
+              <span class="sort-option-copy"><strong>${esc(name)}</strong><small>${mine ? "Selling on this device" : taken ? "Selling on another device" : "Free — tap to sell as " + esc(name)}</small></span>
+              ${mine ? `<span class="sort-option-check">${icon("i-check")}</span>` : ""}
+            </button>`;
+          }).join("")}
+        </div>
+        <div class="staff-gate-divider" aria-hidden="true"><span>or</span></div>
+        <label class="field-label" for="gate-staff-name">Add a new shopkeeper</label>
+        <input class="input" id="gate-staff-name" name="gate-staff-name" placeholder="Name" autocomplete="off" maxlength="40" aria-label="New shopkeeper name">
+        <div class="sheet-actions" style="margin-top:10px">
+          <button class="btn btn-primary btn-block" data-act="add-staff-gate">${icon("i-plus")} Add shopkeeper</button>
+        </div>
+        <p class="field-small" style="margin-top:8px">A new name is free — this device claims it instantly and can start ringing up sales.</p>
+      </div>`
+    });
+  }
+
+  /** Open the staff gate when blocked; close it when it is no longer needed;
+      refresh it in between. */
+  function refreshStaffGate() {
+    const blocked = Boolean(T.staffBlocked?.());
+    if (blocked && !isOpen()) return openStaffGate();
+    if (blocked) return openStaffGate(); // re-render with the current claims
+    if (isOpen()) close(true);
+  }
+
+  /**
    * Collect the monthly plan. When the developer has a Till or Paybill
    * configured, the shop pays with an M-Pesa prompt like any other sale.
    * Without one - which is now - the sheet walks the shop through sending the
@@ -3074,6 +3119,7 @@
     openSupplierEditor, supplierError, openSupplierPayment, openSupplierBill,
     openDebtCheckout, openCustomerPayment, openDebtReminder, openSellSort,
     openStaffPicker,
+    openStaffGate, refreshStaffGate,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
     openVariantPicker, openPackPicker,

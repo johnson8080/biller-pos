@@ -1376,6 +1376,29 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 .staff-pick.is-active .staff-pick-avatar { background: #16a34a; }
 
+/* Staff gate: the modal that stands between a signed-in device with no
+   free shopkeeper and the till itself. */
+.staff-gate { display: flex; flex-direction: column; gap: 2px; }
+.staff-gate .staff-picker { display: flex; flex-direction: column; gap: 6px; }
+.staff-gate-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 10px;
+  color: var(--muted);
+  font-size: calc(10px * var(--fs));
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.staff-gate-divider::before,
+.staff-gate-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 /* Shopkeepers roster editor in Store & receipts */
 .staff-roster {
   display: flex;
