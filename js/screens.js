@@ -102,12 +102,6 @@
         <div class="appbar-context"><div class="appbar-title">${esc(customer?.name || "Customer")}</div></div>
         <div class="appbar-right">${customer ? `<button class="text-btn" data-act="customer-payment" data-id="${esc(customer.id)}">Pay</button>` : ""}</div>`;
     }
-    if (route.name === "plans") {
-      return `
-        <button class="icon-btn ghost" data-nav="#/more" aria-label="Go back">${icon("i-back")}</button>
-        <div class="appbar-context"><div class="appbar-title">Subscriptions</div></div>
-        <div class="appbar-right"></div>`;
-    }
     if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history", "announcements"].includes(route.name)) {
       const supplier = route.name === "supplier" ? T.findSupplier(route.param) : null;
       const config = {
@@ -138,7 +132,6 @@
       <div class="appbar-right">
         ${isSell ? `<button class="hero-btn hero-scan" data-act="open-scanner" aria-label="Scan barcode">${icon("i-scan")}</button>
         <button class="hero-btn hero-search ${T.ui.searchOpen ? "is-active" : ""}" data-act="toggle-search" aria-label="${T.ui.searchOpen ? "Close search" : "Search products"}" aria-pressed="${T.ui.searchOpen ? "true" : "false"}">${icon("i-search")}</button>` : ""}
-        ${T.isDeveloperAccount() ? `<button class="hero-btn" data-nav="#/plans" aria-label="Online accounts">${icon("i-eye")}</button>` : ""}
         <button class="cart-hero" data-act="open-cart" aria-label="Checkout, ${cartCount} ${cartCount === 1 ? "item" : "items"} in the cart">
           ${icon("i-bag")}
           ${cartCount ? `<span class="cart-hero-count">${cartCount}</span>` : ""}
@@ -167,6 +160,7 @@
     { id: "stock", label: "STOCK", icon: "i-box", path: "#/stock" },
     { id: "suppliers", label: "SUPPLIERS", icon: "i-truck", path: "#/suppliers" },
     { id: "reports", label: "REPORTS", icon: "i-chart", path: "#/reports" },
+    { id: "plans", label: "PLAN", icon: "i-card", path: "#/plans", devOnly: true },
     { id: "more", label: "SETTINGS", icon: "i-more", path: "#/more" }
   ];
 
@@ -180,7 +174,9 @@
       if (!count) return "";
       return `<span class="tab-badge" aria-hidden="true">${count > 9 ? "9+" : count}</span>`;
     };
-    return TABS.map((tab) => {
+    const isDeveloper = T.isDeveloperAccount?.() || false;
+    const visibleTabs = TABS.filter((tab) => !tab.devOnly || isDeveloper);
+    const tabbar = visibleTabs.map((tab) => {
       const active = route.name === tab.id;
       const count = tab.id === "debt" ? dueCount : tab.id === "more" ? moreCount : 0;
       const badge = badgeFor(tab);
@@ -191,6 +187,7 @@
         <span class="tab-icon">${icon(tab.icon)}${badge}</span><span class="tab-label">${tab.label}</span>
       </button>`;
     }).join("");
+    return tabbar;
   }
 
   function dock() {
@@ -1899,7 +1896,6 @@
     const store = T.state.store;
     const session = T.getSession();
     const themeName = T.THEMES.find((theme) => theme.id === T.themeId())?.name || "Forest";
-    const isDeveloper = T.isDeveloperAccount();
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
     const settingsGroup = (id, iconName, title, sub, body) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}" data-group="${esc(id)}">
@@ -2010,16 +2006,6 @@
           <button class="switch${debtBlocked ? " is-on" : ""}" type="button" role="switch" aria-checked="${debtBlocked}" data-act="toggle-no-debt" aria-label="No debt allowed"><span class="switch-thumb"></span></button>
         </div>
       </div>`;
-    const pendingPayments = T.pendingPaymentCount?.() || 0;
-    const developerBody = `
-      <div class="data-list">
-        <button class="data-row" data-nav="#/plans" aria-label="Subscription panel${pendingPayments ? `, ${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting` : ""}">
-          <span class="data-icon">${icon("i-card")}</span>
-          <span class="data-copy"><strong>Subscription panel</strong><small>${pendingPayments ? `${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting for a decision` : "Shops, codes, payments — and Announcements: send a message to every till"}</small></span>
-          ${pendingPayments ? `<span class="count-badge">${pendingPayments > 9 ? "9+" : pendingPayments}</span>` : ""}
-          <span class="chev">${icon("i-chevron")}</span>
-        </button>
-      </div>`;
     const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
     const announceCount = T.announcementUnreadCount?.() || 0;
     const dataBody = `
@@ -2096,7 +2082,6 @@
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
-        ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", pendingPayments ? `${pendingPayments} payment${pendingPayments === 1 ? "" : "s"} waiting for a decision` : "Subscription & shop announcements", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
       </div>
