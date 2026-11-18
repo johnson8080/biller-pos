@@ -1777,6 +1777,10 @@
   /* ---------- Customer debt ---------- */
 
   function openDebtCheckout() {
+    if (T.debtAllowed && !T.debtAllowed()) {
+      openInfo({ title: "No debt allowed", message: "This till is not allowed to sell on credit. Change this in Settings → Security → No debt allowed.", iconName: "i-lock", tone: "warn" });
+      return;
+    }
     const totals = T.cartTotals();
     if (!totals.lines.length) { T.toast("There is nothing to sell", "i-alert"); return; }
     const count = T.itemCount();

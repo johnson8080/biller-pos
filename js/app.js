@@ -520,6 +520,16 @@ async function copyPlainValue(value) {
 }
 
 // Popup shown when a till restricted to one payment mode tries to take another.
+function blockedDebtNotice() {
+  const T = window.Till;
+  T.sheets?.openInfo?.({
+    title: "No debt allowed",
+    message: "This till is not allowed to sell on credit. Change this in Settings → Security → No debt allowed.",
+    iconName: "i-lock",
+    tone: "warn"
+  });
+}
+
 function blockedPaymentNotice(method) {
   const T = window.Till;
   const label = method === "mpesa" ? "M-Pesa" : method === "card" ? "card" : "cash";
@@ -559,7 +569,7 @@ function runAction(btn) {
     "edit-product", "delete-product", "delete-order", "delete-customer",
     "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
     "add-stock", "stock-dec", "restock-product", "open-wastage", "start-audit",
-    "set-payment-mode",
+    "set-payment-mode", "toggle-no-debt",
     "reset-data", "import-data"
   ]);
   if (PIN_GUARDED.has(act) && T.pinEnabled?.()) {
@@ -755,7 +765,15 @@ function runAction(btn) {
     requestAnimationFrame(() => document.getElementById("debt-search")?.focus({ preventScroll: true }));
   }
   else if (act === "add-to-debt") {
+    if (T.debtAllowed && !T.debtAllowed()) { blockedDebtNotice(); return; }
     T.sheets?.openDebtCheckout?.();
+  }
+  else if (act === "toggle-no-debt") {
+    const next = !(T.debtAllowed ? T.debtAllowed() : true);
+    if (T.setDebtAllowed?.(next)) {
+      T.toast(next ? "Debt allowed at checkout" : "No debt allowed — ADD TO DEBT is disabled", "i-lock");
+      render();
+    }
   }
   else if (act === "customer-payment" && id) {
     T.sheets?.openCustomerPayment?.(id);

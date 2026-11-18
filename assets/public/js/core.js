@@ -194,6 +194,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       sellView: "list",
       pinHash: "",
       paymentMode: "all",
+      debtBlocked: false,
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -322,6 +323,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     // Checkout payment mode: which methods the till allows.
     store.paymentMode = ["all", "cash", "mpesa", "card"].includes(String(store.paymentMode)) ? store.paymentMode : "all";
+    // When the shop bans selling on credit, this stays true.
+    store.debtBlocked = store.debtBlocked === true;
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // Shopkeepers: a synced list of names. Older saves only carry the single
@@ -883,6 +886,13 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       const mode = T.paymentMode();
       if (mode === "all") return true;
       return mode === String(method || "").trim().toLowerCase();
+    },
+    debtAllowed: () => T.state?.store?.debtBlocked !== true,
+    setDebtAllowed: (allowed) => {
+      if (!T.state.store) T.state.store = {};
+      T.state.store.debtBlocked = !Boolean(allowed);
+      T.save();
+      return true;
     },
     currencySymbol: () => {
       const key = T.currencyCode();
@@ -2192,6 +2202,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   T.completeSale = ({ method = "cash", tendered = 0, amountCents = 0, reference = null, checkoutId = "", accountRef = "", customerName = "", customerPhone = "", customerId = null, dueDate = null, note = "" } = {}) => {
     const totals = T.cartTotals();
     if (!totals.lines.length) return null;
+    // The shop can ban selling on credit outright. This is the last line of
+    // defence — the UI also grays the button out and asks for the PIN.
+    if (String(method) === "debt" && T.state?.store?.debtBlocked === true) return null;
     // M-Pesa only accepts whole shillings. When the app had to round the
     // request, the receipt records the amount the customer actually paid,
     // not the cart total, so the books and the M-Pesa statement agree.

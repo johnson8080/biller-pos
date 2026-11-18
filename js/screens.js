@@ -1936,6 +1936,8 @@
         </button>
       </div>`;
     const paymentMode = T.paymentMode ? T.paymentMode() : "all";
+    const debtAllowed = T.debtAllowed ? T.debtAllowed() : true;
+    const debtBlocked = !debtAllowed;
     const modeCopy = {
       all: "Cash, M-Pesa and Card can all be taken at checkout.",
       cash: "Only cash can be taken. M-Pesa and Card are grayed out at checkout.",
@@ -1962,6 +1964,14 @@
             { value: "mpesa", label: "M-Pesa only" },
             { value: "card", label: "Card only" }
           ].map((option) => `<button class="seg-btn ${paymentMode === option.value ? "is-active" : ""}" data-act="set-payment-mode" data-value="${option.value}" role="radio" aria-checked="${paymentMode === option.value}">${option.label}</button>`).join("")}
+        </div>
+        <div class="security-divider" role="separator"></div>
+        <div class="switch-row">
+          <div class="switch-copy">
+            <strong>No debt allowed</strong>
+            <small>${debtBlocked ? "On — ADD TO DEBT is grayed out at checkout. Every sale must be paid now." : "Off — customers can buy now and pay later."}</small>
+          </div>
+          <button class="switch${debtBlocked ? " is-on" : ""}" type="button" role="switch" aria-checked="${debtBlocked}" data-act="toggle-no-debt" aria-label="No debt allowed"><span class="switch-thumb"></span></button>
         </div>
       </div>`;
     const developerBody = `
@@ -2018,7 +2028,7 @@
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}`, securityBody)}
+        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
@@ -2454,6 +2464,7 @@
 
   function cart() {
     const locked = T.subscriptionLocked();
+    const debtAllowed = T.debtAllowed ? T.debtAllowed() : true;
     const totals = T.cartTotals();
     const count = T.itemCount();
     const items = totals.lines.map((line) => {
@@ -2527,8 +2538,8 @@
       </div>
       <div class="flow-footer">
         <button class="btn btn-primary btn-block" data-act="checkout" ${locked ? "disabled" : ""}>SELL ITEMS</button>
-        <button class="btn btn-debt btn-block" data-act="add-to-debt" ${locked || !count ? "disabled" : ""}>${icon("i-user")} ADD TO DEBT</button>
-        <p class="footer-hint">${locked ? "Pay the monthly plan to complete this sale. The cart is kept safe." : "Tax and discounts are included in this total."}</p>
+        <button class="btn btn-debt btn-block${debtAllowed ? "" : " is-blocked"}" data-act="add-to-debt" ${locked || !count ? "disabled" : ""} aria-disabled="${debtAllowed ? "false" : "true"}">${icon("i-user")} ADD TO DEBT</button>
+        <p class="footer-hint">${locked ? "Pay the monthly plan to complete this sale. The cart is kept safe." : debtAllowed ? "Tax and discounts are included in this total." : "No debt allowed — every sale must be paid now."}</p>
       </div>
     </section>`;
   }

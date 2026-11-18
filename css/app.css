@@ -2566,6 +2566,16 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .seg-btn.is-blocked { opacity: .42; filter: grayscale(1); cursor: not-allowed; }
 .seg-btn.is-blocked .ico { opacity: .7; }
 .security-divider { height: 1px; background: var(--ui-line); margin: 14px 0; border: 0; }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 0 4px; }
+.switch-copy { flex: 1; min-width: 0; }
+.switch-copy strong { display: block; font-size: calc(12.5px * var(--fs)); font-weight: 750; color: var(--ink); }
+.switch-copy small { display: block; font-size: calc(10px * var(--fs)); color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.switch { flex: 0 0 auto; width: 46px; height: 28px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--ui-line); position: relative; cursor: pointer; transition: background .16s ease, border-color .16s ease; -webkit-tap-highlight-color: transparent; }
+.switch.is-on { background: var(--forest); border-color: var(--forest-ink); }
+.switch-thumb { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .16s ease; pointer-events: none; }
+.switch.is-on .switch-thumb { transform: translateX(18px); }
+.btn-debt.is-blocked { opacity: .42; filter: grayscale(1); cursor: not-allowed; }
+.btn-debt.is-blocked .ico { opacity: .7; }
 .derived-piece { margin: 4px 0 0; padding: 6px 10px; border: 0.5px solid var(--ui-line); border-radius: 6px; background: var(--surface-2); font-size: calc(11px * var(--fs)); font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .discount-apply { margin-top: 8px; }
 .variant-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
