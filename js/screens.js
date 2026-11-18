@@ -1920,12 +1920,11 @@
     const themeName = T.THEMES.find((theme) => theme.id === T.themeId())?.name || "Forest";
     const isDeveloper = T.isDeveloperAccount();
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
-    const settingsGroup = (id, iconName, title, sub, body, preview) => `
+    const settingsGroup = (id, iconName, title, sub, body) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}" data-group="${esc(id)}">
         <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}">
           <span class="data-icon">${icon(iconName)}</span>
           <span class="data-copy"><strong>${esc(title)}</strong><small>${esc(sub)}</small></span>
-          ${preview ? `<span class="group-preview" aria-hidden="true">${preview}</span>` : ""}
           <span class="chev">${icon("i-chevron")}</span>
         </button>
         <div class="settings-group-body" ${openGroups[id] ? "" : "hidden"}>${body}</div>
@@ -1981,18 +1980,6 @@
           <div class="segmented" role="group" aria-label="Text size">
             ${["small", "medium", "large"].map((size) => `<button type="button" class="seg-btn ${T.textSizeId() === size ? "is-active" : ""}" data-act="set-text-size" data-value="${size}" aria-pressed="${T.textSizeId() === size}">${size[0].toUpperCase() + size.slice(1)}</button>`).join("")}
           </div>
-          ${(() => {
-            const id = T.textSizeId();
-            const px = id === "small" ? 13 : id === "large" ? 20 : 16;
-            const label = id[0].toUpperCase() + id.slice(1);
-            return `<div class="text-preview" aria-hidden="true">
-            <div class="text-preview-copy">
-              <span class="text-preview-label">Preview · ${label} text</span>
-              <span class="text-preview-sample" style="font-size:${px}px">Quick brown fox — Ksh 1,250</span>
-            </div>
-            <div class="text-preview-sizes">${["small", "medium", "large"].map((size) => `<span class="size-guide${id === size ? " is-active" : ""}">A</span>`).join("")}</div>
-          </div>`;
-          })()}
         </div>
       </div>`;
     const accountBody = `
@@ -2040,13 +2027,6 @@
             <small>${debtBlocked ? "On — ADD TO DEBT is grayed out at checkout. Every sale must be paid now." : "Off — customers can buy now and pay later."}</small>
           </div>
           <button class="switch${debtBlocked ? " is-on" : ""}" type="button" role="switch" aria-checked="${debtBlocked}" data-act="toggle-no-debt" aria-label="No debt allowed"><span class="switch-thumb"></span></button>
-        </div>
-        <div class="debt-preview${debtBlocked ? " is-blocked" : ""}" aria-hidden="true">
-          <div class="debt-preview-btn${debtBlocked ? " is-blocked" : ""}">${icon("i-user")} ADD TO DEBT</div>
-          <div class="debt-preview-copy">
-            <strong>${debtBlocked ? "Credit is blocked" : "Credit is allowed"}</strong>
-            <small>${debtBlocked ? "Grayed out at the cart — tapping it shows “No debt allowed”." : "Live at the cart — customers can buy now and pay later."}</small>
-          </div>
         </div>
       </div>`;
     const developerBody = `
@@ -2131,11 +2111,11 @@
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
-        ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody, `<span class="text-preview-mini" style="font-size:${T.textSizeId() === "small" ? 12 : T.textSizeId() === "large" ? 19 : 15}px">Aa</span>`)}
+        ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscription & shop announcements", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody, `<span class="debt-mini${debtBlocked ? " is-blocked" : ""}">${icon("i-user")} ADD TO DEBT</span>`)}
+        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
       </div>
 
       <button type="button" class="account-card announcement-card" data-nav="#/announcements" style="margin-top:10px" aria-label="Announcements${announceCount ? `, ${announceCount} unread` : ""}">
