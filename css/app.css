@@ -2347,6 +2347,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .key:active { background: var(--paper-deep); }
 .key.util { color: var(--muted); font-size: calc(12px * var(--fs)); }
 .key.util .ico { width: 18px; height: 18px; margin: 0 auto; }
+.pin-dots { display: flex; justify-content: center; gap: 12px; padding: 6px 0 14px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--surface-2); border: 1.5px solid var(--ui-line); transition: background .12s ease; }
+.pin-dot.is-filled { background: var(--forest); border-color: var(--forest-ink); }
+.pin-error { color: var(--red); font-size: calc(10.5px * var(--fs)); font-weight: 650; text-align: center; margin: 0 0 8px; }
 .pay-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px; padding: 0 3px; font-size: calc(9px * var(--fs)); line-height: 1.45; color: var(--muted); }
 .pay-note .ico { width: 13px; height: 13px; flex: none; margin-top: 1px; color: var(--forest-3); }
 .card-board { margin-top: 12px; padding: 17px 14px; border-radius: 10px; background: var(--surface); border: 1px solid var(--ui-line); box-shadow: var(--shadow-card); text-align: center; }

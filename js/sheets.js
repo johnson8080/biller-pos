@@ -974,6 +974,106 @@
     if (form) setFormError(form, message);
   }
 
+  function openPinSheet({ caption, mode = "verify", currentPin = null, onSuccess }) {
+    const T = window.Till;
+    let stage = mode === "set" ? "enter-new" : "enter-current";
+    let entered = "";
+    let first = "";
+    const singleDigit = (key) => {
+      if (stage === "enter-new" || stage === "confirm-new" || stage === "enter-current") {
+        entered = (entered + key).slice(0, 4);
+        paint();
+      }
+      if (entered.length === 4) advance();
+    };
+    const dots = (n) => `<div class="pin-dots" id="pin-dots" role="group" aria-label="PIN dots">${[0, 1, 2, 3].map((i) => `<span class="pin-dot${i < n ? " is-filled" : ""}"></span>`).join("")}</div>`;
+    const paint = () => {
+      const host = document.getElementById("pin-dots");
+      if (host) host.outerHTML = dots(entered.length);
+    };
+    const captionFor = () => ({
+      "enter-current": caption || "Enter the shop PIN",
+      "enter-new": "Choose a 4-digit PIN",
+      "confirm-new": "Enter the same PIN again"
+    }[stage]);
+    let errorEl = null;
+    const showError = (msg) => {
+      if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; }
+    };
+    const advance = () => {
+      if (stage === "enter-current") {
+        if (T.pinVerify(entered)) {
+          currentPin = entered;
+          entered = "";
+          if (mode === "change") { stage = "enter-new"; }
+          else if (mode === "remove") { T.pinClear(currentPin); close(true); onSuccess?.("remove"); return; }
+          else { close(true); onSuccess?.(); return; }
+          const cap = document.getElementById("pin-caption");
+          if (cap) cap.textContent = captionFor();
+          paint();
+          return;
+        }
+        showError("PIN does not match");
+        entered = "";
+        paint();
+        return;
+      }
+      if (stage === "enter-new") {
+        first = entered;
+        entered = "";
+        stage = "confirm-new";
+        if (errorEl) errorEl.hidden = true;
+        const cap = document.getElementById("pin-caption");
+        if (cap) cap.textContent = captionFor();
+        paint();
+        return;
+      }
+      if (stage === "confirm-new") {
+        if (entered === first) {
+          T.pinSet(entered, mode === "change" ? currentPin : null);
+          close(true);
+          onSuccess?.(mode);
+          return;
+        }
+        showError("PINs do not match — start over");
+        first = "";
+        entered = "";
+        stage = "enter-new";
+        const cap = document.getElementById("pin-caption");
+        if (cap) cap.textContent = captionFor();
+        paint();
+        return;
+      }
+    };
+    const onKey = (event) => {
+      const button = event.target?.closest?.("[data-pin-key]");
+      if (!button) return;
+      event.preventDefault();
+      const key = button.dataset.pinKey;
+      if (key === "del") { entered = entered.slice(0, -1); paint(); return; }
+      if (key === "clear") { entered = ""; paint(); return; }
+      singleDigit(key);
+    };
+    open({
+      title: "Security PIN",
+      iconName: "i-lock",
+      size: "compact",
+      body: `<p class="confirm-copy" id="pin-caption">${esc(captionFor())}</p>
+        ${dots(0)}
+        <p class="pin-error" id="pin-error" hidden></p>
+        <div class="keypad" role="group" aria-label="PIN keypad">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="key" type="button" data-pin-key="${n}">${n}</button>`).join("")}
+          <button class="key util" type="button" data-pin-key="clear">Clear</button>
+          <button class="key" type="button" data-pin-key="0">0</button>
+          <button class="key util" type="button" data-pin-key="del" aria-label="Backspace">${icon("i-backspace")}</button>
+        </div>
+        <div class="sheet-actions"><button class="btn btn-quiet btn-block" type="button" data-act="close-sheet">Cancel</button></div>`,
+      onClose: () => document.removeEventListener("click", onKey, true)
+    });
+    errorEl = document.getElementById("pin-error");
+    document.addEventListener("click", onKey, true);
+  }
+
   /* ---------- Info / confirm ---------- */
 
   function openSaveInfo() {
@@ -2940,7 +3040,7 @@
 
   T.sheets = {
     open, close, isOpen, openManual, manualError, openUnknown, openOutOfStock,
-    openWeigh, openWastage, openTarget, openStockDay,
+    openWeigh, openWastage, openTarget, openStockDay, openPinSheet,
     openDiscount, setDiscountMode, discountError, openProductEditor, renderProductEditor,    readProductForm, productEditorError, openSaveInfo, confirm, runConfirm,
     openMiniScan, closeMiniScan,
     openQuickScan, refreshQuickScan,

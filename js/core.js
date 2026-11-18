@@ -192,6 +192,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       colorScheme: "light",
       textSize: "medium",
       sellView: "list",
+      pinHash: "",
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -241,6 +242,14 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
    *  Merges in newly shipped Kenya defaults so existing shops do not miss the
    *  bigger catalog on app updates. Anything the shop already has comes first.
    */
+  // Shop security PIN. Stored as a hash, never as plain text — used to stop a
+  // stray finger from opening the edit/delete flows on a busy till.
+  const pinHashOf = (pin) => {
+    let hash = 5381;
+    const source = `biller-pos-pin:${String(pin || "")}`;
+    for (let i = 0; i < source.length; i++) hash = ((hash << 5) + hash + source.charCodeAt(i)) >>> 0;
+    return `p${hash.toString(36)}`;
+  };
   function normalizeCategories(list) {
     const saved = Array.isArray(list) && list.length ? list : [];
     // Anything in CATEGORIES that the saved list does not already contain
@@ -289,6 +298,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       // Daily stock snapshots: the shelf counted at the start of a day and
       // the last level seen that day, keyed by YYYY-MM-DD.
       stockDays: {},
+      activityLog: [],
       createdAt: new Date().toISOString()
     };
   }
@@ -356,6 +366,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         }))
         .filter((entry) => entry.code)
     };
+    // Shop security PIN stored as a hash; blank means not set.
+    store.pinHash = /^p[a-z0-9]{1,16}$/.test(String(store.pinHash || "")) ? String(store.pinHash) : "";
     // The monthly sales target: an amount for one month of one year.
     const savedTarget = typeof store.target === "object" && store.target ? store.target : {};
     store.target = {
@@ -643,6 +655,15 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         note: String(a.note || "").slice(0, 200)
       }))
       .slice(-50);
+    const activityLog = (Array.isArray(data.activityLog) ? data.activityLog : [])
+      .filter((entry) => entry && typeof entry === "object")
+      .map((entry, index) => ({
+        id: String(entry.id || `log_${index}`).slice(0, 40),
+        at: String(entry.at || new Date().toISOString()),
+        kind: String(entry.kind || "other").slice(0, 20),
+        summary: String(entry.summary || "Activity").slice(0, 140)
+      }))
+      .slice(0, 300);
     return {
       version: 1,
       store,
@@ -657,6 +678,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       pro: data.pro === true,
       wastage,
       stockDays,
+      activityLog,
       audits,
       createdAt: data.createdAt || new Date().toISOString(),
       defaultsMigrated: true,
@@ -822,6 +844,29 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     /** The categories the shop currently has. */
     categories: () => [...(T.state?.categories || [])],
     currencyCode: () => String((T.state && T.state.store && T.state.store.currency) || CURRENCY).toUpperCase(),
+    pinEnabled: () => Boolean(String(T.state?.store?.pinHash || "")),
+    pinVerify: (pin) => {
+      const expected = String(T.state?.store?.pinHash || "");
+      return Boolean(expected) && expected === pinHashOf(pin);
+    },
+    pinSet: (pin, currentPin) => {
+      const expected = String(T.state?.store?.pinHash || "");
+      if (expected && expected !== pinHashOf(currentPin)) return false;
+      const clean = String(pin || "").replace(/\D/g, "").slice(0, 8);
+      if (clean.length !== 4) return false;
+      if (!T.state.store) T.state.store = {};
+      T.state.store.pinHash = pinHashOf(clean);
+      T.save();
+      return true;
+    },
+    pinClear: (currentPin) => {
+      const expected = String(T.state?.store?.pinHash || "");
+      if (expected && expected !== pinHashOf(currentPin)) return false;
+      if (!T.state.store) T.state.store = {};
+      T.state.store.pinHash = "";
+      T.save();
+      return true;
+    },
     currencySymbol: () => {
       const key = T.currencyCode();
       if (!moneyFmtCache[key]) moneyFmtCache[key] = moneyFmtFor(key);

@@ -1917,6 +1917,17 @@
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
+    const securityBody = `
+      <div class="about-card">
+        <div class="report-card-head"><h2>Shop PIN</h2><span class="status-pill ${T.pinEnabled() ? "is-good" : "is-warn"}"><span class="dot"></span>${T.pinEnabled() ? "On" : "Off"}</span></div>
+        <p class="card-sub">${T.pinEnabled() ? "A 4-digit PIN is required before anyone can edit or delete orders, products, suppliers or shop data." : "No PIN is set — anyone with this till can edit or delete orders, products, suppliers and shop data."}</p>
+        <div class="sheet-actions" style="margin-top:10px">
+          ${T.pinEnabled()
+            ? `<button class="btn btn-ghost btn-block" data-act="remove-pin">${icon("i-trash")} Remove PIN</button>
+               <button class="btn btn-primary btn-block" data-act="change-pin">${icon("i-lock")} Change PIN</button>`
+            : `<button class="btn btn-primary btn-block" data-act="set-pin">${icon("i-lock")} Set a PIN</button>`}
+        </div>
+      </div>`;
     const developerBody = `
       <div class="data-list">
         <button class="data-row" data-nav="#/plans">
@@ -1971,6 +1982,7 @@
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
+        ${settingsGroup("security", "i-lock", "Security", T.pinEnabled() ? "PIN enabled — required for edits & deletes" : "No PIN — open to anyone on this device", securityBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">

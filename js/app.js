@@ -540,6 +540,21 @@ function runAction(btn) {
       return;
     }
   }
+  // Security PIN: edits, deletes and destructive actions need the PIN once
+  // per session when it is set. Sales keep working — it blocks damage, not
+  // business. Re-entering the session (signed-out / new load) re-locks it.
+  const PIN_GUARDED = new Set([
+    "edit-product", "delete-product", "delete-order", "delete-customer",
+    "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
+    "reset-data", "import-data"
+  ]);
+  if (PIN_GUARDED.has(act) && T.pinEnabled?.() && !T.ui.pinVerified) {
+    T.sheets?.openPinSheet?.({
+      caption: "Till is secured — enter the shop PIN to continue.",
+      onSuccess: () => { T.ui.pinVerified = true; runAction(btn); }
+    });
+    return;
+  }
   // A shop that has not paid cannot change its shop: no selling, no
   // stock, no suppliers, no customers, no categories. Reading, paying the
   // plan, the appearance and the support chat all stay open, so the shop can
@@ -805,6 +820,9 @@ function runAction(btn) {
   else if (act === "close-sheet") {
     T.sheets?.close?.();
   }
+  else if (act === "set-pin") { T.sheets?.openPinSheet?.({ mode: "set", onSuccess: () => { T.toast("PIN set", "i-lock"); render(); } }); }
+  else if (act === "change-pin") { T.sheets?.openPinSheet?.({ mode: "change", onSuccess: () => { T.toast("PIN changed", "i-lock"); render(); } }); }
+  else if (act === "remove-pin") { T.sheets?.openPinSheet?.({ mode: "remove", onSuccess: () => { T.toast("PIN removed", "i-info"); render(); } }); }
   else if (act === "confirm-sheet") {
     T.sheets?.runConfirm?.();
   }
