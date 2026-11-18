@@ -1854,7 +1854,7 @@
         ${status === "trial"
           ? `Your first ${plan.trialDays} days are free. Pay ${esc(amount)} when the trial ends${activeDays !== null ? ` - ${activeDays} day${activeDays === 1 ? "" : "s"} left` : ""}.`
           : status === "active" && due
-            ? `Next payment ${esc(T.shortDateFmt.format(due))}${activeDays !== null ? ` - ${activeDays} day${activeDays === 1 ? "" : "s"} left` : ""}.`
+            ? `Next payment ${esc(T.shortDateFmt.format(due))}${activeDays !== null ? ` - ${activeDays} day${activeDays === 1 ? "" : "s"} left` : ""}. Renewing now adds 30 more days on top of what is paid for.`
             : status === "due" && due
               ? `Payment of ${esc(amount)} was due ${esc(T.shortDateFmt.format(due))}.`
               : status === "awaiting"
@@ -1863,10 +1863,15 @@
                   ? `The ${esc(amount)} payment is overdue.`
                   : `Monthly plan of ${esc(amount)}.`}
       </p>
-      ${status !== "active" && status !== "trial" ? `
-        <button class="btn btn-primary btn-block" data-act="pay-subscription" style="margin-top:12px">
-          ${icon("i-phone")} ${status === "awaiting" ? "Payment details" : `Pay ${esc(amount)}`}
-        </button>` : ""}
+      <button class="btn btn-primary btn-block" data-act="pay-subscription" style="margin-top:12px">
+        ${icon("i-phone")} ${status === "awaiting"
+          ? "Payment details"
+          : status === "active"
+            ? `Renew — ${esc(amount)} / month`
+            : status === "trial"
+              ? `Pay ${esc(amount)} to activate`
+              : `Pay ${esc(amount)}`}
+      </button>
       ${status === "awaiting" ? `
         <p class="field-small" style="margin-top:10px">${icon("i-clock", "ico ico-sm")} We will switch your plan on as soon as the developer confirms the payment.</p>` : ""}
       ${fee.mpesaNumber || fee.bank.number ? `
@@ -1922,8 +1927,7 @@
           <span class="data-copy"><strong>Audit report</strong><small>Count shelf stock and mark each item as matched</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
-      </div>
-      ${subscriptionBody ? `<div class="section-head" style="margin-top:12px"><h2>Monthly plan</h2><span class="small muted">${T.subscriptionStatus() === "active" ? "Active" : T.subscriptionStatus() === "trial" ? "Free trial" : T.subscriptionStatus() === "awaiting" ? "Awaiting confirmation" : "Payment due"}</span></div>${subscriptionBody}` : ""}`;
+      </div>`;
     const catalogBody = categorySection();
     const appearanceBody = `
       <div class="theme-card">
@@ -2075,6 +2079,7 @@
 
       <div class="settings-groups">
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
+        ${subscriptionBody ? settingsGroup("monthly", "i-card", "Monthly plan", (() => { const status = T.subscriptionStatus(); const days = T.subscriptionActiveDaysLeft?.(); if (status === "active") return `Active${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "trial") return `Free trial${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "awaiting") return "Awaiting confirmation"; if (status === "overdue") return "Payment overdue"; return "Payment due"; })(), subscriptionBody) : ""}
         ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting` : "Payment and announcement", planBody, planCount) : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
