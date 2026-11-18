@@ -2007,6 +2007,33 @@
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
+    const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
+    const timeAgo = (iso) => {
+      const ts = Date.parse(iso);
+      if (!Number.isFinite(ts)) return "";
+      const minutes = Math.floor((Date.now() - ts) / 60000);
+      if (minutes < 1) return "just now";
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days === 1) return "yesterday";
+      if (days < 30) return `${days}d ago`;
+      return new Date(ts).toLocaleDateString("en-KE", { day: "numeric", month: "short" });
+    };
+    const activityIcon = (kind) => ({ add: "i-plus", edit: "i-pencil", delete: "i-trash", sale: "i-receipt", stock: "i-box", security: "i-lock", reset: "i-refresh" }[kind] || "i-info");
+    const cleanKind = (kind) => String(kind || "other").replace(/[^a-z]/g, "").slice(0, 20) || "other";
+    const historyBody = `
+      ${activity.length ? `<div class="activity-list">
+        ${activity.slice(0, 30).map((entry) => {
+          const kind = cleanKind(entry.kind);
+          return `<div class="activity-row">
+          <span class="activity-icon kind-${kind}">${icon(activityIcon(kind))}</span>
+          <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${esc(timeAgo(entry.at))}</small></span>
+        </div>`;
+        }).join("")}
+      </div>
+      <div class="sheet-actions" style="margin-top:10px"><button class="btn btn-ghost btn-block" data-act="clear-activity-log">${icon("i-trash")} Clear history</button></div>` : `<p class="card-sub" style="padding:10px 2px 2px">Nothing recorded yet. Adds, edits, deletes, stock changes, sales and security switches will show up here.</p>`}`;
     const aboutBody = `
       <div class="about-card">
         <div class="about-top">
@@ -2029,6 +2056,7 @@
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
+        ${settingsGroup("history", "i-receipt", "History log", activity.length ? `${activity.length} recent ${activity.length === 1 ? "entry" : "entries"} · adds, edits, deletes` : "Adds, edits and deletes", historyBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">

@@ -914,6 +914,7 @@
       T.save();
       T.ui.editor = null;
       close(true);
+      T.logActivity?.(existing ? "edit" : "add", `${existing ? "Updated" : "Added"} product “${values.name}”`);
       T.toast(existing ? "Product updated" : "Product added", "i-check");
       if (editor.addToCart && window.resetSellSearch) window.resetSellSearch(); else window.render?.();
     });
@@ -1292,6 +1293,7 @@
         T.ui.supplierSearch = "";
       }
       T.save();
+      T.logActivity?.(existing ? "edit" : "add", `${existing ? "Updated" : "Added"} supplier “${next.name}”`);
       close(true);
       T.toast(existing ? "Supplier updated" : "Supplier added", "i-check");
       window.render?.();

@@ -863,6 +863,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (!T.state.store) T.state.store = {};
       T.state.store.pinHash = pinHashOf(clean);
       T.save();
+      T.logActivity("security", currentPin ? "Shop PIN changed" : "Shop PIN set");
       return true;
     },
     pinClear: (currentPin) => {
@@ -871,6 +872,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (!T.state.store) T.state.store = {};
       T.state.store.pinHash = "";
       T.save();
+      T.logActivity("security", "Shop PIN removed");
       return true;
     },
     paymentMode: () => String(T.state?.store?.paymentMode || "all").trim().toLowerCase().replace(/[^a-z]/g, "") || "all",
@@ -880,6 +882,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (!T.state.store) T.state.store = {};
       T.state.store.paymentMode = next;
       T.save();
+      const label = next === "all" ? "All payments" : next === "mpesa" ? "M-Pesa only" : next === "card" ? "Card only" : "Cash only";
+      T.logActivity("security", `Payment mode → ${label}`);
       return true;
     },
     paymentAllows: (method) => {
@@ -892,6 +896,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (!T.state.store) T.state.store = {};
       T.state.store.debtBlocked = !Boolean(allowed);
       T.save();
+      T.logActivity("security", allowed ? "Debt allowed at checkout" : "No debt allowed — credit banned");
       return true;
     },
     currencySymbol: () => {
@@ -1164,6 +1169,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         cost
       });
     });
+    if (applied.length) {
+      const total = applied.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+      T.logActivity("stock", `Bulk stock in: ${total} units across ${applied.length} ${applied.length === 1 ? "item" : "items"}`);
+    }
     return applied;
   };
 
@@ -1189,6 +1198,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         product.packSize = Math.min(100000, Math.round(packSize));
       }
       T.save();
+      T.logActivity("stock", `Stock in: ${amount} × ${product.name} (${variant.label || "variant"})`);
       return { ok: true, product, variant };
     }
     if (cost !== null && cost !== undefined) {
@@ -1204,6 +1214,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     product.stock = clampInt(product.stock + amount, 0, 1000000);
     T.save();
+    T.logActivity("stock", `Stock in: ${amount} × ${product.name}`);
     return { ok: true, product };
   };
 
@@ -1606,6 +1617,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     });
     if (T.state.wastage.length > 300) T.state.wastage.length = 300;
     T.save();
+    T.logActivity("stock", `Wrote off ${amount} × ${product.name} (${cleanReason})`);
     return { ok: true, product };
   };
 
@@ -2152,6 +2164,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     T.state.categories.push(clean);
     T.save();
+    T.logActivity("add", `Added category “${clean}”`);
     return { ok: true, name: clean };
   };
 
@@ -2170,6 +2183,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     if (T.ui.category === current) T.ui.category = clean;
     T.save();
+    T.logActivity("edit", `Renamed category “${current}” to “${clean}”`);
     return { ok: true, name: clean };
   };
 
@@ -2187,6 +2201,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     if (T.ui.category === name) T.ui.category = "All";
     T.save();
+    T.logActivity("delete", `Deleted category “${name}”`);
     return { ok: true, fallback };
   };
 
@@ -2306,6 +2321,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     T.state.transactions.unshift(tx);
     T.state.nextReceipt = receiptNo + 1;
+    const tenderLabel = method === "mpesa" ? "M-Pesa" : method === "card" ? "Card" : method === "debt" ? "On debt" : "Cash";
+    T.logActivity("sale", `Sale #${receiptNo} · ${tenderLabel}`);
     if (isDebt && customer) {
       customer.entries = customer.entries || [];
       customer.entries.unshift({
@@ -2353,7 +2370,30 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       customer.entries = customer.entries.filter((entry) => String(entry?.txId || "") !== String(tx.id));
     }
     T.save();
+    T.logActivity("delete", `Order #${String(tx.receiptNo || tx.id || "").slice(-6)} deleted — units returned to stock`);
     return { ok: true, tx };
+  };
+
+  /**
+   * Append a line to the shop's activity log (kept in the synced state, capped
+   * at 300 entries). Kinds: add | edit | delete | sale | stock | security | reset.
+   */
+  T.logActivity = (kind, summary) => {
+    const clean = String(summary || "").trim().slice(0, 140);
+    if (!clean) return;
+    if (!Array.isArray(T.state.activityLog)) T.state.activityLog = [];
+    T.state.activityLog.unshift({
+      id: uid("log"),
+      at: new Date().toISOString(),
+      kind: String(kind || "other").slice(0, 20).replace(/[^a-z]/g, "") || "other",
+      summary: clean
+    });
+    if (T.state.activityLog.length > 300) T.state.activityLog.length = 300;
+    T.save({ quiet: true });
+  };
+  T.clearActivityLog = () => {
+    T.state.activityLog = [];
+    T.save();
   };
 
   T.setSaveState = (mode) => {

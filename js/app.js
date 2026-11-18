@@ -541,7 +541,9 @@ function blockedPaymentNotice(method) {
   });
 }
 
-function runAction(btn) {
+// opts.pinVerified is set only by the PIN sheet's onSuccess — one pass
+// through verified. Every fresh user tap asks for the PIN again.
+function runAction(btn, opts = {}) {
   const T = window.Till;
   if (!T) return;
   const act = btn.dataset.act;
@@ -562,20 +564,19 @@ function runAction(btn) {
       return;
     }
   }
-  // Security PIN: edits, deletes and destructive actions need the PIN once
-  // per session when it is set. Sales keep working — it blocks damage, not
-  // business. Re-entering the session (signed-out / new load) re-locks it.
+  // Security PIN: edits, deletes and destructive actions ask for the PIN on
+  // every tap. Sales keep working — it blocks damage, not business.
   const PIN_GUARDED = new Set([
     "edit-product", "delete-product", "delete-order", "delete-customer",
     "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
     "add-stock", "stock-dec", "restock-product", "open-wastage", "start-audit",
-    "set-payment-mode", "toggle-no-debt",
+    "set-payment-mode", "toggle-no-debt", "clear-activity-log",
     "reset-data", "import-data"
   ]);
-  if (PIN_GUARDED.has(act) && T.pinEnabled?.()) {
+  if (PIN_GUARDED.has(act) && T.pinEnabled?.() && !opts.pinVerified) {
     T.sheets?.openPinSheet?.({
       caption: "Records are secured — enter the shop PIN to continue.",
-      onSuccess: () => runAction(btn)
+      onSuccess: () => runAction(btn, { pinVerified: true })
     });
     return;
   }
@@ -682,6 +683,7 @@ function runAction(btn) {
         T.state.suppliers = (T.state.suppliers || []).filter((s) => s.id !== id);
         if (!T.state.suppliers.length) T.ui.supplierSearch = "";
         T.save();
+        T.logActivity?.("delete", `Deleted supplier “${supplier?.name || "Unknown"}”`);
         T.toast("Supplier deleted", "i-check");
         if (onDetail) go("#/suppliers");
         else render();
@@ -790,6 +792,7 @@ function runAction(btn) {
         T.state.customers = (T.state.customers || []).filter((c) => c.id !== id);
         if (!T.state.customers.length) T.ui.debtSearch = "";
         T.save();
+        T.logActivity?.("delete", `Deleted customer “${customer?.name || "Unknown"}”`);
         T.toast("Customer deleted", "i-check");
         if (onDetail) go("#/debt");
         else render();
@@ -829,9 +832,11 @@ function runAction(btn) {
       confirmLabel: "Delete product",
       danger: true,
       onConfirm: () => {
+        const deleted = T.state.products.find((p) => p.id === id);
         T.state.products = T.state.products.filter((p) => p.id !== id);
         T.state.cart.items = T.state.cart.items.filter((i) => i.productId !== id);
         T.save();
+        T.logActivity?.("delete", `Deleted product “${deleted?.name || "Unknown"}”`);
         T.toast("Product deleted", "i-check");
         render();
       }
@@ -857,6 +862,11 @@ function runAction(btn) {
   else if (act === "remove-pin") { T.sheets?.openPinSheet?.({ mode: "remove", onSuccess: () => { T.toast("PIN removed", "i-info"); render(); } }); }
   else if (act === "unlock-audit") { T.sheets?.openPinSheet?.({ caption: "Audit report is protected — enter the shop PIN to continue.", onSuccess: () => { T.ui.auditUnlocked = true; render(); } }); }
   else if (act === "unlock-mpesa") { T.sheets?.openPinSheet?.({ caption: "M-Pesa settings are protected — enter the shop PIN to continue.", onSuccess: () => { T.ui.mpesaUnlocked = true; render(); } }); }
+  else if (act === "clear-activity-log") {
+    T.clearActivityLog?.();
+    T.toast("History cleared", "i-trash");
+    render();
+  }
   else if (act === "confirm-sheet") {
     T.sheets?.runConfirm?.();
   }
@@ -1292,6 +1302,7 @@ function runAction(btn) {
       onConfirm: () => {
         T.state = T.seedState();
         T.save();
+        T.logActivity?.("reset", "All data reset — shop started empty");
         T.ui.category = "All";
         T.ui.search = "";
         T.ui.stockSearch = "";
@@ -1324,6 +1335,7 @@ function runAction(btn) {
               const data = JSON.parse(evt.target.result);
               T.state = T.normalizeState ? T.normalizeState(data) : data;
               T.save({ quiet: true });
+              T.logActivity?.("reset", "Restored from a backup file");
               render();
               T.toast("Restored from backup successfully", "i-check");
             } catch (err) {

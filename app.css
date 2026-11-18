@@ -2576,6 +2576,19 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .switch.is-on .switch-thumb { transform: translateX(18px); }
 .btn-debt.is-blocked { opacity: .42; filter: grayscale(1); cursor: not-allowed; }
 .btn-debt.is-blocked .ico { opacity: .7; }
+.activity-list { display: flex; flex-direction: column; max-height: 320px; overflow-y: auto; margin: 2px -2px 0; }
+.activity-row { display: flex; align-items: center; gap: 9px; padding: 7px 2px; border-bottom: 1px solid var(--ui-line); }
+.activity-row:last-child { border-bottom: 0; }
+.activity-icon { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 7px; display: inline-grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+.activity-icon .ico { width: 15px; height: 15px; }
+.activity-icon.kind-add { background: rgba(63, 125, 74, .14); color: var(--forest); }
+.activity-icon.kind-delete { background: rgba(168, 58, 42, .12); color: var(--red); }
+.activity-icon.kind-sale { background: rgba(63, 125, 74, .1); color: var(--forest-ink); }
+.activity-icon.kind-security { background: var(--surface-2); color: var(--forest); }
+.activity-icon.kind-stock { background: rgba(63, 125, 74, .08); color: var(--ink-2); }
+.activity-copy { flex: 1; min-width: 0; }
+.activity-copy strong { display: block; font-size: calc(11px * var(--fs)); font-weight: 650; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+.activity-copy small { display: block; font-size: calc(9.5px * var(--fs)); color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
 .derived-piece { margin: 4px 0 0; padding: 6px 10px; border: 0.5px solid var(--ui-line); border-radius: 6px; background: var(--surface-2); font-size: calc(11px * var(--fs)); font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .discount-apply { margin-top: 8px; }
 .variant-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
