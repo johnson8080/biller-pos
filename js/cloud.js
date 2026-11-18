@@ -110,6 +110,28 @@
     return Number(localStorage.getItem(SAVED_AT_KEY) || 0);
   }
 
+  /* ---------- "This device has changes the cloud has never seen" ----------
+     An edit made while offline (or before the first pull finishes) never
+     reaches Firestore on its own. Remember it, and flush it on the next
+     successful pull so the devices stay aligned without a user doing
+     anything. */
+  function pendingKey() {
+    return "biller.pos.pending." + (user?.uid || "local");
+  }
+  function markPending() {
+    try { localStorage.setItem(pendingKey(), "1"); } catch { /* ignore */ }
+  }
+  function clearPending() {
+    try { localStorage.removeItem(pendingKey()); } catch { /* ignore */ }
+  }
+  function hasPending() {
+    try { return localStorage.getItem(pendingKey()) === "1"; } catch { return false; }
+  }
+  async function flushPending() {
+    if (!hasPending()) return false;
+    return push({ immediate: true });
+  }
+
   function friendlyError(error) {
     const code = String(error?.code || "");
     const text = String(error?.message || "").toLowerCase();
@@ -248,7 +270,13 @@
    * changes travels as one write.
    */
   function push({ immediate = false } = {}) {
-    if (!fs || !user || !pulledOnce) return Promise.resolve(false);
+    if (!fs || !user) return Promise.resolve(false);
+    if (!pulledOnce) {
+      // Not allowed to write until a pull has completed — but the edit is
+      // real. Remember it and send it on the next successful pull.
+      markPending();
+      return Promise.resolve(false);
+    }
     clearTimeout(pushTimer);
     const run = async () => {
       try {
@@ -277,6 +305,7 @@
         // The device and the cloud now agree, so remember when.
         try { localStorage.setItem(SAVED_AT_KEY, String(Date.now())); } catch { /* ignore */ }
         window.Till?.setSavedAt?.(Date.now());
+        clearPending();
         setPhase("synced");
         return true;
       } catch (error) {
@@ -284,6 +313,7 @@
         const code = String(error?.code || "").toLowerCase();
         if (code.includes("unavailable") || code.includes("network")) setOnline(false);
         setPhase("error", lastError);
+        markPending();
         return false;
       }
     };
@@ -308,6 +338,7 @@
       const data = snap.exists ? snap.data() : null;
       if (!data || !data.state) {
         // Nothing in the cloud yet — send this device's copy up.
+        pulledOnce = true;
         await push({ immediate: true });
         return { ok: true, applied: false, reason: "empty" };
       }
@@ -315,10 +346,16 @@
       const localAt = localSavedAt();
       if (!force && remoteAt && remoteAt <= localAt) {
         lastSyncAt = Date.now();
+        pulledOnce = true;
         setPhase("synced");
-        return { ok: true, applied: false, reason: "local-newer" };
+        // This device holds changes the cloud has not seen yet (they were
+        // made offline, or the phone was signed in before syncing). Send
+        // them now, so the two devices converge without anyone editing.
+        const flushed = await flushPending();
+        return { ok: true, applied: false, reason: "local-newer", flushed };
       }
       applyRemote(data.state, remoteAt);
+      pulledOnce = true;
       lastSyncAt = Date.now();
       setPhase("synced");
       return { ok: true, applied: true };
@@ -374,6 +411,9 @@
   function applyRemote(remote, stamp = 0) {
     const merged = T.normalizeState(remote);
     T.state = merged;
+    // The cloud copy won; anything this device wanted to send no longer
+    // exists, so forget the marker.
+    clearPending();
     try {
       // Save it under the account that owns it without touching the
       // "last edited" stamp: receiving a copy is not a local change, and
