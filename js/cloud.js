@@ -114,9 +114,13 @@
      An edit made while offline (or before the first pull finishes) never
      reaches Firestore on its own. Remember it, and flush it on the next
      successful pull so the devices stay aligned without a user doing
-     anything. */
+     anything. The hash of the last synced state breaks the "local is newer"
+     tie, so flushing never ping-pongs: identical content pushes nothing. */
   function pendingKey() {
     return "biller.pos.pending." + (user?.uid || "local");
+  }
+  function lastHashKey() {
+    return "biller.pos.hash." + (user?.uid || "local");
   }
   function markPending() {
     try { localStorage.setItem(pendingKey(), "1"); } catch { /* ignore */ }
@@ -127,8 +131,26 @@
   function hasPending() {
     try { return localStorage.getItem(pendingKey()) === "1"; } catch { return false; }
   }
+  function stateHash() {
+    try {
+      const raw = JSON.stringify(T.state);
+      let h = 5381;
+      for (let i = 0; i < raw.length; i++) h = ((h << 5) + h + raw.charCodeAt(i)) >>> 0;
+      return raw.length + ":" + h.toString(36);
+    } catch { return ""; }
+  }
+  function lastSyncedHash() {
+    try { return localStorage.getItem(lastHashKey()) || ""; } catch { return ""; }
+  }
+  function rememberSyncedHash() {
+    try {
+      const hash = stateHash();
+      if (hash) localStorage.setItem(lastHashKey(), hash);
+    } catch { /* ignore */ }
+  }
   async function flushPending() {
-    if (!hasPending()) return false;
+    const needs = hasPending() || stateHash() !== lastSyncedHash();
+    if (!needs) return false;
     return push({ immediate: true });
   }
 
@@ -306,6 +328,7 @@
         try { localStorage.setItem(SAVED_AT_KEY, String(Date.now())); } catch { /* ignore */ }
         window.Till?.setSavedAt?.(Date.now());
         clearPending();
+        rememberSyncedHash();
         setPhase("synced");
         return true;
       } catch (error) {
@@ -414,6 +437,7 @@
     // The cloud copy won; anything this device wanted to send no longer
     // exists, so forget the marker.
     clearPending();
+    rememberSyncedHash();
     try {
       // Save it under the account that owns it without touching the
       // "last edited" stamp: receiving a copy is not a local change, and
