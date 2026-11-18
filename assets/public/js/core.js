@@ -793,7 +793,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       T.state = seedState();
     }
     stateOwner = nextOwner;
-    persistState(nextOwner);
+    // Do NOT stamp this write. If the till is fresh for this account (no
+    // products, transactions or PIN yet), stamping would make this device
+    // claim to be newer than the cloud shop and lock out the pull — the
+    // fresh till must not shadow the account's existing shop.
+    persistState(nextOwner, { stamp: false });
     // The saved stamp belonged to the shop we just left, so the cloud copy
     // for this account is free to win the next comparison.
     try { localStorage.removeItem("biller.pos.savedAt"); } catch { /* ignore */ }
