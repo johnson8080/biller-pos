@@ -1744,36 +1744,12 @@
     </div>`;
 
     const developerAnnouncements = T.cloud?.announcements?.() || [];
-    const announceReads = T.ui.announcementReads || {};
-    const announceOpen = T.ui.announcementOpen || {};
-    const announceCard = `<div class="settings-card announce-card">
-      <div class="report-card-head"><h2>Announcements</h2><span class="report-total">${developerAnnouncements.length}</span></div>
-      <p class="report-note" style="margin-top:4px">Send a message to every shop. They see a red count on the announcement card in Settings — and on the Settings tab — until they open it. Opening it writes you a receipt with that till.</p>
-      <div class="field" style="margin-top:8px">
-        <label for="announce-title">Title</label>
-        <input class="input" id="announce-title" maxlength="80" placeholder="e.g. Maintenance Sunday 6am" autocomplete="off">
-      </div>
-      <div class="field" style="margin-top:6px">
-        <label for="announce-body">Message</label>
-        <textarea class="input" id="announce-body" rows="2" maxlength="600" placeholder="What every shop should know" style="resize:vertical;min-height:56px"></textarea>
-      </div>
-      <p class="form-error" id="announce-error" role="alert" hidden></p>
-      <div class="sheet-actions" style="margin-top:8px"><button class="btn btn-primary btn-block" data-act="send-announcement">${icon("i-bell")} Send to all shops</button></div>
-      ${developerAnnouncements.length ? `<div class="announce-dev-list">${developerAnnouncements.map((item) => {
-        const id = esc(item.id);
-        const cached = announceReads[item.id];
-        const open = Boolean(announceOpen[item.id]);
-        const readers = Array.isArray(cached) ? cached : null;
-        return `<div class="announce-dev-row">
-          <div class="announce-dev-head">
-            <div class="announce-dev-copy"><strong>${esc(item.title)}</strong><small>${esc(announceWhen(item.at))}</small></div>
-            <button class="text-btn" data-act="delete-announcement" data-id="${id}">Delete</button>
-          </div>
-          <p class="card-sub" style="margin:4px 0 0;overflow-wrap:anywhere">${esc(item.body)}</p>
-          <button class="chip announce-reads-toggle" data-act="toggle-announce-reads" data-value="${id}" aria-expanded="${open}">${readers ? `${readers.length} ${readers.length === 1 ? "shop" : "shops"} opened` : "Who opened it"} ${icon("i-chevron")}</button>
-          ${open ? `<div class="announce-readers">${cached === null ? `<p class="report-note">Loading…</p>` : readers.length ? readers.map((reader) => `<div class="reader-row"><span class="reader-dot"></span><span class="reader-copy"><strong>${esc(reader.shop || reader.email || "Shop")}</strong><small>${esc(reader.code ? `${reader.code} · ` : "")}${esc(reader.email)} · ${esc(announceWhen(reader.at))}</small></span></div>`).join("") : `<p class="report-note">No shop has opened it yet.</p>`}</div>` : ""}
-        </div>`;
-      }).join("")}</div>` : `<p class="report-note" style="margin-top:8px">Nothing sent yet.</p>`}
+    const announceDoorway = `<div class="settings-card announce-doorway">
+      <button class="data-row" data-nav="#/announcements" style="border:0;margin:0">
+        <span class="data-icon">${icon("i-bell")}</span>
+        <span class="data-copy"><strong>Announcements</strong><small>${developerAnnouncements.length} sent — write a message to every till and see who opened it</small></span>
+        <span class="chev">${icon("i-chevron")}</span>
+      </button>
     </div>`;
 
     return `<section class="screen" aria-labelledby="plans-title">
@@ -1782,7 +1758,7 @@
         <h1 id="plans-title">Subscriptions</h1>
         <p class="sub">Every shop, its code, and what has been paid.</p>
       </div>
-      ${announceCard}
+      ${announceDoorway}
       ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
@@ -3084,14 +3060,32 @@
     </section>`;
   }
 
+  /** The developer's manage view of one announcement: delete + receipts. */
+  const announceDevRowHTML = (item) => {
+    const id = esc(item.id);
+    const cached = T.ui.announcementReads?.[item.id];
+    const open = Boolean(T.ui.announcementOpen?.[item.id]);
+    const readers = Array.isArray(cached) ? cached : null;
+    return `<div class="announce-dev-row">
+      <div class="announce-dev-head">
+        <div class="announce-dev-copy"><strong>${esc(item.title)}</strong><small>${esc(announceWhen(item.at))}</small></div>
+        <button class="text-btn" data-act="delete-announcement" data-id="${id}">Delete</button>
+      </div>
+      <p class="card-sub" style="margin:4px 0 0;overflow-wrap:anywhere">${esc(item.body)}</p>
+      <button class="chip announce-reads-toggle" data-act="toggle-announce-reads" data-value="${id}" aria-expanded="${open}">${readers ? `${readers.length} ${readers.length === 1 ? "shop" : "shops"} opened` : "Who opened it"} ${icon("i-chevron")}</button>
+      ${open ? `<div class="announce-readers">${cached === null ? `<p class="report-note">Loading…</p>` : readers.length ? readers.map((reader) => `<div class="reader-row"><span class="reader-dot"></span><span class="reader-copy"><strong>${esc(reader.shop || reader.email || "Shop")}</strong><small>${esc(reader.code ? `${reader.code} · ` : "")}${esc(reader.email)} · ${esc(announceWhen(reader.at))}</small></span></div>`).join("") : `<p class="report-note">No shop has opened it yet.</p>`}</div>` : ""}
+    </div>`;
+  };
+
   /**
-   * Announcements from the developer. Every signed-in shop sees the same
-   * list. A shop gets a red count on this page until it opens it, and the
-   * developer sees exactly which shop opened what.
+   * Announcements. Every signed-in shop sees the same list; the developer
+   * account also gets the composer at the top and the receipts expander on
+   * each entry — the page is where the developer writes, sends and audits.
    */
   function announcements(freshIds = []) {
     const fresh = new Set((freshIds || []).map(String));
     const items = T.cloud?.announcements?.() || [];
+    const isDev = Boolean(T.isDeveloperAccount?.());
     const rows = items.map((item) => {
       const isNew = fresh.has(item.id);
       return `<article class="announce-item${isNew ? " is-new" : ""}">
@@ -3106,17 +3100,34 @@
         <p class="announce-item-body">${esc(item.body)}</p>
       </article>`;
     }).join("");
+    const devRows = items.map((item) => announceDevRowHTML(item)).join("");
     return `<section class="screen" aria-labelledby="announcements-title">
       <div class="screen-head">
         <h1 id="announcements-title">ANNOUNCEMENTS</h1>
-        <p class="sub">Messages from the developer for every till.</p>
+        <p class="sub">${isDev ? "Write, send, and see who opened it." : "Messages from the developer for every till."}</p>
       </div>
+      ${isDev ? `
+      <div class="settings-card announce-card">
+        <div class="report-card-head"><h2>New announcement</h2></div>
+        <div class="field" style="margin-top:8px">
+          <label for="announce-title">Title</label>
+          <input class="input" id="announce-title" maxlength="80" placeholder="e.g. Maintenance Sunday 6am" autocomplete="off">
+        </div>
+        <div class="field" style="margin-top:6px">
+          <label for="announce-body">Message</label>
+          <textarea class="input" id="announce-body" rows="2" maxlength="600" placeholder="What every shop should know" style="resize:vertical;min-height:56px"></textarea>
+        </div>
+        <p class="form-error" id="announce-error" role="alert" hidden></p>
+        <div class="sheet-actions" style="margin-top:8px"><button class="btn btn-primary btn-block" data-act="send-announcement">${icon("i-bell")} Send to all shops</button></div>
+      </div>` : ""}
       ${items.length
-        ? `<div class="announce-list">${rows}</div>`
+        ? isDev
+          ? `<div class="announce-dev-list">${devRows}</div>`
+          : `<div class="announce-list">${rows}</div>`
         : `<div class="empty-state">
              <div class="empty-icon">${icon("i-bell")}</div>
              <h3>No announcements yet</h3>
-             <p>When the developer sends a message to every shop, it will show up here.</p>
+             <p>${isDev ? "Send your first message to every till with the form above. Shops see a red count on their Settings tab until they open it." : "When the developer sends a message to every shop, it will show up here."}</p>
            </div>`}
     </section>`;
   }

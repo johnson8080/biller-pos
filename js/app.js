@@ -889,7 +889,9 @@ function runAction(btn, opts = {}) {
     const errorEl = document.getElementById("announce-error");
     const fail = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; } };
     if (errorEl) errorEl.hidden = true;
-    T.cloud?.sendAnnouncement?.(titleEl?.value, bodyEl?.value).then((result) => {
+    const send = T.cloud?.sendAnnouncement?.bind(T.cloud);
+    if (!send) { const message = "Not connected to the cloud. Open the app while online and sign in — then try again."; fail(message); T.toast(message, "i-alert"); return; }
+    send(titleEl?.value, bodyEl?.value).then((result) => {
       if (!result?.ok) {
         const message = result?.error || "Could not send the announcement.";
         fail(message);
@@ -909,7 +911,7 @@ function runAction(btn, opts = {}) {
       message: "It disappears from every shop's Announcements page. Shops that already opened it keep their receipt.",
       confirmLabel: "Delete announcement",
       danger: true,
-      onConfirm: () => { T.cloud?.deleteAnnouncement?.(id).then(() => render()); }
+      onConfirm: () => { T.cloud?.deleteAnnouncement?.(id)?.then(() => render()); }
     });
   }
   else if (act === "toggle-announce-reads" && value) {
@@ -919,7 +921,7 @@ function runAction(btn, opts = {}) {
       T.ui.announcementReads = T.ui.announcementReads || {};
       if (!Object.prototype.hasOwnProperty.call(T.ui.announcementReads, value)) {
         T.ui.announcementReads[value] = null; // loading
-        T.cloud?.announcementReaders?.(value).then((result) => {
+        T.cloud?.announcementReaders?.(value)?.then((result) => {
           T.ui.announcementReads[value] = result?.ok ? result.readers : [];
           render();
         });
