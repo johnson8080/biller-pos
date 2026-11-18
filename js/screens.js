@@ -1573,12 +1573,24 @@
     // current state — even if the developer has to do nothing.
     const norm = (s) => (["reverted", "declined"].includes(s) ? "due" : s);
     const accountsById = new Map(accounts.map((a) => [a.id, a]));
+    const requestsById = new Map(requests.map((r) => [r.id, r]));
     const liveStatusFor = (id, fallback) => {
+      const request = requestsById.get(id);
+      // The payment document is the strongest signal there is — it wins over
+      // the presence heartbeat, which can lag a full minute behind and must
+      // never make a confirmed shop look like it's waiting again.
+      if (request) {
+        if (request.status === "pending") return "pending";
+        if (request.status === "confirmed") return "active";
+        if (request.status === "reverted" || request.status === "declined") return "due";
+      }
       const account = accountsById.get(id);
-      if (!account) return norm(String(fallback || "pending"));
+      if (!account) return norm(String(request?.status || fallback || "pending"));
       const asked = account.payment && account.payment.status === "pending";
       const sub = account.sub || {};
-      return asked ? "pending" : norm(String(sub.status || fallback || "active"));
+      const subStatus = String(sub.status || "");
+      if (asked || subStatus === "awaiting" || subStatus === "pending") return "pending";
+      return norm(subStatus || request?.status || fallback || "active");
     };
     const entries = [];
     const seenIds = new Set();
@@ -1610,7 +1622,10 @@
       // A shop that says it has paid also shows here through its presence
       // record, so the request is visible even before the new rules are live.
       const asked = account.payment && account.payment.status === "pending";
-      const accountStatus = asked ? "pending" : norm(String(sub.status || "active"));
+      const subStatus = String(sub.status || "");
+      const accountStatus = (asked || subStatus === "awaiting" || subStatus === "pending")
+        ? "pending"
+        : norm(subStatus || "active");
       entries.push({
         id: account.id,
         code: account.code || "",

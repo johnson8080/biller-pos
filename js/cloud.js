@@ -727,7 +727,13 @@
           list.push({ id: doc.id, ...data });
         });
         list.sort((a, b) => (b.at || 0) - (a.at || 0));
-        const fresh = list.find((item) => item.status === "pending" && !paymentRequests.some((old) => old.id === item.id));
+        // Treat any request that flips TO pending as fresh — including a
+        // shop whose payment was confirmed earlier and sent again after a
+        // revert. Without this the developer never sees a toast prompt for
+        // follow-up payments.
+        const knownPending = new Set();
+        for (const p of paymentRequests) if (p.status === "pending") knownPending.add(p.id);
+        const fresh = list.find((item) => item.status === "pending" && !knownPending.has(item.id));
         paymentRequests = list;
         notify();
         if (fresh && onPaymentPrompt) onPaymentPrompt(fresh);
