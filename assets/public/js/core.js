@@ -188,7 +188,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       staffList: [],
       taxRate: 0,
       currency: "KES",
-      theme: "ocean",
+      theme: "forest",
       colorScheme: "light",
       textSize: "medium",
       sellView: "list",
@@ -274,6 +274,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       categories: [...CATEGORIES],
       defaultsMigrated: true,
       categoriesMigrated: true,
+      defaultsForestApplied: true,
       products: [],
       suppliers: [],
       customers: [],
@@ -302,10 +303,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // Light and dark are forced by the shop, never taken from the phone.
     store.colorScheme = store.colorScheme === "dark" ? "dark" : "light";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
-    // One-time migration to the new default look (Ocean + medium text).
-    if (data.defaultsMigrated !== true) {
-      if (store.theme === "forest") store.theme = "ocean";
-      if (store.textSize === "small") store.textSize = "medium";
+    // One-time migration to the new default look (Light + Forest + medium text).
+    if (data.defaultsForestApplied !== true) {
+      store.theme = "forest";
+      store.colorScheme = "light";
+      store.textSize = "medium";
     }
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
@@ -657,7 +659,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       stockDays,
       audits,
       createdAt: data.createdAt || new Date().toISOString(),
-      defaultsMigrated: true
+      defaultsMigrated: true,
+      defaultsForestApplied: true
     };
   }
 
