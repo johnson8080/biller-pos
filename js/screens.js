@@ -108,7 +108,7 @@
         <div class="appbar-context"><div class="appbar-title">Subscriptions</div></div>
         <div class="appbar-right"></div>`;
     }
-    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa"].includes(route.name)) {
+    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history"].includes(route.name)) {
       const supplier = route.name === "supplier" ? T.findSupplier(route.param) : null;
       const config = {
         cart: { title: "Checkout", back: "#/sell", action: `<button class="text-btn danger" data-act="clear-cart">Clear</button>` },
@@ -116,7 +116,8 @@
         receipt: { title: "Receipt", back: T.ui.justPaidId ? "#/sell" : "#/orders", action: `<button class="text-btn" data-act="new-sale">New sale</button>` },
         account: { title: "Account", back: "#/more", action: "" },
         store: { title: "Store & receipts", back: "#/more", action: "" },
-        mpesa: { title: "M-Pesa", back: "#/store", action: "" },
+        mpesa: { title: "M-Pesa", back: "#/more", action: "" },
+        history: { title: "History log", back: "#/more", action: "" },
         supplier: { title: supplier?.name || "Supplier", back: "#/suppliers", action: supplier ? `<button class="text-btn" data-act="edit-supplier" data-id="${esc(supplier.id)}">Edit</button>` : "" }
       }[route.name];
       return `
@@ -1982,6 +1983,7 @@
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
+    const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
     const dataBody = `
       <div class="data-list">
         <button class="data-row" data-act="export-data">
@@ -2001,39 +2003,17 @@
             <span class="dot"></span><span class="save-label">Saved</span>
           </span>
         </button>
+        <button class="data-row" data-nav="#/history">
+          <span class="data-icon">${icon("i-receipt")}</span>
+          <span class="data-copy"><strong>History log</strong><small>${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} · adds, edits, deletes` : "Every add, edit and delete on this till"}</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </button>
         <button class="data-row danger" data-act="reset-data">
           <span class="data-icon">${icon("i-refresh")}</span>
           <span class="data-copy"><strong>Reset all data</strong><small>Clear products, orders and settings</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
-    const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
-    const timeAgo = (iso) => {
-      const ts = Date.parse(iso);
-      if (!Number.isFinite(ts)) return "";
-      const minutes = Math.floor((Date.now() - ts) / 60000);
-      if (minutes < 1) return "just now";
-      if (minutes < 60) return `${minutes}m ago`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours}h ago`;
-      const days = Math.floor(hours / 24);
-      if (days === 1) return "yesterday";
-      if (days < 30) return `${days}d ago`;
-      return new Date(ts).toLocaleDateString("en-KE", { day: "numeric", month: "short" });
-    };
-    const activityIcon = (kind) => ({ add: "i-plus", edit: "i-pencil", delete: "i-trash", sale: "i-receipt", stock: "i-box", security: "i-lock", reset: "i-refresh" }[kind] || "i-info");
-    const cleanKind = (kind) => String(kind || "other").replace(/[^a-z]/g, "").slice(0, 20) || "other";
-    const historyBody = `
-      ${activity.length ? `<div class="activity-list">
-        ${activity.slice(0, 30).map((entry) => {
-          const kind = cleanKind(entry.kind);
-          return `<div class="activity-row">
-          <span class="activity-icon kind-${kind}">${icon(activityIcon(kind))}</span>
-          <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${esc(timeAgo(entry.at))}</small></span>
-        </div>`;
-        }).join("")}
-      </div>
-      <div class="sheet-actions" style="margin-top:10px"><button class="btn btn-ghost btn-block" data-act="clear-activity-log">${icon("i-trash")} Clear history</button></div>` : `<p class="card-sub" style="padding:10px 2px 2px">Nothing recorded yet. Adds, edits, deletes, stock changes, sales and security switches will show up here.</p>`}`;
     const aboutBody = `
       <div class="about-card">
         <div class="about-top">
@@ -2077,11 +2057,10 @@
         ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"}`, appearanceBody)}
-        ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
+        ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
         ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " · No debt" : ""}`, securityBody)}
-        ${settingsGroup("history", "i-receipt", "History log", activity.length ? `${activity.length} recent ${activity.length === 1 ? "entry" : "entries"} · adds, edits, deletes` : "Adds, edits and deletes", historyBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
@@ -2713,7 +2692,7 @@
         <span class="mpesa-brand"><span class="mpesa-word">M-PESA</span></span>
         <h3>Receive payments on M-Pesa</h3>
         <p>Add your Safaricom Paybill or Till number in Store &amp; receipts. Customers will then get a PIN prompt on their phone and the money goes straight to your account.</p>
-        <button class="btn btn-primary btn-block" data-nav="#/store">${icon("i-store")} Add Paybill or Till</button>
+        <button class="btn btn-primary btn-block" data-nav="#/mpesa">${icon("i-phone")} Add Paybill or Till</button>
       </div>`;
     }
 
@@ -2737,7 +2716,7 @@
     const blocker = ready.ok
       ? ""
       : `<div class="mpesa-alert is-setup">${icon("i-info", "ico ico-sm")}<span>${esc(ready.message)}</span></div>
-         ${ready.reason === "browser" ? `<button class="btn btn-ghost btn-block" data-nav="#/store">Open settings</button>` : `<button class="btn btn-ghost btn-block" data-nav="#/store">Open store settings</button>`}`;
+         ${ready.reason === "browser" ? `<button class="btn btn-ghost btn-block" data-nav="#/mpesa">Open M-Pesa settings</button>` : `<button class="btn btn-ghost btn-block" data-nav="#/mpesa">Open M-Pesa settings</button>`}`;
 
     return `<div class="mpesa-board">
       <span class="mpesa-brand"><span class="mpesa-word">M-PESA</span><span class="mpesa-target">${esc(target)}</span></span>
@@ -2989,5 +2968,50 @@
     </section>`;
   }
 
-  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, pinLocked, icon };
+  const logTimeAgo = (iso) => {
+    const ts = Date.parse(iso);
+    if (!Number.isFinite(ts)) return "";
+    const minutes = Math.floor((Date.now() - ts) / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "yesterday";
+    if (days < 30) return `${days}d ago`;
+    return new Date(ts).toLocaleDateString("en-KE", { day: "numeric", month: "short" });
+  };
+  const logCleanKind = (kind) => String(kind || "other").replace(/[^a-z]/g, "").slice(0, 20) || "other";
+  const logIcon = (kind) => ({ add: "i-plus", edit: "i-pencil", delete: "i-trash", sale: "i-receipt", stock: "i-box", security: "i-lock", reset: "i-refresh" }[kind] || "i-info");
+  const logRows = (entries) => entries.map((entry) => {
+    const kind = logCleanKind(entry.kind);
+    return `<div class="activity-row">
+      <span class="activity-icon kind-${kind}">${icon(logIcon(kind))}</span>
+      <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${esc(logTimeAgo(entry.at))}</small></span>
+    </div>`;
+  }).join("");
+
+  /**
+   * The shop's activity log on its own page — adds, edits, deletes, stock,
+   * sales and security switches, newest first.
+   */
+  function history() {
+    const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
+    return `<section class="screen" aria-labelledby="history-title">
+      <div class="screen-head with-action">
+        <div><h1 id="history-title">HISTORY LOG</h1><p class="sub">${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} · newest first` : "Every add, edit and delete, newest first"}</p></div>
+        ${activity.length ? `<button class="text-btn danger" data-act="clear-activity-log">Clear</button>` : ""}
+      </div>
+      ${activity.length
+        ? `<div class="activity-list history-list">${logRows(activity)}</div>
+           <p class="field-help history-note">The log keeps the last 300 entries. Export the backup from Settings to archive a longer record.</p>`
+        : `<div class="empty-state">
+             <div class="empty-icon">${icon("i-receipt")}</div>
+             <h3>Nothing recorded yet</h3>
+             <p>Adds, edits, deletes, stock changes, sales and security switches will show up here.</p>
+           </div>`}
+    </section>`;
+  }
+
+  T.screens = { appbar, tabbar, dock, sell, sellResults, orders, ordersList, reports, audit, suppliers, supplierResults, supplierDetail, debt, debtResults, customerDebt, stock, inventoryRows, stockFilterRow, more, storeSettings, mpesaSettings, accountSettings, categorySection, plans, auth, cart, payment, receipt, receiptText, receiptImage, scan, productTile, stockNote, qtyInCart, lockedScreen, pinLocked, history, icon };
 })();

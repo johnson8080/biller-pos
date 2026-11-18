@@ -2593,6 +2593,8 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .activity-icon.kind-sale { background: rgba(63, 125, 74, .1); color: var(--forest-ink); }
 .activity-icon.kind-security { background: var(--surface-2); color: var(--forest); }
 .activity-icon.kind-stock { background: rgba(63, 125, 74, .08); color: var(--ink-2); }
+.activity-list.history-list { max-height: none; overflow: visible; margin-top: 2px; }
+.history-note { padding: 10px 2px 2px; color: var(--muted); font-size: calc(10px * var(--fs)); }
 .activity-copy { flex: 1; min-width: 0; }
 .activity-copy strong { display: block; font-size: calc(11px * var(--fs)); font-weight: 650; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
 .activity-copy small { display: block; font-size: calc(9.5px * var(--fs)); color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }

@@ -1956,6 +1956,7 @@ function render() {
   else if (screenName === "debt") html = route.param ? T.screens.customerDebt(route.param) : T.screens.debt();
   else if (screenName === "supplier") html = T.screens.supplierDetail(route.param);
   else if (screenName === "reports") html = T.screens.reports();
+  else if (screenName === "history") html = T.screens.history();
   else if (screenName === "audit") {
     // No PIN sheet here on purpose: it opens only from the "Enter PIN" button
     // below, so someone who does not want to enter the PIN can just leave.
