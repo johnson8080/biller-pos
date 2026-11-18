@@ -106,6 +106,9 @@ function updateOfflineBanner() {
  * instead of jumping to Sell every time.
  */
 let navTrail = [];
+// The route the viewport last rendered — when it changes, the page starts at
+// the top instead of keeping whatever scroll offset the previous page had.
+let renderedRouteKey = null;
 
 /**
  * Move to another screen.
@@ -1241,6 +1244,25 @@ function runAction(btn, opts = {}) {
     nextMap[value] = nextOpen;
     T.ui.settingsOpen = nextMap;
     render();
+    // The group just expanded below the fold: bring its head and the start of
+    // its content onto the screen instead of making the shopkeeper scroll.
+    // Re-pin to the target for a short window so Chrome's scroll anchoring
+    // (which prefers the old position after the DOM re-render) gets undone.
+    if (nextOpen) {
+      const start = performance.now();
+      const pin = () => {
+        const target = document.querySelector(`.settings-group[data-group="${String(value).replace(/[^a-z-]/gi, "")}"]`);
+        const v = document.getElementById("viewport");
+        if (target && v) {
+          const padTop = parseFloat(getComputedStyle(v).paddingTop) || 0;
+          const docTop = target.getBoundingClientRect().top - v.getBoundingClientRect().top + v.scrollTop;
+          const want = docTop - padTop - 8;
+          if (Math.abs(v.scrollTop - want) > 1) v.scrollTo({ top: want, behavior: "instant" });
+        }
+        if (performance.now() - start < 600) requestAnimationFrame(pin);
+      };
+      requestAnimationFrame(pin);
+    }
   }
   else if (act === "set-text-size" && value) {
     const size = ["small", "medium", "large"].includes(String(value)) ? String(value) : T.textSizeId();
@@ -1937,6 +1959,12 @@ function render() {
   }
   const previousRouteName = T.ui.route?.name;
   T.ui.route = route;
+  const routeKey = `${route.name}/${route.param || ""}`;
+  if (renderedRouteKey !== routeKey) {
+    renderedRouteKey = routeKey;
+    // The scroll container is .viewport, not the window.
+    viewport.scrollTop = 0;
+  }
 
   // Opening the Settings tab starts with every category dropdown closed.
   if (route.name === "more") {
