@@ -121,6 +121,9 @@ let navTrail = [];
 // The route the viewport last rendered — when it changes, the page starts at
 // the top instead of keeping whatever scroll offset the previous page had.
 let renderedRouteKey = null;
+// Fingerprint of the cloud state at the last render — used to skip no-op
+// refreshes when Firestore sends an unchanged snapshot.
+let cloudSyncHash = "";
 
 /**
  * Move to another screen.
@@ -1890,15 +1893,39 @@ setInterval(() => { try { updateSyncDot(); } catch { /* ignore */ } }, 2000);
 /** Rebuild just the bottom tab bar — used when the cloud moves and only the
  *  Settings badge on it can change (e.g. a new developer announcement lands
  *  while the shopkeeper is mid-sale). */
+/** A cheap fingerprint of the cloud state the "live" screens display. */
+function cloudSyncStateHash() {
+  try {
+    const T = window.Till;
+    if (!T) return "none";
+    const parts = [];
+    for (const account of T.cloud?.accounts?.() || []) {
+      parts.push(`a:${account.id}:${account.t || 0}:${account.off ? 1 : 0}:${account.sub?.status || ""}`);
+    }
+    for (const request of T.cloud?.paymentRequests?.() || []) {
+      parts.push(`p:${request.id}:${request.status}:${request.at || 0}`);
+    }
+    for (const item of T.cloud?.announcements?.() || []) {
+      parts.push(`n:${item.id}:${item.at || 0}`);
+    }
+    return parts.join("|");
+  } catch {
+    return "none";
+  }
+}
+
 function refreshTabBadge() {
   const tabbarEl = document.getElementById("tabbar");
   if (!tabbarEl) return;
   const route = window.Till?.ui?.route || { name: "sell" };
   const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
-  tabbarEl.innerHTML = showTabs ? window.Till.screens.tabbar(route) : "";
-  tabbarEl.classList.toggle("is-hidden", !showTabs);
-  wireNav(tabbarEl);
-  wireActions(tabbarEl);
+  const html = showTabs ? window.Till.screens.tabbar(route) : "";
+  if (tabbarEl.innerHTML !== html) {
+    tabbarEl.innerHTML = html;
+    tabbarEl.classList.toggle("is-hidden", !showTabs);
+    wireNav(tabbarEl);
+    wireActions(tabbarEl);
+  }
 }
 
 // Clearing the search query after an item is added to the sale, so the
@@ -2104,6 +2131,9 @@ function render() {
 
   viewport.innerHTML = html;
   viewport.classList.toggle("is-auth", screenName === "auth");
+  // Keep the cloud fingerprint in step with what the shop actually sees, so
+  // the next snapshot only re-renders when something genuinely changed.
+  cloudSyncHash = cloudSyncStateHash();
 
   // The plan card shows whether the phone reminders are on.
   if (document.getElementById("notify-status")) updateReminderRow();
@@ -2379,8 +2409,18 @@ function boot() {
     const active = document.activeElement;
     const editing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
     if (editing || name === "announcements") { refreshTabBadge(); return; }
-    if (["account", "more", "plans"].includes(name)) render();
-    else refreshTabBadge();
+    if (["account", "more", "plans"].includes(name)) {
+      // Firestore sends a snapshot every heartbeat (60s) — almost always
+      // with zero change. Only re-paint the screen when something actually
+      // moved; that kills the periodic flash while the app is open.
+      const hash = cloudSyncStateHash();
+      if (hash !== cloudSyncHash) {
+        cloudSyncHash = hash;
+        render();
+        return;
+      }
+    }
+    refreshTabBadge();
   });
   // Start the connectivity probe even if the Firebase SDK never loads.
   window.Till?.cloud?.init?.();
