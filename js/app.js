@@ -63,13 +63,25 @@ function setupAuthObserver() {
             goHome();
           }
         } else {
-          // No signed-in account — the app is locked behind the login screen.
-          localStorage.removeItem("biller.pos.auth");
-          T.sheets?.close?.(true);
-          T.activateAccount?.(null);
-          T.cloud?.detach?.();
-          if (location.hash !== "#/auth") {
-            replace("#/auth");
+          // No signed-in Firebase user — could be a real sign-out, or just a
+          // boot on a flaky connection. Only a device that never signed in
+          // gets bounced to the login screen; a device with a saved session
+          // keeps it (the local till still works, and the owner keeps the
+          // developer panel). Everything that needs the cloud stays gated by
+          // Firebase Auth rules either way.
+          const hadSession = Boolean(window.Till?.getSession?.()?.email);
+          if (hadSession) {
+            console.warn("Firebase has no user right now — keeping the saved session and running offline.");
+            T.sheets?.close?.(true);
+            T.cloud?.detach?.();
+          } else {
+            localStorage.removeItem("biller.pos.auth");
+            T.sheets?.close?.(true);
+            T.activateAccount?.(null);
+            T.cloud?.detach?.();
+            if (location.hash !== "#/auth") {
+              replace("#/auth");
+            }
           }
         }
       } catch (e) { console.warn("Auth observer error:", e); }
@@ -878,7 +890,12 @@ function runAction(btn, opts = {}) {
     const fail = (msg) => { if (errorEl) { errorEl.textContent = msg; errorEl.hidden = false; } };
     if (errorEl) errorEl.hidden = true;
     T.cloud?.sendAnnouncement?.(titleEl?.value, bodyEl?.value).then((result) => {
-      if (!result?.ok) { fail(result?.error || "Could not send the announcement."); return; }
+      if (!result?.ok) {
+        const message = result?.error || "Could not send the announcement.";
+        fail(message);
+        T.toast(message, "i-alert");
+        return;
+      }
       if (titleEl) titleEl.value = "";
       if (bodyEl) bodyEl.value = "";
       T.toast("Announcement sent to every shop", "i-bell");

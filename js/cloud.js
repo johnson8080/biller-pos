@@ -786,7 +786,9 @@
 
   /** The developer publishes an announcement every shop can see. */
   async function sendAnnouncement(title, body) {
-    if (!fs || !user || !isOwner()) return { ok: false, error: "Only the developer account can send announcements." };
+    if (!isOwner()) return { ok: false, error: "Only the developer account can send announcements." };
+    if (!fs) return { ok: false, error: "Not connected to the cloud. Open the app while online and try again." };
+    if (!user) return { ok: false, error: "You're signed in offline. Sign in to the cloud first, then send." };
     const cleanTitle = String(title || "").trim().slice(0, 80);
     const cleanBody = String(body || "").trim().slice(0, 600);
     if (!cleanTitle) return { ok: false, error: "Give the announcement a title." };
@@ -801,6 +803,10 @@
       });
       return { ok: true };
     } catch (error) {
+      const text = String(error?.code || error?.message || error).toLowerCase();
+      if (text.includes("permission") || text.includes("missing") || text.includes("insufficient")) {
+        return { ok: false, error: "Announcements are blocked by Firebase rules. Run: firebase deploy --only firestore:rules" };
+      }
       return { ok: false, error: friendlyError(error) };
     }
   }
