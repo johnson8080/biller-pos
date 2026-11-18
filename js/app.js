@@ -2378,8 +2378,8 @@ function boot() {
     const name = window.Till?.ui?.route?.name;
     const active = document.activeElement;
     const editing = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
-    if (editing) { refreshTabBadge(); return; }
-    if (["account", "more", "plans", "announcements"].includes(name)) render();
+    if (editing || name === "announcements") { refreshTabBadge(); return; }
+    if (["account", "more", "plans"].includes(name)) render();
     else refreshTabBadge();
   });
   // Start the connectivity probe even if the Firebase SDK never loads.
