@@ -2823,20 +2823,22 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: var(--forest);
-  color: #f7f5ec;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
   font-size: calc(11px * var(--fs));
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, .25);
-  box-shadow: var(--shadow-float);
+  font-weight: 650;
+  border: 1px solid var(--ui-line);
+  box-shadow: var(--shadow-card);
   opacity: 0;
   transform: translate(-50%, 10px);
   pointer-events: none;
   transition: opacity .2s ease, transform .2s ease;
 }
-.toast .ico { width: 15px; height: 15px; color: var(--lime); }
+.toast .ico { width: 15px; height: 15px; color: var(--forest); }
+.toast.is-bad { border-color: rgba(var(--red-rgb), .45); color: var(--red); }
+.toast.is-bad .ico { color: var(--red); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .cart-confirm-stack {
   position: absolute;
@@ -2858,7 +2860,7 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   align-items: center;
   gap: 9px;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: 7px;
   background: var(--surface);
   border: 1px solid var(--ui-line);
   box-shadow: var(--shadow-float);
