@@ -193,6 +193,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       textSize: "medium",
       sellView: "list",
       pinHash: "",
+      paymentMode: "all",
       sellSort: "new",
       mpesa: {
         paybill: "",
@@ -319,6 +320,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       store.colorScheme = "light";
       store.textSize = "medium";
     }
+    // Checkout payment mode: which methods the till allows.
+    store.paymentMode = ["all", "cash", "mpesa", "card"].includes(String(store.paymentMode)) ? store.paymentMode : "all";
     store.sellView = store.sellView === "grid" ? "grid" : "list";
     store.sellSort = ["new", "az", "za"].includes(store.sellSort) ? store.sellSort : "new";
     // Shopkeepers: a synced list of names. Older saves only carry the single
@@ -866,6 +869,20 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       T.state.store.pinHash = "";
       T.save();
       return true;
+    },
+    paymentMode: () => String(T.state?.store?.paymentMode || "all").trim().toLowerCase().replace(/[^a-z]/g, "") || "all",
+    setPaymentMode: (mode) => {
+      const next = String(mode || "all").trim().toLowerCase();
+      if (!["all", "cash", "mpesa", "card"].includes(next)) return false;
+      if (!T.state.store) T.state.store = {};
+      T.state.store.paymentMode = next;
+      T.save();
+      return true;
+    },
+    paymentAllows: (method) => {
+      const mode = T.paymentMode();
+      if (mode === "all") return true;
+      return mode === String(method || "").trim().toLowerCase();
     },
     currencySymbol: () => {
       const key = T.currencyCode();

@@ -1917,6 +1917,13 @@
           <span class="chev">${icon("i-chevron")}</span>
         </button>
       </div>`;
+    const paymentMode = T.paymentMode ? T.paymentMode() : "all";
+    const modeCopy = {
+      all: "Cash, M-Pesa and Card can all be taken at checkout.",
+      cash: "Only cash can be taken. M-Pesa and Card are grayed out at checkout.",
+      mpesa: "Only M-Pesa can be taken. Cash and Card are grayed out at checkout.",
+      card: "Only Card can be taken. Cash and M-Pesa are grayed out at checkout."
+    }[paymentMode];
     const securityBody = `
       <div class="about-card">
         <div class="report-card-head"><h2>Shop PIN</h2><span class="status-pill ${T.pinEnabled() ? "is-good" : "is-warn"}"><span class="dot"></span>${T.pinEnabled() ? "On" : "Off"}</span></div>
@@ -1926,6 +1933,17 @@
             ? `<button class="btn btn-ghost btn-block" data-act="remove-pin">${icon("i-trash")} Remove PIN</button>
                <button class="btn btn-primary btn-block" data-act="change-pin">${icon("i-lock")} Change PIN</button>`
             : `<button class="btn btn-primary btn-block" data-act="set-pin">${icon("i-lock")} Set a PIN</button>`}
+        </div>
+        <div class="security-divider" role="separator"></div>
+        <div class="report-card-head"><h2>Checkout payment mode</h2><span class="status-pill ${paymentMode === "all" ? "is-good" : "is-warn"}"><span class="dot"></span>${paymentMode === "all" ? "All methods" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}</span></div>
+        <p class="card-sub">${esc(modeCopy)}</p>
+        <div class="segmented seg-four" role="radiogroup" aria-label="Allowed payment methods" style="margin-top:8px">
+          ${[
+            { value: "all", label: "All payments" },
+            { value: "cash", label: "Cash only" },
+            { value: "mpesa", label: "M-Pesa only" },
+            { value: "card", label: "Card only" }
+          ].map((option) => `<button class="seg-btn ${paymentMode === option.value ? "is-active" : ""}" data-act="set-payment-mode" data-value="${option.value}" role="radio" aria-checked="${paymentMode === option.value}">${option.label}</button>`).join("")}
         </div>
       </div>`;
     const developerBody = `
@@ -1982,7 +2000,7 @@
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup and reset", dataBody)}
         ${isDeveloper ? settingsGroup("developer", "i-chat", "Developer", "Subscriptions and support", developerBody) : ""}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("security", "i-lock", "Security", T.pinEnabled() ? "PIN enabled — required for edits & deletes" : "No PIN — open to anyone on this device", securityBody)}
+        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} · ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}`, securityBody)}
       </div>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
@@ -2517,7 +2535,16 @@
       return `<section class="screen sell">${subscriptionLockPanel()}</section>`;
     }
     const totals = T.cartTotals();
-    const method = T.ui.payment === "card" ? "card" : T.ui.payment === "mpesa" ? "mpesa" : "cash";
+    const allows = (m) => (T.paymentAllows ? T.paymentAllows(m) : true);
+    // Which tender methods the till is allowed to take. When a method is not
+    // allowed it renders grayed out and tapping it explains why.
+    const tenders = [
+      { method: "cash", label: "Cash", iconName: "i-cash" },
+      { method: "mpesa", label: "M-Pesa", iconName: "i-phone" },
+      { method: "card", label: "Card", iconName: "i-card" }
+    ];
+    let method = T.ui.payment === "card" ? "card" : T.ui.payment === "mpesa" ? "mpesa" : "cash";
+    if (!allows(method)) method = tenders.find((t) => allows(t.method))?.method || "cash";
     // The keypad stores whole shillings; amounts elsewhere are in cents.
     const cash = Math.round((Number(T.ui.cash) || 0) * 100);
     const tendered = method === "cash" ? cash : 0;
@@ -2566,9 +2593,11 @@
         <p class="breakdown">Subtotal ${money(totals.subtotal)}${totals.discountAmount ? ` · Discount −${money(totals.discountAmount)}` : ""} · Tax ${money(totals.tax)}</p>
       </div>
       <div class="segmented seg-three" role="tablist" aria-label="Payment method">
-        <button class="seg-btn ${method === "cash" ? "is-active" : ""}" data-act="set-payment" data-value="cash" role="tab" aria-selected="${method === "cash"}">${icon("i-cash")} Cash</button>
-        <button class="seg-btn ${method === "mpesa" ? "is-active" : ""}" data-act="set-payment" data-value="mpesa" role="tab" aria-selected="${method === "mpesa"}">${icon("i-phone")} M-Pesa</button>
-        <button class="seg-btn ${method === "card" ? "is-active" : ""}" data-act="set-payment" data-value="card" role="tab" aria-selected="${method === "card"}">${icon("i-card")} Card</button>
+        ${tenders.map((t) => {
+          const allowed = allows(t.method);
+          const active = method === t.method;
+          return `<button class="seg-btn ${active ? "is-active" : ""}${allowed ? "" : " is-blocked"}" data-act="set-payment" data-value="${t.method}" role="tab" aria-selected="${active}" aria-disabled="${!allowed}">${icon(t.iconName)} ${t.label}</button>`;
+        }).join("")}
       </div>
       ${cashBoard}
       ${mpesaBoard}

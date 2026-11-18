@@ -519,6 +519,18 @@ async function copyPlainValue(value) {
   }
 }
 
+// Popup shown when a till restricted to one payment mode tries to take another.
+function blockedPaymentNotice(method) {
+  const T = window.Till;
+  const label = method === "mpesa" ? "M-Pesa" : method === "card" ? "card" : "cash";
+  T.sheets?.openInfo?.({
+    title: "Payments restricted",
+    message: `Only ${label} payments are allowed. Change this in Settings → Security → Checkout payment mode.`,
+    iconName: "i-lock",
+    tone: "warn"
+  });
+}
+
 function runAction(btn) {
   const T = window.Till;
   if (!T) return;
@@ -547,6 +559,7 @@ function runAction(btn) {
     "edit-product", "delete-product", "delete-order", "delete-customer",
     "delete-account", "delete-supplier", "edit-supplier", "edit-category", "delete-category",
     "add-stock", "stock-dec", "restock-product", "open-wastage", "start-audit",
+    "set-payment-mode",
     "reset-data", "import-data"
   ]);
   if (PIN_GUARDED.has(act) && T.pinEnabled?.()) {
@@ -988,6 +1001,7 @@ function runAction(btn) {
     }
   }
   else if (act === "complete-cash") {
+    if (T.paymentAllows && !T.paymentAllows("cash")) { blockedPaymentNotice("cash"); return; }
     // The keypad types whole shillings, while every amount inside the app is
     // stored in cents.
     const tendered = Math.round((Number(T.ui.cash) || 0) * 100);
@@ -1000,6 +1014,7 @@ function runAction(btn) {
     go(`#/receipt/${tx.id}`, { user: false, reset: true });
   }
   else if (act === "start-card") {
+    if (T.paymentAllows && !T.paymentAllows("card")) { blockedPaymentNotice("card"); return; }
     const token = (T.ui.cardToken || 0) + 1;
     T.ui.cardToken = token;
     T.ui.cardBusy = true; render();
@@ -1041,13 +1056,33 @@ function runAction(btn) {
   else if (act === "set-stock-filter" && value) { T.ui.stockFilter = value; render(); }
   else if (act === "set-order-filter" && value) { T.ui.ordersFilter = value; render(); }
   else if (act === "set-payment" && value) {
-    if ((T.ui.mpesa.stage === "sending" || T.ui.mpesa.stage === "waiting") && value !== "mpesa") {
+    const wanted = ["cash", "mpesa", "card"].includes(String(value)) ? String(value) : "cash";
+    if (T.paymentAllows && !T.paymentAllows(wanted)) {
+      blockedPaymentNotice(wanted);
+      return;
+    }
+    if ((T.ui.mpesa.stage === "sending" || T.ui.mpesa.stage === "waiting") && wanted !== "mpesa") {
       T.toast("Finish or cancel the M-Pesa request first", "i-alert");
       return;
     }
-    T.ui.payment = value; render();
+    T.ui.payment = wanted; render();
   }
-  else if (act === "mpesa-send") { startMpesaPayment(); }
+  else if (act === "set-payment-mode" && value) {
+    const mode = String(value || "all").trim().toLowerCase();
+    if (!["all", "cash", "mpesa", "card"].includes(mode)) return;
+    if (T.setPaymentMode?.(mode)) {
+      // Keep the till on a method it is still allowed to take.
+      const allowed = ["cash", "mpesa", "card"].filter((m) => T.paymentAllows?.(m));
+      if (allowed.length && !T.paymentAllows?.(T.ui.payment)) T.ui.payment = allowed[0];
+      const label = mode === "all" ? "all payments" : `${mode === "mpesa" ? "M-Pesa" : mode.charAt(0).toUpperCase() + mode.slice(1)} only`;
+      T.toast(`Checkout now allows ${label}`, "i-lock");
+      render();
+    }
+  }
+  else if (act === "mpesa-send") {
+    if (T.paymentAllows && !T.paymentAllows("mpesa")) { blockedPaymentNotice("mpesa"); return; }
+    startMpesaPayment();
+  }
   else if (act === "mpesa-cancel") {
     T.mpesa?.cancel?.();
     T.ui.mpesa = { stage: "idle", phone: T.ui.mpesa.phone, account: T.ui.mpesa.account, error: "", checkoutId: "", startedAt: 0 };

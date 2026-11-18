@@ -1076,6 +1076,16 @@
 
   /* ---------- Info / confirm ---------- */
 
+  function openInfo({ title = "Hold on", message = "", iconName = "i-info", tone = "" } = {}) {
+    open({
+      title,
+      iconName,
+      tone,
+      body: `<p class="confirm-copy">${esc(message)}</p>
+        <div class="sheet-actions"><button class="btn btn-primary btn-block" data-act="close-sheet">Got it</button></div>`
+    });
+  }
+
   function openSaveInfo() {
     const bytes = new Blob([JSON.stringify(T.state)]).size;
     open({
@@ -3040,7 +3050,7 @@
 
   T.sheets = {
     open, close, isOpen, openManual, manualError, openUnknown, openOutOfStock,
-    openWeigh, openWastage, openTarget, openStockDay, openPinSheet,
+    openWeigh, openWastage, openTarget, openStockDay, openPinSheet, openInfo,
     openDiscount, setDiscountMode, discountError, openProductEditor, renderProductEditor,    readProductForm, productEditorError, openSaveInfo, confirm, runConfirm,
     openMiniScan, closeMiniScan,
     openQuickScan, refreshQuickScan,
