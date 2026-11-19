@@ -713,7 +713,10 @@ function runAction(btn, opts = {}) {
     const LOCK_ALLOW = new Set([
       "pay-subscription", "subscription-sent", "cloud-sync", "refresh-data",
       "open-subscription", "open-date-settings", "open-developer-chat",
-      "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection", "sign-out"
+      "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection", "sign-out",
+      // An unpaid shop may always walk out for good, the same one-tap act that
+      // already exists in Settings — it is what many "I gave up" calls funnel into.
+      "open-delete-account"
     ]);
     if (!LOCK_ALLOW.has(act)) {
       T.toast("Your plan needs paying first", "i-alert");
