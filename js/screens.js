@@ -1614,6 +1614,8 @@
 
     const entries = [];
     const seenIds = new Set();
+    const devEmails = T.DEV_EMAILS || [];
+    const isDevEntry = (e) => devEmails.includes(String(e?.email || "").trim().toLowerCase());
     requests.forEach((request) => {
       seenIds.add(request.id);
       const liveStatus = liveStatusFor(request.id, request.status || "pending");
@@ -1674,9 +1676,7 @@
       });
     });
 
-    const filteredEntries = entries;
-    const devEmails = T.DEV_EMAILS || [];
-    const isDevEntry = (e) => devEmails.includes(String(e?.email || "").trim().toLowerCase());
+    const filteredEntries = entries.filter((e) => !isDevEntry(e));
     // My own shop is pinned to the top of the list, always. Everyone else is
     // sorted: waiting first, then by most recent activity.
     filteredEntries.sort((a, b) =>
@@ -1843,6 +1843,7 @@
     return `<div class="plan-row">
       <div class="plan-row-top">
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
+        ${row.phone ? phoneButton : ""}
         <span class="plan-row-seen${online ? " is-online" : ""}">${esc(online ? "● online" : seenText)}</span>
         <span class="plan-row-pill ${tone}">${esc(label)}</span>
       </div>
@@ -1867,7 +1868,6 @@
         ${row.reference ? ` · <span>ref ${esc(row.reference)}</span>` : ""}
         ${row.mpesaCode ? ` · <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
         ${row.dupCode ? ` · <span class="plan-dup-flag">${icon("i-alert")} Same code</span>` : ""}
-        ${row.phone ? ` · ${phoneButton}` : ""}
       </div>
       ${row.pending ? `<div class="plan-row-actions">
         <button class="btn btn-primary" data-act="confirm-payment" data-id="${esc(row.id)}">Confirm payment</button>
