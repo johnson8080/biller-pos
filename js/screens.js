@@ -102,7 +102,7 @@
         <div class="appbar-context"><div class="appbar-title">${esc(customer?.name || "Customer")}</div></div>
         <div class="appbar-right">${customer ? `<button class="text-btn" data-act="customer-payment" data-id="${esc(customer.id)}">Pay</button>` : ""}</div>`;
     }
-    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history", "announcements"].includes(route.name)) {
+    if (["cart", "payment", "receipt", "account", "store", "supplier", "mpesa", "history", "announcements", "plans"].includes(route.name)) {
       const supplier = route.name === "supplier" ? T.findSupplier(route.param) : null;
       const config = {
         cart: { title: "Checkout", back: "#/sell", action: `<button class="text-btn danger" data-act="clear-cart">Clear</button>` },
@@ -113,6 +113,7 @@
         mpesa: { title: "M-Pesa", back: "#/more", action: "" },
         history: { title: "History log", back: "#/more", action: "" },
         announcements: { title: "Announcements", back: "#/more", action: "" },
+        plans: { title: "Subscriptions", back: "#/more", action: "" },
         supplier: { title: supplier?.name || "Supplier", back: "#/suppliers", action: supplier ? `<button class="text-btn" data-act="edit-supplier" data-id="${esc(supplier.id)}">Edit</button>` : "" }
       }[route.name];
       return `
