@@ -125,13 +125,15 @@
     const initial = (session?.email || T.state.store.staff || T.state.store.name || "S").slice(0, 1).toUpperCase();
     const cartCount = T.itemCount();
     const isSell = route.name === "sell";
+    const developerMode = T.isDeveloperAccount?.();
+    const planCount = developerMode ? (T.pendingPaymentCount?.() || 0) : 0;
     return `
       <a class="brand" href="#/sell" data-nav="#/sell" aria-label="Biller POS home">
         <span class="brand-mark">${icon("i-store")}</span>
         <span class="brand-name">Biller POS</span>
       </a>
       <div class="appbar-right">
-        ${isSell ? `<button class="hero-btn hero-scan" data-act="open-scanner" aria-label="Scan barcode">${icon("i-scan")}</button>
+        ${isSell ? `${developerMode ? `<button class="hero-btn hero-plan" data-nav="#/plans" aria-label="Open the Subscriptions panel${planCount ? `, ${planCount} waiting for confirmation` : ""}" title="Subscriptions${planCount ? ` — ${planCount} waiting` : ""}">${icon("i-card")}${planCount ? `<span class="cart-hero-count">${planCount > 9 ? "9+" : planCount}</span>` : ""}</button>` : ""}<button class="hero-btn hero-scan" data-act="open-scanner" aria-label="Scan barcode">${icon("i-scan")}</button>
         <button class="hero-btn hero-search ${T.ui.searchOpen ? "is-active" : ""}" data-act="toggle-search" aria-label="${T.ui.searchOpen ? "Close search" : "Search products"}" aria-pressed="${T.ui.searchOpen ? "true" : "false"}">${icon("i-search")}</button>` : ""}
         <button class="cart-hero" data-act="open-cart" aria-label="Checkout, ${cartCount} ${cartCount === 1 ? "item" : "items"} in the cart">
           ${icon("i-bag")}
