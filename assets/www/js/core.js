@@ -2610,15 +2610,20 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return true;
   };
 
-  // True for a brand-new till: not a single shopkeeper exists — and only
-  // while the cloud answer is known. A signed-in shop whose first pull is
-  // still in flight may have a whole business waiting on the cloud; offering
-  // a blank-shop setup then would invite the owner to retype everything
-  // into a till whose history exists. Once the pull has landed (or the
-  // cloud is proven unreachable), all writes to the cloud are fenced, so
-  // the gate can safely open.
+  // True for a brand-new till, or for one where the shop itself is not yet
+  // real: not a single shopkeeper exists, OR the shop details were never
+  // saved. A signed-in shop whose first pull is still in flight may have a
+  // whole business waiting on the cloud; offering a blank-shop setup then
+  // would invite the owner to retype everything into a till whose history
+  // exists. Once the pull has landed (or the cloud is proven unreachable),
+  // all writes to the cloud are fenced, so the gate can safely open.
   T.firstRunNeeded = () => {
-    if (T.staffRoster().length) return false;
+    const store = T.state?.store || {};
+    const name = String(store.name || "").trim().toLowerCase();
+    const hasShopkeeper = T.staffRoster().length > 0;
+    // Both steps must be complete before anything sells or stock edits land:
+    // someone rings the sale, and the till knows which shop it belongs to.
+    if (hasShopkeeper && name && name !== "my store") return false;
     // While the cloud answer is unknown (or the account has no cloud shop
     // yet), the blank setup sheet must never open. The action router checks
     // the same state and shows the waiting sheet instead.

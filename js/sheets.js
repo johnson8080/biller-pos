@@ -2505,6 +2505,7 @@
     const current = T.activeStaff ? T.activeStaff() : "";
     open({
       locked: true,
+      kind: "staff-gate",
       title: "Who is selling on this device?",
       subtitle: "Every shopkeeper here is already selling on another device — add one to start",
       iconName: "i-user",
@@ -2638,6 +2639,7 @@
     const keeperListed = roster.length > 0;
     open({
       locked: true,
+      kind: "first-run",
       title: "Set up your shop",
       subtitle: "Who is selling, what this shop calls itself, and optionally M-Pesa — all save to Firebase",
       iconName: "i-user",
@@ -2765,11 +2767,16 @@
   }
   function refreshStaffGate() {
     const blocked = Boolean(T.staffBlocked?.());
-    if (!blocked) { gateSignature = ""; if (isOpen()) close(true); return; }
-    const signature = staffGateSignature();
+    if (!blocked) {
+      gateSignature = "";
+      // Only the staff gate is ours to close — never an unrelated sheet.
+      if (isOpen() && activeKind === "staff-gate") close(true);
+      return;
+    }
     // Nothing the gate shows changed since the last repaint: leave the
     // sheet alone. The shopkeeper can keep typing the name undisturbed.
-    if (isOpen() && signature === gateSignature) return;
+    const signature = staffGateSignature();
+    if (isOpen() && activeKind === "staff-gate" && signature === gateSignature) return;
     gateSignature = signature;
     return openStaffGate();
   }
