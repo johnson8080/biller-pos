@@ -54,6 +54,10 @@
   // waiting for its first sync. The seed goes up only when the shopkeeper
   // actually sets the shop up.
   let cloudEmpty = false;
+  // The state this device last agreed on with the cloud. It is the base of
+  // every three-way merge: "what did I change?" is only answerable against
+  // the copy both sides started from.
+  let lastSyncedState = null;
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
@@ -107,18 +111,6 @@
   function isOwner() {
     const email = String(user?.email || T.getSession()?.email || "").trim().toLowerCase();
     return DEV_EMAILS.includes(email);
-  }
-
-  function localSavedAt() {
-    // The stamp of the shop this account is using, not a global one. The
-    // legacy global stamp is written by every local save — including this
-    // device's brand-new seed before it has seen the cloud copy — so a
-    // signed-in account must never inherit it: 0 means "we do not know",
-    // which the sync logic treats as "the cloud wins".
-    const own = window.Till?.savedAtFor?.();
-    if (own) return own;
-    if (user) return 0;
-    return Number(localStorage.getItem(SAVED_AT_KEY) || 0);
   }
 
   /* ---------- "This device has changes the cloud has never seen" ----------
@@ -185,12 +177,55 @@
   function lastSyncedHash() {
     try { return localStorage.getItem(lastHashKey()) || ""; } catch { return ""; }
   }
-  function rememberSyncedHash() {
+  function rememberSyncedHash(state) {
     try {
-      const hash = stateHash();
+      const source = state || T.state;
+      const hash = stateHashOf(T.normalizeState ? T.normalizeState(source) : source);
       if (hash) localStorage.setItem(lastHashKey(), hash);
     } catch { /* ignore */ }
   }
+
+  /* The last copy both sides agreed on. It is what makes a merge possible:
+     "what did this device change?" can only be answered against the state the
+     cloud held when this device last synced. Kept in memory and mirrored in
+     localStorage so an edit made offline survives a reload and still merges
+     when the connection returns. */
+  function baseKey() {
+    return "biller.pos.base." + (user?.uid || "local");
+  }
+  function rememberBase(state) {
+    lastSyncedState = cloneValue(state) || null;
+    try {
+      const raw = lastSyncedState ? JSON.stringify(lastSyncedState) : "";
+      // The cloud document stops at 1 MB; a bigger mirror cannot be the base
+      // of anything that could have been written there.
+      if (raw && raw.length <= 1200000) localStorage.setItem(baseKey(), raw);
+      else localStorage.removeItem(baseKey());
+    } catch { /* quota / private mode: merge from memory only */ }
+  }
+  function loadBase() {
+    if (lastSyncedState) return lastSyncedState;
+    try {
+      const raw = localStorage.getItem(baseKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      const stored = lastSyncedHash();
+      if (!stored) return null;
+      const hash = stateHashOf(T.normalizeState ? T.normalizeState(parsed) : parsed);
+      if (hash !== stored) return null;
+      lastSyncedState = parsed;
+      return parsed;
+    } catch { return null; }
+  }
+
+  /** Remember the exact copy the cloud now holds: its hash and its content. */
+  function rememberSynced(state) {
+    const copy = cloneValue(state || T.state);
+    if (copy && typeof copy === "object") delete copy.cart;
+    rememberSyncedHash(copy);
+    rememberBase(copy);
+  }
+
   async function flushPending() {
     // Without a synced hash this device has no basis to claim its copy is
     // complete — flushing would push an unproven (possibly seeded) till over
@@ -201,6 +236,172 @@
     const needs = hasPending() || stateHash() !== stored;
     if (!needs) return false;
     return push({ immediate: true });
+  }
+
+  /* ---------- Merging edits from two devices ----------
+     Both tills may edit the same shop. When the cloud moved under this
+     device, adopting the cloud copy throws this device's work away; blindly
+     pushing throws the other device's work away. The right answer is a
+     three-way merge against the copy both sides last agreed on: keep every
+     change either side made, and only let the device that is saving now win
+     where the very same field was changed differently on both. */
+
+  function cloneValue(value) {
+    if (value === undefined) return undefined;
+    try { return JSON.parse(JSON.stringify(value)); } catch { return value; }
+  }
+
+  function isPlainObject(value) {
+    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function deepEqual(a, b) {
+    if (a === b) return true;
+    if (typeof a !== typeof b) return false;
+    if (a === null || b === null) return false;
+    if (Array.isArray(a) || Array.isArray(b)) {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i += 1) if (!deepEqual(a[i], b[i])) return false;
+      return true;
+    }
+    if (typeof a === "object") {
+      const aKeys = Object.keys(a);
+      const bKeys = Object.keys(b);
+      if (aKeys.length !== bKeys.length) return false;
+      for (const key of aKeys) {
+        if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+        if (!deepEqual(a[key], b[key])) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function arrayItemKey(item) {
+    if (isPlainObject(item)) {
+      // The same payment is the same payment on every phone when its M-Pesa
+      // code matches, even if each phone applied it at a slightly different
+      // moment. This is what stops a confirmation buying two months.
+      if (item.mpesaCode) return "code:" + String(item.mpesaCode).trim().toUpperCase();
+      if (item.id != null) return "id:" + String(item.id);
+      if (item.receiptNo != null) return "no:" + String(item.receiptNo);
+      if (item.date != null) return "date:" + String(item.date);
+      if (item.at != null) return "at:" + String(item.at);
+      if (item.name != null) return "name:" + String(item.name);
+    }
+    try { return "value:" + JSON.stringify(item); } catch { return "value:" + String(item); }
+  }
+
+  function mergeArray(base, local, remote) {
+    const b = Array.isArray(base) ? base : [];
+    const l = Array.isArray(local) ? local : [];
+    const r = Array.isArray(remote) ? remote : [];
+    const mapOf = (list) => {
+      const map = new Map();
+      for (const item of list) map.set(arrayItemKey(item), item);
+      return map;
+    };
+    const bmap = mapOf(b);
+    const lmap = mapOf(l);
+    const rmap = mapOf(r);
+    const order = [];
+    const seen = new Set();
+    const addOrder = (list) => {
+      for (const item of list) {
+        const key = arrayItemKey(item);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        order.push(key);
+      }
+    };
+    addOrder(l);
+    addOrder(r);
+    const out = [];
+    for (const key of order) {
+      const baseItem = bmap.get(key);
+      const localItem = lmap.get(key);
+      const remoteItem = rmap.get(key);
+      if (localItem !== undefined && remoteItem !== undefined) {
+        out.push(mergeValue(baseItem, localItem, remoteItem));
+      } else if (localItem !== undefined) {
+        // The other side deleted it (or never had it). An edit beats a
+        // delete; an untouched item follows the delete.
+        if (baseItem === undefined || !deepEqual(localItem, baseItem)) out.push(cloneValue(localItem));
+      } else if (remoteItem !== undefined) {
+        if (baseItem === undefined || !deepEqual(remoteItem, baseItem)) out.push(cloneValue(remoteItem));
+      }
+    }
+    return out;
+  }
+
+  function mergeValue(base, local, remote, key = "") {
+    const localChanged = !deepEqual(local, base);
+    const remoteChanged = !deepEqual(remote, base);
+    if (!localChanged) return cloneValue(remote);
+    if (!remoteChanged) return cloneValue(local);
+    if (deepEqual(local, remote)) return cloneValue(local);
+    // Both tills changed the same counter. Add the two deltas, so two
+    // concurrent sales do not erase each other from the stock.
+    if (key === "stock" || key === "nextReceipt") {
+      const b = Number(base);
+      const l = Number(local);
+      const r = Number(remote);
+      if (Number.isFinite(b) && Number.isFinite(l) && Number.isFinite(r)) {
+        return Math.max(0, b + (l - b) + (r - b));
+      }
+    }
+    // Plan dates only ever move forward.
+    if (key === "paidUntil" || key === "lastPaidAt") {
+      const l = Date.parse(local) || 0;
+      const r = Date.parse(remote) || 0;
+      if (l || r) return cloneValue(l >= r ? local : remote);
+    }
+    if (key === "lastConfirmedAt") {
+      const l = Number(local) || 0;
+      const r = Number(remote) || 0;
+      if (l || r) return Math.max(l, r);
+    }
+    if (Array.isArray(local) && Array.isArray(remote)) return mergeArray(base, local, remote);
+    if (isPlainObject(local) && isPlainObject(remote)) return mergeObject(base, local, remote);
+    // The same field was set to two different values: the device that is
+    // saving now wins, exactly like editing a field twice in a row.
+    return cloneValue(local);
+  }
+
+  function mergeObject(base, local, remote) {
+    const b = isPlainObject(base) ? base : {};
+    const l = isPlainObject(local) ? local : {};
+    const r = isPlainObject(remote) ? remote : {};
+    const out = {};
+    const keys = new Set([...Object.keys(l), ...Object.keys(r)]);
+    for (const key of keys) {
+      // The cart belongs to the device that built it.
+      if (key === "cart") continue;
+      const value = mergeValue(b[key], l[key], r[key], key);
+      if (value !== undefined) out[key] = value;
+    }
+    return out;
+  }
+
+  function mergeState(base, local, remote) {
+    const merged = mergeObject(base, local, remote);
+    // Never lose the device's own cart.
+    const cart = T.state && T.state.cart ? T.state.cart : { items: [], discount: null };
+    merged.cart = cloneValue(cart);
+    return T.normalizeState ? T.normalizeState(merged) : merged;
+  }
+
+  /** Re-paint only when the shopkeeper is not typing. A sync that lands
+      behind the shopkeeper replaces the screen, and replacing a screen with
+      a form on it throws whatever they were writing away. */
+  function maybeRepaint() {
+    try {
+      const active = document.activeElement;
+      const tag = String(active?.tagName || "").toLowerCase();
+      const editing = Boolean(active) && (tag === "input" || tag === "textarea" || tag === "select" || active.isContentEditable);
+      if (editing) return;
+      window.render?.();
+    } catch { /* ignore */ }
   }
 
   /* ---------- Which copy is the shop? ----------
@@ -399,6 +600,7 @@
     notifiedUnread = new Set();
     pulledOnce = false;
     cloudEmpty = false;
+    lastSyncedState = null;
     if (user && fs) beatOff();
     user = null;
     setPhase("signed-out");
@@ -411,6 +613,40 @@
   }
 
   /* ---------- Saving and loading ---------- */
+
+  /** Write one copy of the shop to the cloud and remember it as the base. */
+  async function writeSnapshot(state) {
+    const snapshot = cloneValue(state);
+    // The cart never leaves this device: two tills ringing up on the same
+    // account must not push each other's unpaid items across.
+    delete snapshot.cart;
+    const size = JSON.stringify(snapshot).length;
+    if (size > 900000) {
+      // Firestore documents stop at 1 MB. The shop keeps working on the
+      // device, but the cloud copy is left alone.
+      lastError = "The shop is too large for the cloud copy — it stays on this device.";
+      setPhase("error", lastError);
+      return false;
+    }
+    await fs.collection(SHOP_COLLECTION).doc(user.uid).set({
+      state: snapshot,
+      // The device's own clock, so it can be compared with the stamp the
+      // device keeps locally. The server time is kept alongside it.
+      updatedAt: Date.now(),
+      serverAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: user.email || "",
+      version: window.ASSET_VERSION || ""
+    }, { merge: true });
+    lastSyncAt = Date.now();
+    // The device and the cloud now agree, so remember when.
+    try { localStorage.setItem(SAVED_AT_KEY, String(Date.now())); } catch { /* ignore */ }
+    window.Till?.setSavedAt?.(Date.now());
+    cloudEmpty = false;
+    clearPending();
+    rememberSynced(snapshot);
+    setPhase("synced");
+    return true;
+  }
 
   /**
    * Copy the shop state to the cloud. Saves are debounced so a burst of
@@ -434,77 +670,95 @@
         // A pull may have landed between the check above and this timer:
         // never send a blank seed over an account with no cloud shop.
         if (!force && cloudEmpty && shopIsSeed(T.state)) return false;
-        // Never write on top of changes this device has not seen. Reading
-        // the cloud copy first — exactly what pull does — is the difference
-        // between "local wins because it was saved later" (which silently
-        // erases another device's PIN, sales or shopkeepers, as happened
-        // with one account this week) and "local wins because the cloud
-        // genuinely did not move". Comparing clock stamps is not enough:
-        // any local save bumps savedAt, so a stale till can look newer
-        // than a fresh remote. Compare the CONTENT with the state this
-        // device based its edits on.
+        // Never write on top of changes this device has not seen. Read the
+        // cloud copy first, then MERGE the two sides' edits instead of
+        // choosing one and throwing the other away. The old fence adopted
+        // the cloud copy on any movement, so a normal save on the other
+        // phone made the next save here disappear.
         const fence = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
         const fenceData = fence.exists ? fence.data() : null;
         if (!force && fenceData && fenceData.state) {
           const remoteAt = Number(fenceData.updatedAt) || (fenceData.serverAt?.toMillis?.() || 0);
-          const storedHash = lastSyncedHash();
-          const remoteHash = T.normalizeState ? stateHashOf(T.normalizeState(fenceData.state)) : "";
-          const remoteMoved = storedHash
-            ? Boolean(remoteHash) && remoteHash !== storedHash
-            // This device never confirmed what the cloud held: it has no
-            // business overwriting it. The next pull adopts the cloud copy.
-            : true;
-          if (remoteMoved) {
-            // The cloud moved under this till. Before adopting it, make sure
-            // it really is this shop: a blank seed or a different, weaker
-            // shop must never replace the shop this device has been using.
+          const remote = T.normalizeState(fenceData.state);
+          const conflict = shopConflict(T.state, remote);
+          if (conflict === "remote") {
+            // The cloud holds the account's real shop; this till is blank or
+            // was set up as a second, newer shop. Adopt the cloud copy.
             const carriedUserWork = stateHash() !== lastSyncedHash();
             if (applyRemote(fenceData.state, remoteAt)) {
               lastError = "";
               setPhase("synced");
               if (carriedUserWork) {
-                T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+                T.toast?.("Your shop from the other phone is now on this device", "i-info");
               }
               return false;
             }
-            // applyRemote refused: the cloud copy is a blank seed or a
-            // different, weaker shop. Keep this device's shop and repair the
-            // cloud with it below.
           }
+          if (conflict === "same") {
+            const storedHash = lastSyncedHash();
+            const base = storedHash ? loadBase() : null;
+            const baseHash = base ? stateHashOf(T.normalizeState ? T.normalizeState(base) : base) : "";
+            const localDelta = baseHash ? stateHash() !== baseHash : true;
+            if (base) {
+              // Compare against THIS device's own base, not the shared
+              // registry: a zombie copy from before a reload or a second open
+              // tab of the app can be pushing from a stale in-memory state,
+              // and it must merge — never overwrite the cloud with it.
+              if (localDelta) {
+                const merged = mergeState(base, T.state, remote);
+                // The cart never syncs: compare the merged copy and the cloud
+                // copy on their synced content, not on a cart this device is
+                // holding.
+                if (stateHashOf(merged) !== stateHashOf(remote)) {
+                  // This device has changes its base does not include: keep
+                  // them and put them together with the cloud copy.
+                  T.state = merged;
+                  try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
+                  maybeRepaint();
+                  T.sheets?.refreshStaffGate?.();
+                  T.toast?.("Merged the other device's changes with yours — nothing was lost", "i-check");
+                  // fall through and write the merge below
+                } else {
+                  // Everything this device has is already inside the cloud
+                  // copy; refresh the base and leave the cloud alone.
+                  applyRemote(fenceData.state, remoteAt);
+                  lastError = "";
+                  setPhase("synced");
+                  return false;
+                }
+              } else if (stateHashOf(remote) !== stateHash()) {
+                // This device has no changes of its own; the cloud copy is
+                // newer or different, so take it.
+                applyRemote(fenceData.state, remoteAt);
+                lastError = "";
+                setPhase("synced");
+                return false;
+              } else {
+                // Everything already agrees; nothing to write.
+                lastSyncAt = Date.now();
+                setPhase("synced");
+                return true;
+              }
+            } else if (stateHashOf(remote) !== (storedHash || "")) {
+              // No base to merge from (a fresh device): adopt the cloud copy
+              // rather than overwrite it with an unprovable till.
+              if (applyRemote(fenceData.state, remoteAt)) {
+                lastError = "";
+                setPhase("synced");
+                if (stateHash() !== (storedHash || "")) {
+                  T.toast?.("Another device had newer changes — your till matches it now", "i-info");
+                }
+                return false;
+              }
+            }
+          }
+          // conflict === "local": this device holds the real shop. Keep it
+          // and repair the cloud below.
         }
         // Refresh this device's shopkeeper claim so it does not expire while
         // the shop is open.
         if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
-        const snapshot = JSON.parse(JSON.stringify(T.state));
-        // The cart never leaves this device: two tills ringing up on the
-        // same account must not push each other's unpaid items across.
-        delete snapshot.cart;
-        const size = JSON.stringify(snapshot).length;
-        if (size > 900000) {
-          // Firestore documents stop at 1 MB. The shop keeps working on the
-          // device, but the cloud copy is left alone.
-          lastError = "The shop is too large for the cloud copy — it stays on this device.";
-          setPhase("error", lastError);
-          return false;
-        }
-        await fs.collection(SHOP_COLLECTION).doc(user.uid).set({
-          state: snapshot,
-          // The device's own clock, so it can be compared with the stamp the
-          // device keeps locally. The server time is kept alongside it.
-          updatedAt: Date.now(),
-          serverAt: window.firebase.firestore.FieldValue.serverTimestamp(),
-          updatedBy: user.email || "",
-          version: window.ASSET_VERSION || ""
-        }, { merge: true });
-        lastSyncAt = Date.now();
-        // The device and the cloud now agree, so remember when.
-        try { localStorage.setItem(SAVED_AT_KEY, String(Date.now())); } catch { /* ignore */ }
-        window.Till?.setSavedAt?.(Date.now());
-        cloudEmpty = false;
-        clearPending();
-        rememberSyncedHash();
-        setPhase("synced");
-        return true;
+        return await writeSnapshot(T.state);
       } catch (error) {
         lastError = friendlyError(error);
         const code = String(error?.code || "").toLowerCase();
@@ -561,7 +815,6 @@
       }
       cloudEmpty = false;
       const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
-      const localAt = localSavedAt();
       // Decide which copy is this account's shop before comparing clocks or
       // hashes: a second phone that set itself up early, or a cloud document
       // replaced by a blank seed, must not wipe the real shop.
@@ -579,29 +832,58 @@
         }
         return { ok: true, applied: false, reason: "kept-local", pushed };
       }
-      const remoteWins = conflict === "remote";
-      const localWasSeed = shopIsSeed(T.state);
-      // Content decides whether the cloud moved under this till, not the
-      // clock: a local edit stamps savedAt on every save, so a stale till can
-      // look newer than the remote copy. If anything in the cloud changed
-      // since this till based its edits on it, the remote wins. A device
-      // that has no synced hash cannot compare at all, so it must adopt the
-      // cloud copy too — the clock proves nothing when every save stamps it.
+      if (conflict === "remote") {
+        // The cloud holds the account's real shop; this till is blank or a
+        // second, newer shop started here. Adopt the cloud copy.
+        const localWasSeed = shopIsSeed(T.state);
+        const applied = applyRemote(data.state, remoteAt);
+        pulledOnce = true;
+        lastSyncAt = Date.now();
+        setPhase("synced");
+        if (applied && !localWasSeed) {
+          T.toast?.("Your shop from the other phone is now on this device — its products and shopkeepers replaced the new shop started here", "i-info");
+        }
+        return { ok: true, applied, reason: "remote-shop" };
+      }
+      // Same shop on both sides: compare what each side changed since the
+      // last agreement. The clock proves nothing (every local save stamps
+      // it), so the content hashes decide.
       const stored = lastSyncedHash();
       let remoteHash = "";
-      try {
-        if (stored && T.normalizeState) remoteHash = stateHashOf(T.normalizeState(data.state));
-      } catch { remoteHash = ""; }
-      const drift = stored && remoteHash ? remoteHash !== stored : null;
-      if (!force && !remoteWins && drift === false && remoteAt && remoteAt <= localAt) {
-        lastSyncAt = Date.now();
+      try { remoteHash = stateHashOf(T.normalizeState(data.state)); } catch { remoteHash = ""; }
+      const remoteMoved = stored ? remoteHash !== stored : true;
+      const localChanged = stored ? stateHash() !== stored : false;
+      if (!force && !remoteMoved) {
         pulledOnce = true;
+        lastSyncAt = Date.now();
         setPhase("synced");
-        // This device holds changes the cloud has not seen yet (they were
-        // made offline, or the phone was signed in before syncing). Send
-        // them now, so the two devices converge without anyone editing.
-        const flushed = await flushPending();
-        return { ok: true, applied: false, reason: "local-newer", flushed };
+        // The cloud is exactly what this device last synced. Send any local
+        // edits up now, so the two devices converge without anyone editing.
+        const flushed = localChanged ? await flushPending() : false;
+        return { ok: true, applied: false, reason: localChanged ? "local-newer" : "in-sync", flushed };
+      }
+      if (!force && remoteMoved && localChanged) {
+        const base = loadBase();
+        if (base) {
+          // Both sides changed the same shop: merge, then send the result
+          // up. Nothing either device did is thrown away.
+          const merged = mergeState(base, T.state, data.state);
+          if (stateHashOf(merged) !== stateHashOf(data.state)) {
+            T.state = merged;
+            try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
+            pulledOnce = true;
+            const pushed = await writeSnapshot(merged);
+            lastSyncAt = Date.now();
+            setPhase("synced");
+            maybeRepaint();
+            T.sheets?.refreshStaffGate?.();
+            T.toast?.("Merged this device's changes with the other phone — nothing was lost", "i-check");
+            return { ok: true, applied: true, reason: "merged", pushed };
+          }
+          // The merge adds nothing; the cloud copy is the full picture.
+        }
+        // No base to merge from: adopt the cloud copy rather than overwrite
+        // it. A fresh device never has a base.
       }
       const applied = applyRemote(data.state, remoteAt);
       pulledOnce = true;
@@ -614,12 +896,7 @@
         const pushed = await push({ immediate: true, force: true });
         return { ok: true, applied: false, reason: "kept-local", pushed };
       }
-      if (remoteWins && !localWasSeed) {
-        // This device had started setting up its own shop; the account's
-        // real shop just arrived from the other phone.
-        T.toast?.("Your shop from the other phone is now on this device — its products and shopkeepers replaced the new shop started here", "i-info");
-      }
-      return { ok: true, applied: true, reason: remoteWins ? "remote-shop" : (drift === null ? "remote-first" : "remote-moved") };
+      return { ok: true, applied: true, reason: stored ? "remote-moved" : "remote-first" };
     } catch (error) {
       lastError = friendlyError(error);
       if (serviceDisabled(error)) {
@@ -660,7 +937,10 @@
           }
         }
         cloudEmpty = false;
-        if (shopConflict(T.state, data.state) === "local") {
+        const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
+        const remote = T.normalizeState(data.state);
+        const conflict = shopConflict(T.state, remote);
+        if (conflict === "local") {
           // This device holds the real shop; the cloud copy is a blank seed
           // or a different, weaker shop. Repair the cloud instead of
           // adopting the intruder.
@@ -670,7 +950,32 @@
           setPhase("synced");
           return { ok: true, data, keptLocal: true, pushed };
         }
-        const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
+        if (conflict === "same") {
+          const stored = lastSyncedHash();
+          let remoteHash = "";
+          try { remoteHash = stateHashOf(remote); } catch { remoteHash = ""; }
+          const remoteMoved = stored ? remoteHash !== stored : true;
+          const localChanged = stored ? stateHash() !== stored : false;
+          if (remoteMoved && localChanged) {
+            const base = loadBase();
+            if (base) {
+              // A manual "Sync now" must not throw away this device's edits
+              // either: merge them with what the other phone wrote.
+              const merged = mergeState(base, T.state, remote);
+              if (stateHashOf(merged) !== stateHashOf(remote)) {
+                T.state = merged;
+                try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
+                pulledOnce = true;
+                const pushed = await writeSnapshot(merged);
+                lastSyncAt = Date.now();
+                setPhase("synced");
+                maybeRepaint();
+                T.sheets?.refreshStaffGate?.();
+                return { ok: true, data, merged: true, pushed };
+              }
+            }
+          }
+        }
         if (!applyRemote(data.state, remoteAt)) {
           pulledOnce = true;
           lastSyncAt = Date.now();
@@ -721,7 +1026,7 @@
     // The cloud copy won; anything this device wanted to send no longer
     // exists, so forget the marker.
     clearPending();
-    rememberSyncedHash();
+    rememberSynced(merged);
     try {
       // Save it under the account that owns it without touching the
       // "last edited" stamp: receiving a copy is not a local change, and
@@ -731,7 +1036,7 @@
     } catch (error) {
       console.warn("Could not save the cloud copy locally:", error);
     }
-    window.render?.();
+    maybeRepaint();
     // A fresh sync may free (or fill) the shopkeeper slots — the gate
     // re-evaluates whether it is still needed.
     T.sheets?.refreshStaffGate?.();
