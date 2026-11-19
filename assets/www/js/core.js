@@ -2526,6 +2526,14 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
   };
 
+  // True for a brand-new till: not a single shopkeeper exists. The first
+  // fresh tap blocks behind the one-time "set up your shop" sheet, which
+  // adds a shopkeeper, saves shop details, then lands on the Stock page
+  // so the owner saves their first item too.
+  T.firstRunNeeded = () => {
+    return !T.staffRoster().length;
+  };
+
   // True when every shopkeeper name is taken by another device (or nobody
   // is set and there is nothing to sell as). The app blocks all work
   // behind the "add a shopkeeper" sheet until someone is free to sell.

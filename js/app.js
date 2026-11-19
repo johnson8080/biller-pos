@@ -659,6 +659,15 @@ function runAction(btn, opts = {}) {
   const act = btn.dataset.act;
   const id = btn.dataset.id;
   const value = btn.dataset.value;
+  // Brand-new till: nothing meaningful has been set up yet. Every action
+  // bounces into the one-time setup sheet; only the setup itself runs.
+  const FIRST_RUN_ALLOW = new Set([
+    "first-run-add-keeper", "first-run-save-shop", "sign-out"
+  ]);
+  if (T.firstRunNeeded?.() && !FIRST_RUN_ALLOW.has(act)) {
+    T.sheets?.openFirstRunGate?.();
+    return;
+  }
   // Somebody has to ring up the sale. If every shopkeeper name is already
   // selling on another device, nothing in the till works until this device
   // names somebody of its own — the gate is not skippable, it is the till.
@@ -907,6 +916,52 @@ function runAction(btn, opts = {}) {
     T.sheets?.close?.(true);
     render();
     T.toast(`Selling as ${name}`, "i-check");
+  }
+  else if (act === "first-run-add-keeper") {
+    // A brand-new till has absolutely nobody on the roster — this is their
+    // one and only shopkeeper until more are added in Settings.
+    const input = document.getElementById("first-run-keeper");
+    const name = String(input?.value || "").trim().slice(0, 40);
+    if (!name) {
+      T.toast("Type a shopkeeper name first", "i-alert");
+      input?.focus({ preventScroll: true });
+      return;
+    }
+    const list = T.state.store.staffList || [];
+    if (list.some((n) => String(n).trim().toLowerCase() === name.toLowerCase())) {
+      T.toast("That shopkeeper is already on the list", "i-alert");
+      input?.focus({ preventScroll: true });
+      return;
+    }
+    T.state.store.staffList = [...list, name];
+    if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
+    T.setActiveStaff?.(name);
+    T.claimStaff?.(name);
+    T.save();
+    T.toast(`${name} added as the shopkeeper — now save your shop details`, "i-check");
+    T.sheets?.openFirstRunGate?.();
+  }
+  else if (act === "first-run-save-shop") {
+    const roster = T.staffRoster ? T.staffRoster() : [];
+    if (!roster.length) {
+      T.toast("Add a shopkeeper first", "i-alert");
+      return;
+    }
+    const nameInput = document.getElementById("first-run-name");
+    const phoneInput = document.getElementById("first-run-phone");
+    const name = String(nameInput?.value || "").trim().slice(0, 40);
+    const phone = String(phoneInput?.value || "").trim().slice(0, 20);
+    if (!name) {
+      T.toast("Type the shop name to save", "i-alert");
+      nameInput?.focus({ preventScroll: true });
+      return;
+    }
+    T.state.store.name = name;
+    T.state.store.phone = phone;
+    T.save();
+    T.sheets?.close?.(true);
+    go("#/stock");
+    T.toast(`Welcome, ${name} — save at least one item to start selling`, "i-check");
   }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {

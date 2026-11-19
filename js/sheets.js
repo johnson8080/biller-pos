@@ -2577,6 +2577,62 @@
     sync();
   }
 
+  /**
+   * The very first time a fresh till is opened, before there is a single
+   * shopkeeper and before the shop has a name to print on receipts, every
+   * path blocks behind this sheet. Two steps, in order: who is selling,
+   * and what this shop calls itself. Closes only after both are saved.
+   */
+  function openFirstRunGate() {
+    const store = T.state?.store || {};
+    const roster = T.staffRoster ? T.staffRoster() : [];
+    const keeperListed = roster.length > 0;
+    open({
+      locked: true,
+      title: "Set up your shop",
+      subtitle: "Two steps before your first sale — both save to Firebase instantly",
+      iconName: "i-user",
+      tone: "good",
+      body: `<div class="first-run-gate">
+        <div class="first-run-step ${keeperListed ? "is-done" : ""}">
+          <div class="first-run-step-head">
+            <span class="step-num" aria-hidden="true">${keeperListed ? "✓" : "1"}</span>
+            <div class="step-copy">
+              <strong>Add a shopkeeper</strong>
+              <small>Who rings up the first sale</small>
+            </div>
+          </div>
+          <div class="first-run-step-body">
+            <label class="field-label" for="first-run-keeper">Shopkeeper name</label>
+            <input class="input" id="first-run-keeper" name="first-run-keeper" placeholder="e.g. Mary" autocomplete="off" maxlength="40" aria-label="Shopkeeper name" ${keeperListed ? "disabled" : ""}>
+            <button class="btn btn-primary btn-block" data-act="first-run-add-keeper" ${keeperListed ? "disabled" : ""}>${icon("i-plus")} Add shopkeeper</button>
+            ${keeperListed ? `<p class="field-small" style="margin-top:6px">${esc(roster[0])} claimed for this device</p>` : ""}
+          </div>
+        </div>
+        <div class="staff-gate-divider" aria-hidden="true"><span>then</span></div>
+        <div class="first-run-step">
+          <div class="first-run-step-head">
+            <span class="step-num" aria-hidden="true">2</span>
+            <div class="step-copy">
+              <strong>Save shop details</strong>
+              <small>Prints on receipts, syncs to every device</small>
+            </div>
+          </div>
+          <div class="first-run-step-body">
+            <label class="field-label" for="first-run-name">Shop name</label>
+            <input class="input" id="first-run-name" name="first-run-name" value="${esc(store.name && store.name !== "My Store" ? store.name : "")}" placeholder="e.g. Wanjiru's Duka" autocomplete="organization" maxlength="40" required>
+            <label class="field-label" for="first-run-phone" style="margin-top:8px">Phone</label>
+            <input class="input" id="first-run-phone" name="first-run-phone" value="${esc(store.phone || "")}" inputmode="tel" placeholder="07..." maxlength="20" autocomplete="tel">
+            <div class="sheet-actions" style="margin-top:10px">
+              <button class="btn btn-primary btn-block" data-act="first-run-save-shop" ${keeperListed ? "" : "disabled"}>${icon("i-check")} Save shop — add your first item</button>
+            </div>
+          </div>
+        </div>
+        <p class="field-small" style="margin-top:10px">After saving you land on <strong>Stock</strong> — save at least one item there so there is something to put on the till.</p>
+      </div>`
+    });
+  }
+
   /** Open the staff gate when blocked; close it when it is no longer needed;
       refresh it in between. */
   function refreshStaffGate() {
@@ -3176,6 +3232,7 @@
     openDebtCheckout, openCustomerPayment, openDebtReminder, openSellSort,
     openStaffPicker,
     openStaffGate, refreshStaffGate,
+    openFirstRunGate,
     openDeleteAccount,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,
