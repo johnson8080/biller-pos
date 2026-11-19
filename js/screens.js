@@ -268,7 +268,7 @@
       </div>
       <div class="section-head sell-head-row">
         <h2>${T.ui.category === "All" ? "Quick add" : esc(T.ui.category)}</h2>
-        <button class="sell-status-box" data-nav="#/account" aria-label="Open account settings">${esc((() => { const d = T.subscriptionActiveDaysLeft?.(); if (d === null || d === undefined) return "Active"; return d <= 0 ? "Overdue" : `${d}d left`; })())}</button>
+        <button class="sell-status-box" data-nav="#/account" aria-label="Open account settings">${esc((() => { if (T.isDeveloperAccount?.()) return "Developer"; const d = T.subscriptionActiveDaysLeft?.(); if (d === null || d === undefined) return "Active"; return d <= 0 ? "Overdue" : `${d}d left`; })())}</button>
         <div class="sell-head-tools">
           <span class="small muted">${products.length} ${products.length === 1 ? "item" : "items"}</span>
           <button class="tool-btn" data-act="open-sell-sort" aria-label="Sort items, currently ${esc(sortLabel)}" title="Sort: ${esc(sortLabel)}">${icon("i-sort")}</button>
@@ -1901,6 +1901,30 @@
     const activeDays = T.subscriptionActiveDaysLeft?.();
     const amount = T.money(plan.amountCents);
     const reference = sub.reference || T.subscriptionReference();
+    // The developer's own account is free by definition — show it plainly,
+    // no countdown and no payment asks.
+    if (T.isDeveloperAccount?.()) {
+      return `<div class="sub-card">
+        <div class="sub-top">
+          <div>
+            <p class="card-sub" style="margin-top:0">Developer account</p>
+            <div class="sub-price">Free <small>/ forever</small></div>
+          </div>
+          <span class="sub-pill is-good">Developer</span>
+        </div>
+        <p class="field-small" style="margin-top:8px">You are the developer — Biller POS is free for you, always. Reminders and the renewal card do not apply to this account.</p>
+        <div class="plan-reminders">
+          <div class="plan-reminders-copy">
+            <strong>Reminders</strong>
+            <small id="notify-status">Checking...</small>
+          </div>
+          <div class="plan-reminders-actions">
+            <button class="btn btn-ghost" data-act="notify-request" id="notify-on">Turn on</button>
+            <button class="btn btn-ghost" data-act="notify-test" id="notify-test">Test</button>
+          </div>
+        </div>
+      </div>`;
+    }
 
     const history = (sub.payments || []).slice(-3).reverse().map((entry) => `
       <div class="data-row">
@@ -2076,7 +2100,6 @@
     const announceCount = T.announcementUnreadCount?.() || 0;
     const planCount = T.pendingPaymentCount?.() || 0;
     const developerMode = Boolean(T.isDeveloperAccount?.());
-    const planBody = `<div class="plan-inline">${plansInner()}</div>`;
     const dataBody = `
       <div class="data-list">
         <button class="data-row" data-act="export-data">
@@ -2152,9 +2175,17 @@
       </div>
 
       <div class="settings-groups">
-        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due"}`, shopBody)}
-        ${subscriptionBody ? settingsGroup("monthly", "i-card", "Monthly plan", (() => { const status = T.subscriptionStatus(); const days = T.subscriptionActiveDaysLeft?.(); if (status === "active") return `Active${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "trial") return `Free trial${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "awaiting") return "Awaiting confirmation"; if (status === "overdue") return "Payment overdue"; return "Payment due"; })(), subscriptionBody) : ""}
-        ${developerMode ? settingsGroup("plan", "i-card", "Subscription panel", planCount ? `${planCount} waiting` : "Payment and announcement", planBody, planCount) : ""}
+        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} · Plan ${T.isDeveloperAccount?.() ? "Developer — free" : (T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due")}`, shopBody)}
+        ${subscriptionBody ? settingsGroup("monthly", "i-card", "Monthly plan", (() => { if (T.isDeveloperAccount?.()) return "Developer account · free forever"; const status = T.subscriptionStatus(); const days = T.subscriptionActiveDaysLeft?.(); if (status === "active") return `Active${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "trial") return `Free trial${days !== null ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "awaiting") return "Awaiting confirmation"; if (status === "overdue") return "Payment overdue"; return "Payment due"; })(), subscriptionBody) : ""}
+        ${developerMode ? `
+        <button type="button" class="account-card plan-card" data-nav="#/plans" style="margin-top:10px" aria-label="Open the Subscriptions panel — every shop and what it paid">
+          <span class="data-icon">${icon("i-card")}</span>
+          <span class="account-card-copy">
+            <strong>SUBSCRIPTIONS</strong>
+            <small>${planCount ? `${planCount} waiting for confirmation — every shop, plan and payment` : "Every shop, its plan and what it paid"}</small>
+          </span>
+          ${planCount ? `<span class="count-badge">${planCount > 9 ? "9+" : planCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
+        </button>` : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
@@ -2408,35 +2439,16 @@
     </div>`;
   }
 
-  /** Only the developer account sees this card. */
+  /** Only the developer account sees this card — one tap to the full page. */
   function devPanel() {
     const cloud = T.cloud?.status?.();
     if (!T.isDeveloperAccount()) return "";
-    const accounts = T.cloud?.accounts?.() || [];
-    const planRows = accounts.map((account) => {
-      const sub = account.sub;
-      if (!sub) return "";
-      const status = String(sub.status || "active");
-      const label = status === "active" ? "Paid" : status === "trial" ? "Trial" : status === "awaiting" ? "Awaiting" : status === "overdue" ? "Overdue" : "Due";
-      const tone = status === "active" || status === "trial" ? "is-online" : status === "overdue" ? "is-bad" : "is-warn";
-      const amount = sub.amount ? T.money(sub.amount) : "";
-      const detail = [
-        sub.shop ? sub.shop : "",
-        amount,
-        sub.reference ? `ref ${sub.reference}` : "",
-        sub.paidUntil ? `until ${T.shortDateFmt.format(new Date(sub.paidUntil))}` : ""
-      ].filter(Boolean).join(" · ");
-      return `<div class="dev-account">
-        <span class="dev-dot ${tone}" aria-hidden="true"></span>
-        <span class="dev-copy"><strong>${esc(sub.shop || account.name)}</strong><small>${esc(detail || "monthly plan")}</small></span>
-        <span class="dev-state ${tone}">${esc(label)}</span>
-      </div>`;
-    }).join("");
+    const pending = T.pendingPaymentCount?.() || 0;
     return `<div class="settings-card dev-panel">
-      ${cloud.accountsError ? `<p class="dev-error">Cannot read other accounts (${esc(cloud.accountsError)}). Check the Firestore rules for the presence collection.</p>` : ""}
-      ${planRows ? `<div class="section-head"><h2>Monthly plans</h2></div>
-      <p class="card-sub">Each shop's plan state. A shop marked "Awaiting" has sent the money and is waiting for you to confirm it.</p>
-      <div class="dev-account-list">${planRows}</div>` : `<p class="report-empty">No shop has a plan yet.</p>`}
+      ${cloud?.accountsError ? `<p class="dev-error">Cannot read other accounts (${esc(cloud.accountsError)}). Check the Firestore rules for the presence collection.</p>` : ""}
+      <div class="section-head"><h2>Monthly plans</h2></div>
+      <p class="card-sub">Every shop, its code, its plan and what it paid — on one full page, longest list first.${pending ? ` <strong>${pending} waiting for confirmation.</strong>` : ""}</p>
+      <button class="btn btn-primary btn-block" data-nav="#/plans" style="margin-top:10px">${icon("i-card")} Open the subscriptions panel</button>
     </div>`;
   }
 
