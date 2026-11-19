@@ -2740,12 +2740,38 @@
   }
 
   /** Open the staff gate when blocked; close it when it is no longer needed;
-      refresh it in between. */
+      refresh it in between — but never re-render it just because a sync came
+      along and nothing moved. The gate is the most visible thing on the
+      screen; re-rendering it on a heartbeat is exactly the "blinks every
+      time" flicker. Re-render only when something the gate displays has
+      actually changed. */
+  let gateSignature = "";
+  function staffGateSignature() {
+    try {
+      const roster = T.staffRoster ? T.staffRoster() : [];
+      const current = T.activeStaff ? T.activeStaff() : "";
+      const parts = roster.map((name) => {
+        const mine = name === current;
+        const taken = !mine && Boolean(T.staffClaimedBy?.(name));
+        return `${name}:${mine ? "me" : taken ? "taken" : "free"}`;
+      });
+      const claims = T.staffClaims ? Object.keys(T.staffClaims() || {}) : [];
+      parts.push(`me=${current || "-"}`);
+      parts.push(`keys=${claims.slice().sort().join(",")}`);
+      return parts.join("|");
+    } catch {
+      return String(Math.random());
+    }
+  }
   function refreshStaffGate() {
     const blocked = Boolean(T.staffBlocked?.());
-    if (blocked && !isOpen()) return openStaffGate();
-    if (blocked) return openStaffGate(); // re-render with the current claims
-    if (isOpen()) close(true);
+    if (!blocked) { gateSignature = ""; if (isOpen()) close(true); return; }
+    const signature = staffGateSignature();
+    // Nothing the gate shows changed since the last repaint: leave the
+    // sheet alone. The shopkeeper can keep typing the name undisturbed.
+    if (isOpen() && signature === gateSignature) return;
+    gateSignature = signature;
+    return openStaffGate();
   }
 
   /**

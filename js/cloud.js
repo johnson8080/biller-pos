@@ -143,28 +143,22 @@
       return stateHashOf(T.normalizeState ? T.normalizeState(T.state) : T.state);
     } catch { return ""; }
   }
+  /** Volatile keys that describe sync noise (heartbeats, leases, ledgers)
+      must never decide what "is the cloud different?". Two live devices
+      disagree on them constantly — excluding them from the fingerprint is
+      what stops an infinite merge/render ping-pong. */
   function stateHashOf(obj) {
     try {
       if (!obj || typeof obj !== "object") return "";
       const clean = JSON.parse(JSON.stringify(obj));
-      // Every save rewrites these clocks: the day's stock-book stamp and
-      // the shopkeeper claim heartbeat. They are not user edits, and two
-      // online devices can never hold them byte-equal — excluding them is
-      // what keeps "is the cloud different?" honest.
-      if (clean.stockDays && typeof clean.stockDays === "object") {
-        for (const day of Object.keys(clean.stockDays)) {
-          const record = clean.stockDays[day];
-          if (!record || typeof record !== "object") continue;
-          delete record.openingAt;
-          delete record.latestAt;
-          delete record.closingAt;
-        }
-      }
-      const claims = clean.store && clean.store.staffClaims;
-      if (claims && typeof claims === "object") {
-        for (const name of Object.keys(claims)) {
-          if (claims[name] && typeof claims[name] === "object") delete claims[name].at;
-        }
+      // The day's stock book is rewritten on every interaction: opening and
+      // closing levels are real records, timestamps and snapshot values are
+      // not user edits. Keep them out of merges altogether.
+      delete clean.stockDays;
+      if (clean.store && typeof clean.store === "object") {
+        // Staff claims are per-device leases: two tills on the same account
+        // can never hold them byte-equal, on every tick.
+        delete clean.store.staffClaims;
       }
       // The cart belongs to the device that built it — never compare it.
       delete clean.cart;
@@ -245,6 +239,16 @@
      three-way merge against the copy both sides last agreed on: keep every
      change either side made, and only let the device that is saving now win
      where the very same field was changed differently on both. */
+
+  /** Announce a successful merge, but never more than once per 20 seconds —
+      repeated syncs of the same change must not spam the till. */
+  let lastMergeToastAt = 0;
+  function mergeToast(message) {
+    const now = Date.now();
+    if (now - lastMergeToastAt < 20000) return;
+    lastMergeToastAt = now;
+    T.toast?.(message, "i-check");
+  }
 
   function cloneValue(value) {
     if (value === undefined) return undefined;
@@ -631,7 +635,7 @@
             T.state = merged;
             try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
             push({ immediate: true }).catch(() => {});
-            T.toast?.("Merged the other device's changes with yours — nothing was lost", "i-check");
+            mergeToast("Merged the other device's changes with yours — nothing was lost");
             maybeRepaint();
             T.sheets?.refreshStaffGate?.();
             return;
@@ -648,6 +652,9 @@
   function detach() {
     clearInterval(presenceTimer);
     presenceTimer = null;
+    clearInterval(presencePollTimer);
+    presencePollTimer = null;
+    presenceFingerprint = "";
     clearTimeout(pushTimer);
     pushTimer = null;
     document.removeEventListener("visibilitychange", onVisible);
@@ -775,7 +782,7 @@
                   try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
                   maybeRepaint();
                   T.sheets?.refreshStaffGate?.();
-                  T.toast?.("Merged the other device's changes with yours — nothing was lost", "i-check");
+                  mergeToast("Merged the other device's changes with yours — nothing was lost");
                   // fall through and write the merge below
                 } else {
                   // Everything this device has is already inside the cloud
@@ -936,7 +943,7 @@
             setPhase("synced");
             maybeRepaint();
             T.sheets?.refreshStaffGate?.();
-            T.toast?.("Merged this device's changes with the other phone — nothing was lost", "i-check");
+            mergeToast("Merged this device's changes with the other phone — nothing was lost");
             return { ok: true, applied: true, reason: "merged", pushed };
           }
           // The merge adds nothing; the cloud copy is the full picture.
@@ -1072,20 +1079,27 @@
     // their local copy and repair the cloud.
     if (shopConflict(T.state, remote) === "local") return false;
     const merged = T.normalizeState(remote);
-    // A device with no synced hash was about to (or had just) seen a till
-    // that it knows nothing about — say it out loud instead of looking
-    // like the shop details "vanished".
     const freshJoin = !lastSyncedHash();
     // The till keeps its own cart no matter what the cloud copy holds —
     // another device's cart is none of this device's business.
     const localCart = T.state && T.state.cart ? T.state.cart : { items: [], discount: null };
     merged.cart = localCart;
+    // If the incoming copy is byte-for-byte what this till already holds in
+    // its synced content, a sync event would otherwise touch the DOM for
+    // nothing. Touch nothing at all: keep the markers and the claim in step
+    // with the cloud and leave the screen exactly where it is.
+    const beforeHash = stateHash();
+    const unchanged = beforeHash && stateHashOf(merged) === beforeHash;
     T.state = merged;
     cloudEmpty = false;
     // The cloud copy won; anything this device wanted to send no longer
     // exists, so forget the marker.
     clearPending();
     rememberSynced(merged);
+    if (unchanged) {
+      T.setSavedAt?.(stamp || Date.now());
+      return true;
+    }
     try {
       // Save it under the account that owns it without touching the
       // "last edited" stamp: receiving a copy is not a local change, and
@@ -1475,39 +1489,72 @@
     } catch { /* the account may simply be gone */ }
   }
 
-  /** Watch who else is signed in. Only the developer sees this list. */
+  /* ---------- Presence (developer -> the signed-in shops) ----------
+     Another way to get the data: a one-shot fetch on a timer, never a live
+     listener. The 60-second heartbeat changes nothing on screen — the panel
+     only repaints when a real fact about an account moves (plan status,
+     paid-until, app version, opening/closing). Heartbeats are noise, and
+     noise never reaches the user's fingers. */
+  const PRESENCE_POLL = Number(globalThis?.TILL_PRESENCE_POLL_MS) || 45000;
+  let presencePollTimer = null;
+  let presenceFingerprint = "";
+
+  function isOnlineNow(account) {
+    const at = Number(account?.t) || 0;
+    return at > 0 && Date.now() - at < 900000;
+  }
+
+  async function refreshPresence() {
+    if (!fs || !user) return;
+    try {
+      const snap = await fs.collection(PRESENCE_COLLECTION).get();
+      const list = [];
+      snap.forEach((doc) => {
+        if (user && doc.id === user.uid) return;
+        const data = doc.data() || {};
+        list.push({
+          id: doc.id,
+          name: data.name || "user",
+          v: data.v || "",
+          t: data.t?.toMillis?.() || 0,
+          off: Boolean(data.off),
+          sub: data.sub || null,
+          code: data.code || "",
+          payment: data.payment || null,
+          request: data.request || null
+        });
+      });
+      list.sort((a, b) => b.t - a.t);
+      // Fingerprint the facts the panel shows, not the heartbeat itself.
+      const fingerprint = list
+        .map((item) => [
+          item.id,
+          item.off ? "off" : isOnlineNow(item) ? "online" : "seen",
+          String(item.v || ""),
+          String(item.sub?.status || ""),
+          String(item.sub?.paidUntil || ""),
+          String(item.sub?.lastPaidAt || ""),
+          String(item.code || "")
+        ].join(":"))
+        .sort()
+        .join("|");
+      const changed = fingerprint !== presenceFingerprint;
+      presenceFingerprint = fingerprint;
+      accounts = list;
+      accountsError = "";
+      if (changed) notify();
+    } catch (error) {
+      accountsError = friendlyError(error);
+    }
+  }
+
+  /** Fetch presence on a timer instead of streaming it. */
   function watchPresence() {
     if (!fs) return;
-    try {
-      const unsub = fs.collection(PRESENCE_COLLECTION).onSnapshot((snap) => {
-        const list = [];
-        snap.forEach((doc) => {
-          if (user && doc.id === user.uid) return;
-          const data = doc.data() || {};
-          list.push({
-            id: doc.id,
-            name: data.name || "user",
-            v: data.v || "",
-            t: data.t?.toMillis?.() || 0,
-            off: Boolean(data.off),
-            sub: data.sub || null,
-            code: data.code || "",
-            payment: data.payment || null,
-            request: data.request || null
-          });
-        });
-        list.sort((a, b) => b.t - a.t);
-        accounts = list;
-        accountsError = "";
-        notify();
-      }, (error) => {
-        accountsError = friendlyError(error);
-        notify();
-      });
-      unsubscribers.push(unsub);
-    } catch (error) {
-      console.warn("Could not watch the account list:", error);
-    }
+    // Immediate fetch keeps the panel warm the moment it opens…
+    refreshPresence().catch(() => {});
+    clearInterval(presencePollTimer);
+    presencePollTimer = setInterval(() => { refreshPresence().catch(() => {}); }, PRESENCE_POLL);
   }
 
   /* ---------- Announcements (developer -> every shop) ---------- */
