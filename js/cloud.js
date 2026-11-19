@@ -1533,6 +1533,9 @@
       });
       list.sort((a, b) => b.t - a.t);
       // Fingerprint the facts the panel shows, not the heartbeat itself.
+      // Include the phone and the shop name — a shop that just completed
+      // setup must light up the phone button right away, and these fields
+      // change a few times per account, not every minute.
       const fingerprint = list
         .map((item) => [
           item.id,
@@ -1541,6 +1544,8 @@
           String(item.sub?.status || ""),
           String(item.sub?.paidUntil || ""),
           String(item.sub?.lastPaidAt || ""),
+          String(item.sub?.phone || ""),
+          String(item.sub?.shop || ""),
           String(item.code || "")
         ].join(":"))
         .sort()
