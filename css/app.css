@@ -548,6 +548,10 @@ html[data-color-scheme="dark"] .seg-btn.is-active { background: var(--line-stron
 .plan-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .plan-row { padding: 8px 9px; border-radius: 7px; background: var(--surface); border: 0.5px solid var(--ui-line); box-shadow: var(--shadow-card); }
 .plan-row-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.plan-row-name { min-width: 0; flex: 1 1 auto; }
+.plan-row-seen { flex: none; font-size: calc(8px * var(--fs)); font-weight: 650; color: var(--muted); padding: 2px 7px; border-radius: 5px; background: var(--surface-2); white-space: nowrap; letter-spacing: .02em; }
+.plan-row-seen.is-online { background: var(--lime-soft); color: var(--forest-2); }
+.plan-row-end { margin: 4px 0 0; font-size: calc(8px * var(--fs)); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .plan-row-name strong { display: block; font-size: calc(11px * var(--fs)); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plan-row-name small { display: block; margin-top: 0; font-size: calc(8px * var(--fs)); color: var(--muted); word-break: break-all; }
 .plan-row-pill { flex: none; padding: 2px 6px; border-radius: 5px; font-size: calc(7px * var(--fs)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--surface-2); color: var(--muted); }

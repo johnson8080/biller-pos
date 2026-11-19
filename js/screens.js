@@ -1592,11 +1592,33 @@
       if (asked || subStatus === "awaiting" || subStatus === "pending") return "pending";
       return norm(subStatus || request?.status || fallback || "active");
     };
+    // Helpers for showing the live presence column: the card header carries
+    // "Online" (a heartbeat within the window) or grey "last seen X" so the
+    // developer can tell who is actually using the till right now.
+    const seenText = (stamp, off) => {
+      if (off) return "offline";
+      if (!stamp) return "never seen";
+      const minutes = Math.floor((Date.now() - stamp) / 60000);
+      if (minutes < 1) return "online now";
+      if (minutes < 3) return "online";
+      if (minutes < 60) return `seen ${minutes}m ago`;
+      if (minutes < 1440) return `seen ${Math.floor(minutes / 60)}h ago`;
+      return T.shortDateFmt.format(new Date(stamp));
+    };
+    const daysLeft = (ends) => {
+      if (!ends) return null;
+      const end = Date.parse(ends);
+      if (!Number.isFinite(end)) return null;
+      return Math.max(0, Math.floor((end - Date.now()) / 86400000));
+    };
+
     const entries = [];
     const seenIds = new Set();
     requests.forEach((request) => {
       seenIds.add(request.id);
       const liveStatus = liveStatusFor(request.id, request.status || "pending");
+      const account = accountsById.get(request.id);
+      const sub = account?.sub || {};
       entries.push({
         id: request.id,
         code: request.code || "",
@@ -1608,11 +1630,16 @@
         amount: chaseAmount(liveStatus, request.amount),
         currency: request.currency || "KES",
         reference: request.reference || "",
-        mpesaCode: request.mpesaCode || "",
+        mpesaCode: request.mpesaCode || sub.mpesaCode || "",
         phone: request.phone || "",
-        paidAt: request.confirmedAt || 0,
+        paidAt: request.confirmedAt || sub.lastPaidAt || 0,
         at: request.at || 0,
-        pending: liveStatus === "pending"
+        pending: liveStatus === "pending",
+        // Presence pulse for the card header dot + the "active until" line.
+        lastSeenAt: account?.t || 0,
+        off: Boolean(account?.off),
+        paidUntil: sub.paidUntil || "",
+        startedAt: sub.startedAt || ""
       });
     });
     accounts.forEach((account) => {
@@ -1639,7 +1666,11 @@
         phone: sub.phone || "",
         paidAt: sub.lastPaidAt || 0,
         at: account.t || 0,
-        pending: asked
+        pending: asked,
+        lastSeenAt: account.t || 0,
+        off: Boolean(account.off),
+        paidUntil: sub.paidUntil || "",
+        startedAt: sub.startedAt || ""
       });
     });
 
@@ -1764,6 +1795,7 @@
   }
 
   function planRow(row, seen) {
+    // `seen` is unused now — the card's top center carries the live indicator.
     const label = row.status === "active" ? "Paid"
       : row.status === "trial" ? "Trial"
         : row.status === "awaiting" ? "Waiting"
@@ -1775,14 +1807,54 @@
     const tone = row.status === "active" || row.status === "confirmed" ? "is-good"
       : row.status === "trial" ? "is-good"
         : row.status === "overdue" ? "is-bad" : "is-warn";
-    // The developer's own shop never gets revert/delete — you can force any
-    // other shop back to unpaid, but not this one.
     const isDev = (T.DEV_EMAILS || []).includes(String(row.email || "").trim().toLowerCase());
+    // Last seen / online indicator: "● online" when the presence heartbeat is
+    // fresh and the shop is not flagged off; otherwise a date or relative
+    // text so nothing fake persists.
+    const online = !row.off && row.lastSeenAt && (Date.now() - row.lastSeenAt < 180000);
+    const seenText = (() => {
+      if (row.off) return "offline";
+      if (!row.lastSeenAt) return "never seen";
+      const minutes = Math.floor((Date.now() - row.lastSeenAt) / 60000);
+      if (minutes < 1) return "online now";
+      if (minutes < 3) return "online";
+      if (minutes < 60) return `seen ${minutes}m ago`;
+      if (minutes < 1440) return `seen ${Math.floor(minutes / 60)}h ago`;
+      return T.shortDateFmt.format(new Date(row.lastSeenAt));
+    })();
+    const endDate = (() => {
+      if (!row.paidUntil) return "";
+      const d = new Date(row.paidUntil);
+      return Number.isNaN(d.getTime()) ? "" : T.shortDateFmt.format(d);
+    })();
+    const paidDate = (() => {
+      if (!row.paidAt) return "";
+      const d = new Date(row.paidAt);
+      return Number.isNaN(d.getTime()) ? "" : T.shortDateFmt.format(d);
+    })();
+    const daysLeft = (() => {
+      if (!row.paidUntil) return null;
+      const end = Date.parse(row.paidUntil);
+      if (!Number.isFinite(end)) return null;
+      return Math.max(0, Math.floor((end - Date.now()) / 86400000));
+    })();
+    // Build the "plan line" — "Paid on … · active until … · N days left" — shown below the name.
+    let planLine = "";
+    if (row.paidAt && endDate) {
+      planLine = `Paid on ${paidDate || endDate} · active until ${endDate}`;
+      if (daysLeft !== null) planLine += ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+    } else if (endDate) {
+      planLine = `Active until ${endDate}` + (daysLeft !== null ? ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "");
+    } else if (row.paidAt) {
+      planLine = `Paid on ${paidDate}`;
+    }
     return `<div class="plan-row">
       <div class="plan-row-top">
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
+        <span class="plan-row-seen${online ? " is-online" : ""}">${esc(online ? "● online" : seenText)}</span>
         <span class="plan-row-pill ${tone}">${esc(label)}</span>
       </div>
+      ${planLine ? `<p class="plan-row-end">${esc(planLine)}</p>` : ""}
       <div class="plan-row-meta">
         <span class="plan-row-code"><strong>${esc(row.code || "no code")}</strong></span>
         ${isDev ? ` · <span class="plan-dup-flag">${icon("i-check")} You</span>` : ""}
@@ -1791,8 +1863,6 @@
         ${row.mpesaCode ? ` · <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
         ${row.dupCode ? ` · <span class="plan-dup-flag">${icon("i-alert")} Same code</span>` : ""}
         ${row.phone ? ` · <span>${esc(row.phone)}</span>` : ""}
-        ${row.paidAt ? ` · <span>paid ${esc(T.shortDateFmt.format(new Date(row.paidAt)))}</span>` : ""}
-        <span class="muted" style="margin-left:auto">${esc(seen(row.at))}</span>
       </div>
       ${row.pending ? `<div class="plan-row-actions">
         <button class="btn btn-primary" data-act="confirm-payment" data-id="${esc(row.id)}">Confirm payment</button>
