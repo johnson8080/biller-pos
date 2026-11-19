@@ -19,9 +19,11 @@ service cloud.firestore {
 
     // --- Presence -------------------------------------------------------
     // Each account writes only its own record (email, app version, last
-    // seen, online flag). Only the developer may read the whole list.
+    // seen, online flag). The owner reads the whole list. Admin deletion
+    // is reserved for the developer and the shopkeeper themselves.
     match /billerPresence/{uid} {
-      allow read, delete: if signedIn() && isOwner();
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow delete: if signedIn() && (request.auth.uid == uid || isOwner());
       allow create, update: if signedIn() && request.auth.uid == uid;
     }
 
@@ -50,7 +52,7 @@ service cloud.firestore {
     match /billerAnnouncementReads/{id} {
       allow read: if signedIn() && isOwner();
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if false;
+      allow update, delete: if signedIn() && (request.auth.uid == resource.data.uid || isOwner());
     }
   }
 }

@@ -2153,10 +2153,21 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   /**
    * The developer checked again and the money did not land. Roll the plan
    * back to unpaid on this device: no paidUntil, no trial-extension restart,
-   * no payment state — the lock screen comes straight back.
+   * no payment state — the lock screen comes straight back. The payment
+   * history entry for that exact reference is removed so the ledger stops
+   * pretending the shop settled this cycle; any later payment is a fresh one.
    */
   T.revertSubscription = ({ revertedAt = 0, reason = "" } = {}) => {
     const sub = T.subscription();
+    // Find the entry whose reference matches what we are undoing; when the
+    // Dev panel reverts, the entry most recently written is the one. Remove
+    // that single entry, never the earlier ones.
+    const ref = sub.lastReference || "";
+    const history = Array.isArray(sub.payments) ? sub.payments.slice() : [];
+    const dropIndex = ref
+      ? history.findIndex((p) => p && p.reference === ref)
+      : history.length - 1;
+    if (dropIndex >= 0) history.splice(dropIndex, 1);
     T.state.store.subscription = {
       ...sub,
       paidUntil: "",
@@ -2166,10 +2177,11 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       lastConfirmedAt: 0,
       awaiting: false,
       reference: "",
+      payments: history.slice(-12),
       revertedAt: Number.isFinite(Number(revertedAt)) ? Number(revertedAt) : Date.now(),
       revertedReason: String(reason || "").slice(0, 120)
     };
-    T.save();
+    T.save({ quiet: true, force: true });
     T.toast?.("Your plan was not verified — please pay to keep selling.", "i-alert", "bad");
     return T.state.store.subscription;
   };
