@@ -1745,7 +1745,6 @@
     </div>`;
 
     return `${authCard}
-      ${authCard}
       <div class="plan-stats">
         <div class="plan-stat"><span class="label">Shops</span><strong>${rows.length}</strong></div>
         <div class="plan-stat"><span class="label">Paid</span><strong>${paidCount}</strong></div>
@@ -1838,23 +1837,29 @@
       if (!Number.isFinite(end)) return null;
       return Math.max(0, Math.floor((end - Date.now()) / 86400000));
     })();
-    // Build the "plan line" — "Paid on … · active until … · N days left" — shown below the name.
-    let planLine = "";
-    if (row.paidAt && endDate) {
-      planLine = `Paid on ${paidDate || endDate} · active until ${endDate}`;
-      if (daysLeft !== null) planLine += ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
-    } else if (endDate) {
-      planLine = `Active until ${endDate}` + (daysLeft !== null ? ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : "");
-    } else if (row.paidAt) {
-      planLine = `Paid on ${paidDate}`;
-    }
+    const phoneButton = row.phone
+      ? `<button class="plan-phone" type="button" data-act="copy-value" data-value="${esc(row.phone)}" aria-label="Copy ${esc(row.phone)}">${icon("i-copy")} ${esc(row.phone)}</button>`
+      : "";
     return `<div class="plan-row">
       <div class="plan-row-top">
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
         <span class="plan-row-seen${online ? " is-online" : ""}">${esc(online ? "● online" : seenText)}</span>
         <span class="plan-row-pill ${tone}">${esc(label)}</span>
       </div>
-      ${planLine ? `<p class="plan-row-end">${esc(planLine)}</p>` : ""}
+      <div class="plan-row-grid">
+        <div class="plan-cell">
+          <span class="plan-cell-label">Paid on</span>
+          <strong class="plan-cell-value">${esc(paidDate || "Never")}</strong>
+        </div>
+        <div class="plan-cell">
+          <span class="plan-cell-label">Active until</span>
+          <strong class="plan-cell-value">${esc(endDate || "—")}</strong>
+        </div>
+        <div class="plan-cell">
+          <span class="plan-cell-label">Days left</span>
+          <strong class="plan-cell-value">${daysLeft === null ? "—" : String(daysLeft)}</strong>
+        </div>
+      </div>
       <div class="plan-row-meta">
         <span class="plan-row-code"><strong>${esc(row.code || "no code")}</strong></span>
         ${isDev ? ` · <span class="plan-dup-flag">${icon("i-check")} You</span>` : ""}
@@ -1862,7 +1867,7 @@
         ${row.reference ? ` · <span>ref ${esc(row.reference)}</span>` : ""}
         ${row.mpesaCode ? ` · <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
         ${row.dupCode ? ` · <span class="plan-dup-flag">${icon("i-alert")} Same code</span>` : ""}
-        ${row.phone ? ` · <span>${esc(row.phone)}</span>` : ""}
+        ${row.phone ? ` · ${phoneButton}` : ""}
       </div>
       ${row.pending ? `<div class="plan-row-actions">
         <button class="btn btn-primary" data-act="confirm-payment" data-id="${esc(row.id)}">Confirm payment</button>
