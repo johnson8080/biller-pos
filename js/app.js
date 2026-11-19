@@ -662,7 +662,8 @@ function runAction(btn, opts = {}) {
   // Brand-new till: nothing meaningful has been set up yet. Every action
   // bounces into the one-time setup sheet; only the setup itself runs.
   const FIRST_RUN_ALLOW = new Set([
-    "first-run-add-keeper", "first-run-save-shop", "sign-out"
+    "first-run-add-keeper", "first-run-save-shop", "first-run-save-mpesa", "first-run-skip-mpesa",
+    "sign-out"
   ]);
   if (T.firstRunNeeded?.() && !FIRST_RUN_ALLOW.has(act)) {
     T.sheets?.openFirstRunGate?.();
@@ -949,8 +950,10 @@ function runAction(btn, opts = {}) {
     }
     const nameInput = document.getElementById("first-run-name");
     const phoneInput = document.getElementById("first-run-phone");
+    const addressInput = document.getElementById("first-run-address");
     const name = String(nameInput?.value || "").trim().slice(0, 40);
     const phone = String(phoneInput?.value || "").trim().slice(0, 20);
+    const address = String(addressInput?.value || "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (!name) {
       T.toast("Type the shop name to save", "i-alert");
       nameInput?.focus({ preventScroll: true });
@@ -958,10 +961,51 @@ function runAction(btn, opts = {}) {
     }
     T.state.store.name = name;
     T.state.store.phone = phone;
+    T.state.store.address = address;
     T.save();
+    // Keep the sheet open and drop focus to the optional M-Pesa step.
+    const mpesaName = document.getElementById("first-run-mpesa-paybill") || document.getElementById("first-run-mpesa-till");
+    mpesaName?.focus({ preventScroll: true });
+    document.querySelector('[data-act="first-run-save-mpesa"]')?.scrollIntoView({ block: "center" });
+    T.toast("Shop details saved — add M-Pesa or skip for now", "i-info");
+  }
+  else if (act === "first-run-save-mpesa") {
+    const roster = T.staffRoster ? T.staffRoster() : [];
+    if (!roster.length) { T.toast("Add a shopkeeper first", "i-alert"); return; }
+    const mode = document.getElementById("first-run-mpesa-mode-till")?.checked ? "till" : "paybill";
+    const digits = (id) => String(document.getElementById(id)?.value || "").replace(/\D/g, "").slice(0, 12);
+    const paybill = digits("first-run-mpesa-paybill");
+    const till = digits("first-run-mpesa-till");
+    const consumerKey = String(document.getElementById("first-run-mpesa-consumer-key")?.value || "").trim();
+    const consumerSecret = String(document.getElementById("first-run-mpesa-consumer-secret")?.value || "").trim();
+    const passkey = String(document.getElementById("first-run-mpesa-passkey")?.value || "").trim();
+    const filled = paybill || till || consumerKey || consumerSecret || passkey;
+    if (filled) {
+      T.state.store.mpesa = {
+        paybill,
+        till,
+        mode,
+        account: "",
+        environment: "production",
+        consumerKey,
+        consumerSecret,
+        passkey,
+        backend: "",
+        backendKey: ""
+      };
+      T.logActivity?.("edit", "M-Pesa production saved at first-run setup");
+      T.save();
+    }
     T.sheets?.close?.(true);
     go("#/stock");
-    T.toast(`Welcome, ${name} — save at least one item to start selling`, "i-check");
+    T.toast(filled
+      ? "M-Pesa production saved — save your first item to start selling"
+      : "Skipped M-Pesa — save your first item to start selling", "i-check");
+  }
+  else if (act === "first-run-skip-mpesa") {
+    T.sheets?.close?.(true);
+    go("#/stock");
+    T.toast("Skipped M-Pesa — add it any time in Settings → M-Pesa", "i-info");
   }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {

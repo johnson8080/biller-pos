@@ -2623,12 +2623,47 @@
             <input class="input" id="first-run-name" name="first-run-name" value="${esc(store.name && store.name !== "My Store" ? store.name : "")}" placeholder="e.g. Wanjiru's Duka" autocomplete="organization" maxlength="40" required>
             <label class="field-label" for="first-run-phone" style="margin-top:8px">Phone</label>
             <input class="input" id="first-run-phone" name="first-run-phone" value="${esc(store.phone || "")}" inputmode="tel" placeholder="07..." maxlength="20" autocomplete="tel">
+            <label class="field-label" for="first-run-address" style="margin-top:8px">Location</label>
+            <input class="input" id="first-run-address" name="first-run-address" value="${esc(store.address || "")}" autocomplete="street-address" placeholder="e.g. Kenyatta Avenue, Nairobi" maxlength="80">
             <div class="sheet-actions" style="margin-top:10px">
-              <button class="btn btn-primary btn-block" data-act="first-run-save-shop" ${keeperListed ? "" : "disabled"}>${icon("i-check")} Save shop — add your first item</button>
+              <button class="btn btn-primary btn-block" data-act="first-run-save-shop" ${keeperListed ? "" : "disabled"}>${icon("i-check")} Save shop details — continue</button>
             </div>
           </div>
         </div>
-        <p class="field-small" style="margin-top:10px">After saving you land on <strong>Stock</strong> — save at least one item there so there is something to put on the till.</p>
+        <div class="staff-gate-divider" aria-hidden="true"><span>then</span></div>
+        <div class="first-run-step">
+          <div class="first-run-step-head">
+            <span class="step-num" aria-hidden="true">3</span>
+            <div class="step-copy">
+              <strong>M-Pesa production</strong>
+              <small>Optional — skip if this shop only takes cash</small>
+            </div>
+          </div>
+          <div class="first-run-step-body">
+            <label class="field-label">Send payments to <span class="label-optional">Daraja production app</span></label>
+            <div class="seg-choice" role="radiogroup" aria-label="Send payments to">
+              <input type="radio" id="first-run-mpesa-mode-paybill" name="firstRunMpesaMode" value="paybill" checked>
+              <label for="first-run-mpesa-mode-paybill">Paybill</label>
+              <input type="radio" id="first-run-mpesa-mode-till" name="firstRunMpesaMode" value="till">
+              <label for="first-run-mpesa-mode-till">Till</label>
+            </div>
+            <label class="field-label" for="first-run-mpesa-paybill" style="margin-top:8px">Paybill <span class="label-optional">only the number matching the choice above is used</span></label>
+            <input class="input" id="first-run-mpesa-paybill" name="firstRunMpesaPaybill" inputmode="numeric" autocomplete="off" placeholder="e.g. 247247">
+            <label class="field-label" for="first-run-mpesa-till" style="margin-top:8px">Till number</label>
+            <input class="input" id="first-run-mpesa-till" name="firstRunMpesaTill" inputmode="numeric" autocomplete="off" placeholder="e.g. 123456">
+            <label class="field-label" for="first-run-mpesa-consumer-key" style="margin-top:8px">Daraja consumer key <span class="label-optional">production app</span></label>
+            <input class="input" id="first-run-mpesa-consumer-key" name="firstRunMpesaConsumerKey" autocomplete="off" placeholder="Production consumer key">
+            <label class="field-label" for="first-run-mpesa-consumer-secret" style="margin-top:8px">Daraja consumer secret</label>
+            <input class="input" id="first-run-mpesa-consumer-secret" name="firstRunMpesaConsumerSecret" type="password" autocomplete="new-password" placeholder="Production consumer secret">
+            <label class="field-label" for="first-run-mpesa-passkey" style="margin-top:8px">Lipa na M-Pesa passkey</label>
+            <input class="input" id="first-run-mpesa-passkey" name="firstRunMpesaPasskey" type="password" autocomplete="new-password" placeholder="Production passkey">
+            <div class="sheet-actions" style="margin-top:10px">
+              <button class="btn btn-primary btn-block" data-act="first-run-save-mpesa">${icon("i-check")} Save &amp; finish</button>
+              <button class="btn btn-ghost btn-block" data-act="first-run-skip-mpesa">Skip M-Pesa for now</button>
+            </div>
+          </div>
+        </div>
+        <p class="field-small" style="margin-top:10px">After saving, the till lands on <strong>Stock</strong> — save at least one item there so there is something to put on the till.</p>
       </div>`
     });
   }

@@ -2237,8 +2237,8 @@
           <input class="input" id="store-name" name="name" value="${esc(store.name)}" required autocomplete="organization">
         </div>
         <div class="field">
-          <label for="store-address">Address</label>
-          <input class="input" id="store-address" name="address" value="${esc(store.address)}" autocomplete="street-address">
+          <label for="store-address">Location</label>
+          <input class="input" id="store-address" name="address" value="${esc(store.address)}" autocomplete="street-address" placeholder="e.g. Kenyatta Avenue, Nairobi">
         </div>
         <div class="field">
           <label for="store-phone">Phone</label>

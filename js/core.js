@@ -313,7 +313,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     store.taxRate = Number.isFinite(Number(store.taxRate)) ? Number(store.taxRate) : fallback.taxRate;
     store.currency = CURRENCY_CODES.includes(String(store.currency || "").toUpperCase()) ? String(store.currency).toUpperCase() : (fallback.currency || CURRENCY);
     store.theme = THEMES.some((theme) => theme.id === store.theme) ? store.theme : (fallback.theme || "forest");
-    // Light and dark are forced by the shop, never taken from the phone.
+    // Single-line Location, identical format to the receipt — nothing fancy.
+    store.address = String(store.address || "").replace(/\s+/g, " ").trim().slice(0, 80);
     store.colorScheme = store.colorScheme === "dark" ? "dark" : "light";
     store.textSize = ["small", "medium", "large"].includes(String(store.textSize || "small")) ? store.textSize : "small";
     // One-time migration to the new default look (Light + Forest + medium text).
