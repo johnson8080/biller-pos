@@ -2544,12 +2544,25 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
   };
 
-  // True for a brand-new till: not a single shopkeeper exists. The first
-  // fresh tap blocks behind the one-time "set up your shop" sheet, which
-  // adds a shopkeeper, saves shop details, then lands on the Stock page
-  // so the owner saves their first item too.
+  // True for a brand-new till: not a single shopkeeper exists — and only
+  // while the cloud answer is known. A signed-in shop whose first pull is
+  // still in flight may have a whole business waiting on the cloud; offering
+  // a blank-shop setup then would invite the owner to retype everything
+  // into a till whose history exists. Once the pull has landed (or the
+  // cloud is proven unreachable), all writes to the cloud are fenced, so
+  // the gate can safely open.
   T.firstRunNeeded = () => {
-    return !T.staffRoster().length;
+    if (T.staffRoster().length) return false;
+    const signed = Boolean(String(getSession()?.email || "").trim());
+    const cloud = window.Till?.cloud;
+    if (signed && typeof cloud?.hydrated === "function" && typeof cloud?.status === "function" && cloud.hydrated() === false) {
+      // In flight, we do not know whether this account already owns a shop.
+      // Once it fails (or the cloud is gone for good), every write is either
+      // impossible or fenced, so the gate may open safely.
+      const phase = String(cloud.status()?.phase || "");
+      if (phase === "syncing") return false;
+    }
+    return true;
   };
 
   // True when every shopkeeper name is taken by another device (or nobody

@@ -104,9 +104,14 @@
   }
 
   function localSavedAt() {
-    // The stamp of the shop this account is using, not a global one.
+    // The stamp of the shop this account is using, not a global one. The
+    // legacy global stamp is written by every local save — including this
+    // device's brand-new seed before it has seen the cloud copy — so a
+    // signed-in account must never inherit it: 0 means "we do not know",
+    // which the sync logic treats as "the cloud wins".
     const own = window.Till?.savedAtFor?.();
     if (own) return own;
+    if (user) return 0;
     return Number(localStorage.getItem(SAVED_AT_KEY) || 0);
   }
 
@@ -177,7 +182,13 @@
     } catch { /* ignore */ }
   }
   async function flushPending() {
-    const needs = hasPending() || stateHash() !== lastSyncedHash();
+    // Without a synced hash this device has no basis to claim its copy is
+    // complete — flushing would push an unproven (possibly seeded) till over
+    // the cloud shop. The hash is always set once a pull has completed, so
+    // everything afterwards flushes normally.
+    const stored = lastSyncedHash();
+    if (!stored) return false;
+    const needs = hasPending() || stateHash() !== stored;
     if (!needs) return false;
     return push({ immediate: true });
   }
@@ -347,7 +358,9 @@
           const remoteHash = T.normalizeState ? stateHashOf(T.normalizeState(fenceData.state)) : "";
           const remoteMoved = storedHash
             ? Boolean(remoteHash) && remoteHash !== storedHash
-            : remoteAt > localSavedAt();
+            // This device never confirmed what the cloud held: it has no
+            // business overwriting it. The next pull adopts the cloud copy.
+            : true;
           if (remoteMoved) {
             // Another device advanced the shop since this copy was based
             // on. Put that copy in place instead of overwriting it — the
@@ -434,15 +447,16 @@
       // Content decides whether the cloud moved under this till, not the
       // clock: a local edit stamps savedAt on every save, so a stale till can
       // look newer than the remote copy. If anything in the cloud changed
-      // since this till based its edits on it, the remote wins.
-      let drift = false;
+      // since this till based its edits on it, the remote wins. A device
+      // that has no synced hash cannot compare at all, so it must adopt the
+      // cloud copy too — the clock proves nothing when every save stamps it.
+      const stored = lastSyncedHash();
+      let remoteHash = "";
       try {
-        const stored = lastSyncedHash();
-        if (stored && T.normalizeState) {
-          drift = stateHashOf(T.normalizeState(data.state)) !== stored;
-        }
-      } catch { drift = false; }
-      if (!force && !drift && remoteAt && remoteAt <= localAt) {
+        if (stored && T.normalizeState) remoteHash = stateHashOf(T.normalizeState(data.state));
+      } catch { remoteHash = ""; }
+      const drift = stored && remoteHash ? remoteHash !== stored : null;
+      if (!force && drift === false && remoteAt && remoteAt <= localAt) {
         lastSyncAt = Date.now();
         pulledOnce = true;
         setPhase("synced");
@@ -456,7 +470,7 @@
       pulledOnce = true;
       lastSyncAt = Date.now();
       setPhase("synced");
-      return { ok: true, applied: true, reason: drift ? "remote-moved" : "applied-newer" };
+      return { ok: true, applied: true, reason: drift === null ? "remote-first" : "remote-moved" };
     } catch (error) {
       lastError = friendlyError(error);
       if (serviceDisabled(error)) {
@@ -508,6 +522,10 @@
   /** Put the cloud copy in place on this device. */
   function applyRemote(remote, stamp = 0) {
     const merged = T.normalizeState(remote);
+    // A device with no synced hash was about to (or had just) seen a till
+    // that it knows nothing about — say it out loud instead of looking
+    // like the shop details "vanished".
+    const freshJoin = !lastSyncedHash();
     // The till keeps its own cart no matter what the cloud copy holds —
     // another device's cart is none of this device's business.
     const localCart = T.state && T.state.cart ? T.state.cart : { items: [], discount: null };
@@ -530,6 +548,9 @@
     // A fresh sync may free (or fill) the shopkeeper slots — the gate
     // re-evaluates whether it is still needed.
     T.sheets?.refreshStaffGate?.();
+    if (freshJoin && T.state?.store?.name && String(T.state.store.name) !== "My Store") {
+      T.toast?.(`${T.state.store.name} loaded from the cloud — this device is in step`, "i-info");
+    }
   }
 
   /** The shop's payment request, if it is waiting for the developer. */
@@ -1096,6 +1117,8 @@
     markAnnouncementRead,
     paymentRulesError: () => paymentRulesError,
     myPayment: () => myPayment,
+    /** True once this device has completed a pull (or confirmed the cloud is empty) for the signed-in account. */
+    hydrated: () => pulledOnce,
     requestPayment,
     confirmPayment,
     declinePayment,

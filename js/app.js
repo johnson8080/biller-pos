@@ -918,7 +918,7 @@ function runAction(btn, opts = {}) {
     if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.setActiveStaff?.(name);
     T.claimStaff?.(name);
-    T.save({ quiet: true, force: true });
+    T.save({ quiet: true });
     T.sheets?.close?.(true);
     render();
     T.toast(`Selling as ${name}`, "i-check");
@@ -943,7 +943,7 @@ function runAction(btn, opts = {}) {
     if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.setActiveStaff?.(name);
     T.claimStaff?.(name);
-    T.save({ quiet: true, force: true });
+    T.save({ quiet: true });
     T.toast(`${name} added as the shopkeeper — now save your shop details`, "i-check");
     T.sheets?.openFirstRunGate?.();
   }
@@ -967,7 +967,7 @@ function runAction(btn, opts = {}) {
     T.state.store.name = name;
     T.state.store.phone = phone;
     T.state.store.address = address;
-    T.save({ quiet: true, force: true });
+    T.save({ quiet: true });
     // Keep the sheet open and drop focus to the optional M-Pesa step.
     const mpesaName = document.getElementById("first-run-mpesa-paybill") || document.getElementById("first-run-mpesa-till");
     mpesaName?.focus({ preventScroll: true });
@@ -1000,7 +1000,7 @@ function runAction(btn, opts = {}) {
         backendKey: ""
       };
       T.logActivity?.("edit", "M-Pesa production saved at first-run setup");
-      T.save({ quiet: true, force: true });
+      T.save({ quiet: true });
     }
     T.sheets?.close?.(true);
     go("#/stock");
