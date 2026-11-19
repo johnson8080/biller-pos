@@ -2708,6 +2708,10 @@
     }
     const totals = T.cartTotals();
     const allows = (m) => (T.paymentAllows ? T.paymentAllows(m) : true);
+    // What the till will let through — used for the hover description on the
+    // locked buttons, so the shopkeeper reads the truth, not a guess.
+    const mode = T.paymentMode?.() || "all";
+    const allowedLabel = mode === "mpesa" ? "M-Pesa" : mode === "cash" ? "cash" : mode === "card" ? "card" : "";
     // Which tender methods the till is allowed to take. When a method is not
     // allowed it renders grayed out and tapping it explains why.
     const tenders = [
@@ -2768,7 +2772,10 @@
         ${tenders.map((t) => {
           const allowed = allows(t.method);
           const active = method === t.method;
-          return `<button class="seg-btn ${active ? "is-active" : ""}${allowed ? "" : " is-blocked"}" data-act="set-payment" data-value="${t.method}" role="tab" aria-selected="${active}" aria-disabled="${!allowed}">${icon(t.iconName)} ${t.label}</button>`;
+          const title = allowed
+            ? `${t.label} payments are allowed`
+            : `Locked — this shop takes only ${allowedLabel} payments (change in Settings → Security)`;
+          return `<button class="seg-btn ${active ? "is-active" : ""}${allowed ? "" : " is-blocked"}" data-act="set-payment" data-value="${t.method}" role="tab" aria-selected="${active}" aria-disabled="${!allowed}" title="${esc(title)}">${icon(t.iconName)} ${t.label}</button>`;
         }).join("")}
       </div>
       ${cashBoard}

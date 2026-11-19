@@ -2498,9 +2498,13 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     // The daily stock book rides along with every save: openings on the
     // first save of a day, the last level seen on every one.
     T.markStockDay();
-    // Heartbeat for the shopkeeper claim on this device.
-    const active = T.activeStaff();
-    if (active) T.claimStaff(active);
+    // Heartbeat the name THIS device explicitly claimed — never the silent
+    // fallback. A fallback name nobody picked would silently lock every
+    // other till out of that shopkeeper.
+    if (T.hasDeviceStaff?.()) {
+      const active = T.activeStaff();
+      if (active) T.claimStaff(active);
+    }
     try {
       persistState(stateOwner, { stamp });
       if (stamp) {
@@ -2669,10 +2673,18 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     const pick = String(name || "").trim();
     const mine = T.deviceId();
     const claims = { ...T.staffClaims() };
+    // Sweep stale claims first: a device that stopped heartbeating ages out
+    // and cannot hold a name hostage. Stale entries must not survive on the
+    // very write that refreshes our own claim.
+    const now = Date.now();
+    for (const [staff, claim] of Object.entries(claims)) {
+      if (!claim || now - (Number(claim.at) || 0) > CLAIM_TTL) delete claims[staff];
+    }
+    // Drop every claim this device holds, then take the new one.
     for (const [staff, claim] of Object.entries(claims)) {
       if (claim?.id === mine) delete claims[staff];
     }
-    if (pick) claims[pick] = { id: mine, at: Date.now() };
+    if (pick) claims[pick] = { id: mine, at: now };
     T.state.store.staffClaims = claims;
   };
 

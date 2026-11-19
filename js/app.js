@@ -640,12 +640,16 @@ function blockedDebtNotice() {
   });
 }
 
-function blockedPaymentNotice(method) {
+function blockedPaymentNotice(blocked) {
   const T = window.Till;
-  const label = method === "mpesa" ? "M-Pesa" : method === "card" ? "card" : "cash";
+  const blockedLabel = blocked === "mpesa" ? "M-Pesa" : blocked === "card" ? "card" : "cash";
+  const mode = T.paymentMode?.() || "all";
+  const allowedLabel = mode === "mpesa" ? "M-Pesa" : mode === "card" ? "card" : mode === "cash" ? "cash" : "";
   T.sheets?.openInfo?.({
     title: "Payments restricted",
-    message: `Only ${label} payments are allowed. Change this in Settings → Security → Checkout payment mode.`,
+    message: allowedLabel
+      ? `Right now this shop only takes ${allowedLabel} payments. Change this in Settings → Security → Checkout payment mode.`
+      : `${blockedLabel.charAt(0).toUpperCase() + blockedLabel.slice(1)} is not allowed on this till. Change this in Settings → Security → Checkout payment mode.`,
     iconName: "i-lock",
     tone: "warn"
   });
@@ -909,9 +913,11 @@ function runAction(btn, opts = {}) {
   else if (act === "release-staff" && value) {
     applyStoreForm(T);
     T.releaseStaff?.(value);
+    // Freeing wipes whatever claim another till held — including stale ones
+    // from a device that is no longer there. This till can now take it.
     T.save();
     render();
-    T.toast(`${value} freed from other device`, "i-check");
+    T.toast(`${value} is free — tap it to sell as ${value} on this device`, "i-check");
   }
   else if (act === "add-staff-gate") {
     // The gate only exists because no free shopkeeper does; a fresh name is
@@ -2798,7 +2804,7 @@ function boot() {
   setTimeout(() => { try { window.Till?.sheets?.refreshStaffGate?.(); } catch { /* ignore */ } }, 700);
   // This device's shopkeeper announces itself to the other devices.
   const _bootStaff = window.Till?.activeStaff?.();
-  if (_bootStaff) window.Till?.claimStaff?.(_bootStaff);
+  if (T.hasDeviceStaff?.() && _bootStaff) window.Till?.claimStaff?.(_bootStaff);
   render();
   // Plan the reminders for the monthly plan once the app is up.
   setTimeout(() => { window.Till?.notify?.syncPlan?.(); }, 2500);
