@@ -585,6 +585,9 @@
     // Pull the cloud copy down, then keep the device in step.
     pull({ silent: true }).then((result) => {
       if (result?.ok) pulledOnce = true;
+      // The very first beat ran against a possibly seed shop; now that the
+      // real shop is in place, say hello again with the real details.
+      if (result?.ok) beat().catch(() => {});
       notify();
     }).finally(() => {
       if (isOwner()) watchPresence();
@@ -1096,6 +1099,10 @@
     // exists, so forget the marker.
     clearPending();
     rememberSynced(merged);
+    // Presence carries the shop's name/phone/plan — keep it in step with
+    // whatever the sync just adopted (this also catches the first-join case,
+    // where the initial hello went out as a blank seed).
+    beat().catch(() => {});
     if (unchanged) {
       T.setSavedAt?.(stamp || Date.now());
       return true;
