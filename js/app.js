@@ -976,16 +976,17 @@ function runAction(btn, opts = {}) {
     const digits = (id) => String(document.getElementById(id)?.value || "").replace(/\D/g, "").slice(0, 12);
     const paybill = digits("first-run-mpesa-paybill");
     const till = digits("first-run-mpesa-till");
+    const account = String(document.getElementById("first-run-mpesa-account")?.value || "").trim().slice(0, 12);
     const consumerKey = String(document.getElementById("first-run-mpesa-consumer-key")?.value || "").trim();
     const consumerSecret = String(document.getElementById("first-run-mpesa-consumer-secret")?.value || "").trim();
     const passkey = String(document.getElementById("first-run-mpesa-passkey")?.value || "").trim();
-    const filled = paybill || till || consumerKey || consumerSecret || passkey;
+    const filled = paybill || till || account || consumerKey || consumerSecret || passkey;
     if (filled) {
       T.state.store.mpesa = {
-        paybill,
-        till,
+        paybill: mode === "paybill" ? paybill : "",
+        till: mode === "till" ? till : "",
         mode,
-        account: "",
+        account: mode === "paybill" ? account : "",
         environment: "production",
         consumerKey,
         consumerSecret,
@@ -1900,6 +1901,9 @@ function syncMpesaModeFields(form) {
   };
   setState(document.getElementById("mpesa-paybill"), mode === "paybill");
   setState(document.getElementById("mpesa-till"), mode === "till");
+  // Paybill is linked to the account reference: an account number only
+  // makes sense with a paybill shortcode. A Till shortcode does not use one.
+  setState(document.getElementById("mpesa-account"), mode === "paybill");
 }
 
 /** Send one STK prompt and follow it until Safaricom settles it. */

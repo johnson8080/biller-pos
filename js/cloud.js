@@ -784,6 +784,12 @@
             }
             // The lock is a paint — the shop must not have to reload to see it vanish.
             window.render?.();
+            // The shop just cleared its plan — send a fresh till straight into
+            // the one-time setup so it can start selling. Existing shops are
+            // not disturbed.
+            try {
+              if (window.Till?.firstRunNeeded?.()) window.Till?.sheets?.openFirstRunGate?.();
+            } catch { /* ignore */ }
           }
         }
         if (data.status === "reverted") {

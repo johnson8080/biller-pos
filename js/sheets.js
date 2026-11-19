@@ -2578,10 +2578,9 @@
   }
 
   /**
-   * The very first time a fresh till is opened, before there is a single
-   * shopkeeper and before the shop has a name to print on receipts, every
-   * path blocks behind this sheet. Two steps, in order: who is selling,
-   * and what this shop calls itself. Closes only after both are saved.
+   * The first time this till is opened — after the shop's plan is confirmed
+   * paid — walk the owner straight into the one-time setup: who is selling,
+   * what this shop calls itself, and (optionally) M-Pesa production.
    */
   function openFirstRunGate() {
     const store = T.state?.store || {};
@@ -2590,7 +2589,7 @@
     open({
       locked: true,
       title: "Set up your shop",
-      subtitle: "Two steps before your first sale — both save to Firebase instantly",
+      subtitle: "Who is selling, what this shop calls itself, and optionally M-Pesa — all save to Firebase",
       iconName: "i-user",
       tone: "good",
       body: `<div class="first-run-gate">
@@ -2651,6 +2650,8 @@
             <input class="input" id="first-run-mpesa-paybill" name="firstRunMpesaPaybill" inputmode="numeric" autocomplete="off" placeholder="e.g. 247247">
             <label class="field-label" for="first-run-mpesa-till" style="margin-top:8px">Till number</label>
             <input class="input" id="first-run-mpesa-till" name="firstRunMpesaTill" inputmode="numeric" autocomplete="off" placeholder="e.g. 123456">
+            <label class="field-label" for="first-run-mpesa-account" style="margin-top:8px">Paybill account number <span class="label-optional">shows on your Daraja requests</span></label>
+            <input class="input" id="first-run-mpesa-account" name="firstRunMpesaAccount" autocomplete="off" maxlength="12" placeholder="e.g. your business account number">
             <label class="field-label" for="first-run-mpesa-consumer-key" style="margin-top:8px">Daraja consumer key <span class="label-optional">production app</span></label>
             <input class="input" id="first-run-mpesa-consumer-key" name="firstRunMpesaConsumerKey" autocomplete="off" placeholder="Production consumer key">
             <label class="field-label" for="first-run-mpesa-consumer-secret" style="margin-top:8px">Daraja consumer secret</label>
@@ -2666,6 +2667,26 @@
         <p class="field-small" style="margin-top:10px">After saving, the till lands on <strong>Stock</strong> — save at least one item there so there is something to put on the till.</p>
       </div>`
     });
+    // Paybill acts with an account number; till stands alone. Greyed out the
+    // inputs that do not apply to the current mode.
+    const gate = document.querySelector(".first-run-gate");
+    const syncMode = () => {
+      if (!gate) return;
+      const mode = gate.querySelector('input[name="firstRunMpesaMode"]:checked')?.value || "paybill";
+      const setState = (input, active) => {
+        if (!input) return;
+        input.readOnly = !active;
+        input.setAttribute("aria-disabled", active ? "false" : "true");
+        input.classList.toggle("is-dimmed", !active);
+      };
+      setState(document.getElementById("first-run-mpesa-paybill"), mode === "paybill");
+      setState(document.getElementById("first-run-mpesa-account"), mode === "paybill");
+      setState(document.getElementById("first-run-mpesa-till"), mode === "till");
+    };
+    gate?.addEventListener("change", (event) => {
+      if (event.target && event.target.name === "firstRunMpesaMode") syncMode();
+    });
+    syncMode();
   }
 
   /** Open the staff gate when blocked; close it when it is no longer needed;
