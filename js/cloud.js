@@ -703,13 +703,26 @@
     }
   }
 
-  /** The developer deletes an account. */
+  /**
+   * The developer deletes an account. All four surfaces of the shop are
+   * removed together so the panel no longer shows a stale details card:
+   * the shop document, the payment claims for that shop, its presence
+   * record, and every announcement receipt it sent back.
+   */
   async function deleteAccount(uid) {
     if (!fs || !user || !isOwner()) return { ok: false, error: "Not allowed." };
     try {
       await fs.collection(SHOP_COLLECTION).doc(uid).delete();
       await fs.collection(PRESENCE_COLLECTION).doc(uid).delete();
       await fs.collection(PAYMENT_COLLECTION).doc(uid).delete();
+      // Announcement receipts from this shop go too — the announcement
+      // page should not leave a phantom row for the deleted account.
+      try {
+        const reads = await fs.collection(ANNOUNCEMENT_READS_COLLECTION).where("uid", "==", uid).get();
+        const deletions = [];
+        reads.forEach((doc) => deletions.push(doc.ref.delete()));
+        await Promise.allSettled(deletions);
+      } catch { /* best-effort; the main docs are already gone */ }
       accounts = accounts.filter((item) => item.id !== uid);
       paymentRequests = paymentRequests.filter((item) => item.id !== uid);
       notify();

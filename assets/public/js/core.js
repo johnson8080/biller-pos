@@ -2634,7 +2634,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     el.innerHTML = `<svg class="ico" aria-hidden="true"><use href="#${icon}"></use></svg><span>${esc(message)}</span>`;
     el.classList.add("show");
     clearTimeout(T.ui.toastTimer);
-    T.ui.toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+    T.ui.toastTimer = setTimeout(() => el.classList.remove("show"), 4000);
   };
 
   T.dismissToast = () => {
