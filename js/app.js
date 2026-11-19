@@ -659,6 +659,22 @@ function runAction(btn, opts = {}) {
   const act = btn.dataset.act;
   const id = btn.dataset.id;
   const value = btn.dataset.value;
+  // The account's shop is still on its way from the cloud. Never offer a
+  // blank setup in its place — that is how a second phone used to wipe the
+  // shop. The waiting sheet explains, retries, and offers an explicit "new
+  // shop" path only when the cloud is known to be empty.
+  const CLOUD_WAIT_ALLOW = new Set([
+    "cloud-wait-retry", "cloud-wait-setup",
+    "first-run-add-keeper", "first-run-save-shop", "first-run-save-mpesa", "first-run-skip-mpesa",
+    "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
+    "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
+    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
+    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push"
+  ]);
+  if (T.cloudWaiting?.() && !CLOUD_WAIT_ALLOW.has(act)) {
+    T.sheets?.openCloudWaiting?.();
+    return;
+  }
   // Brand-new till: nothing meaningful has been set up yet. Selling-related
   // taps bounce into the one-time setup sheet; but anything needed to pay
   // the plan or reach the developer still works, so a shop can settle the
@@ -945,7 +961,7 @@ function runAction(btn, opts = {}) {
     T.claimStaff?.(name);
     T.save({ quiet: true });
     T.toast(`${name} added as the shopkeeper — now save your shop details`, "i-check");
-    T.sheets?.openFirstRunGate?.();
+    T.sheets?.openFirstRunGate?.({ force: true });
   }
   else if (act === "first-run-save-shop") {
     const roster = T.staffRoster ? T.staffRoster() : [];
@@ -1578,6 +1594,29 @@ function runAction(btn, opts = {}) {
     // Sign in with a different email — go to the login screen itself.
     T.sheets?.close?.(true);
     go("#/auth");
+  }
+  else if (act === "cloud-wait-retry") {
+    // Ask the server again. A real answer either lands the shop (and the
+    // staff gate) or proves the account has no cloud copy yet.
+    T.toast("Checking the cloud…", "i-refresh");
+    Promise.resolve(T.cloud?.pull?.({ silent: true })).then((result) => {
+      if (T.cloudWaiting?.()) {
+        T.sheets?.openCloudWaiting?.(); // re-render with the fresh answer
+        return;
+      }
+      T.sheets?.close?.(true);
+      render();
+      if (T.staffBlocked?.()) {
+        T.sheets?.openStaffGate?.();
+      } else {
+        T.toast(result?.applied ? "Your shop is here — loaded from the cloud" : "Your shop is already on this phone", "i-check");
+      }
+    });
+  }
+  else if (act === "cloud-wait-setup") {
+    // The shopkeeper confirmed this is a brand-new shop, not a second phone
+    // for an existing one. Only now may the blank setup open.
+    T.sheets?.openFirstRunGate?.({ force: true });
   }
   else if (act === "continue-offline") {
     // The user chose the offline shop on purpose: this phone keeps the
@@ -2662,6 +2701,8 @@ function boot() {
   // the viewport and wipes whatever they were writing (the announcement
   // composer was losing its text mid-sentence). Refresh only the badge.
   window.Till?.cloud?.onChange?.(() => {
+    // The waiting sheet has an answer now: get out of its way.
+    if (!window.Till?.cloudWaiting?.()) window.Till?.sheets?.closeCloudWaiting?.();
     updateSyncDot();
     const name = window.Till?.ui?.route?.name;
     const active = document.activeElement;

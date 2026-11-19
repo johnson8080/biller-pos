@@ -2544,6 +2544,40 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     try { return Boolean(String(localStorage.getItem(STAFF_KEY) || "").trim()); } catch { return false; }
   };
 
+  // True while this device cannot yet tell whether the signed-in account
+  // already owns a shop. The blank setup sheet must not open in this state:
+  // a second phone would invite the owner to retype a shop that is sitting
+  // on the first phone. "Try again" re-checks the cloud; the waiting sheet
+  // offers an explicit "this is a new shop" path when the cloud is empty.
+  T.cloudWaiting = () => {
+    const cloud = window.Till?.cloud;
+    const session = getSession();
+    if (!String(session?.email || "").trim()) return false;
+    if (!cloud || typeof cloud.status !== "function") return false;
+    const phase = String(cloud.status()?.phase || "");
+    // No cloud is attached (local-only mode / Firestore off): there is
+    // nothing to wait for, so the ordinary setup path stays available.
+    if (phase === "signed-out" || phase === "local") return false;
+    // A till that already holds a roster, stock, sales or a real shop name
+    // is not a blank seed. It keeps working offline and never waits.
+    if (T.staffRoster().length) return false;
+    const state = T.state || {};
+    const store = state.store || {};
+    const name = String(store.name || "").trim();
+    if (name && name.toLowerCase() !== "my store") return false;
+    if (Array.isArray(state.products) && state.products.length) return false;
+    if (Array.isArray(state.transactions) && state.transactions.length) return false;
+    if (Array.isArray(state.customers) && state.customers.length) return false;
+    if (Array.isArray(state.suppliers) && state.suppliers.length) return false;
+    if (typeof cloud.hydrated === "function" && cloud.hydrated()) {
+      // The pull finished. Only an account whose cloud has no shop yet is
+      // still unresolved: that shop may be on the owner's other phone.
+      return Boolean(cloud.empty?.());
+    }
+    // The pull is in flight or failed: the account's shop is unknown.
+    return true;
+  };
+
   // True for a brand-new till: not a single shopkeeper exists — and only
   // while the cloud answer is known. A signed-in shop whose first pull is
   // still in flight may have a whole business waiting on the cloud; offering
@@ -2553,15 +2587,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   // the gate can safely open.
   T.firstRunNeeded = () => {
     if (T.staffRoster().length) return false;
-    const signed = Boolean(String(getSession()?.email || "").trim());
-    const cloud = window.Till?.cloud;
-    if (signed && typeof cloud?.hydrated === "function" && typeof cloud?.status === "function" && cloud.hydrated() === false) {
-      // In flight, we do not know whether this account already owns a shop.
-      // Once it fails (or the cloud is gone for good), every write is either
-      // impossible or fenced, so the gate may open safely.
-      const phase = String(cloud.status()?.phase || "");
-      if (phase === "syncing") return false;
-    }
+    // While the cloud answer is unknown (or the account has no cloud shop
+    // yet), the blank setup sheet must never open. The action router checks
+    // the same state and shows the waiting sheet instead.
+    if (T.cloudWaiting()) return false;
     return true;
   };
 

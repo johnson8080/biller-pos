@@ -36,6 +36,7 @@
   let closeTimer = null;
   let closeToken = 0;
   let active = false;
+  let activeKind = "";
   let onCloseCallback = null;
   let lastFocus = null;
   let dialogEl = null;
@@ -49,12 +50,18 @@
     return active;
   }
 
-  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true, size = "default", locked = false }) {
+  /** Close the "waiting for your shop" sheet only — never a payment or sale sheet. */
+  function closeCloudWaiting() {
+    if (active && activeKind === "cloud-waiting") close(true);
+  }
+
+  function open({ title, subtitle = "", iconName = "", tone = "", body = "", focus = "", onClose = null, head = true, size = "default", locked = false, kind = "" }) {
     const root = layers();
     if (!root) return;
     close(true);
     lastFocus = document.activeElement;
     active = true;
+    activeKind = kind;
     onCloseCallback = onClose;
     const sizeClass = size === "compact" ? "sheet-compact" : "";
     root.innerHTML = `
@@ -86,6 +93,7 @@
     if (!root) return;
     if (!active && !root.innerHTML) return;
     active = false;
+    activeKind = "";
     const callback = onCloseCallback;
     onCloseCallback = null;
     // Any camera window that belongs to this sheet goes with it.
@@ -2578,11 +2586,51 @@
   }
 
   /**
+   * The account's shop has not arrived from the cloud yet (first pull still
+   * running, failed, or the cloud has no copy). A blank setup here would
+   * invite a second phone to replace the real shop, so explain the wait and
+   * offer a retry — plus an explicit "new shop" path only when the cloud is
+   * known to be empty.
+   */
+  function openCloudWaiting() {
+    const empty = Boolean(T.cloud?.empty?.());
+    const phase = String(T.cloud?.status?.()?.phase || "");
+    const busy = phase === "syncing";
+    const message = busy
+      ? "Hold on — this phone is checking the cloud for your shop. If your shop is on another phone, it will appear here in a moment."
+      : empty
+        ? "If you already use this account on another phone, open Biller there first so it can send your shop to the cloud. This phone will then show your shopkeepers and sales — never a blank shop."
+        : "Your shop may already be on another phone. Check your connection and try again — setting up a blank shop now could hide the real one.";
+    open({
+      kind: "cloud-waiting",
+      title: busy ? "Loading your shop…" : "Your shop is not here yet",
+      subtitle: busy
+        ? "Checking the cloud for your shop…"
+        : empty
+          ? "No shop has reached the cloud for this account yet."
+          : "This phone could not reach the cloud to check for your shop.",
+      iconName: "i-refresh",
+      tone: busy || empty ? "" : "warn",
+      body: `<div class="first-run-gate">
+        <p>${message}</p>
+        <div class="sheet-actions" style="margin-top:12px">
+          <button class="btn btn-primary btn-block" data-act="cloud-wait-retry">${icon("i-refresh")} Try again</button>
+          ${empty && !busy ? `<button class="btn btn-ghost btn-block" data-act="cloud-wait-setup" style="margin-top:8px">This is a new shop — set it up here</button>` : ""}
+          <button class="btn btn-ghost btn-block" data-act="close-sheet" style="margin-top:8px">Not now</button>
+        </div>
+      </div>`
+    });
+  }
+
+  /**
    * The first time this till is opened — after the shop's plan is confirmed
    * paid — walk the owner straight into the one-time setup: who is selling,
    * what this shop calls itself, and (optionally) M-Pesa production.
    */
-  function openFirstRunGate() {
+  function openFirstRunGate({ force = false } = {}) {
+    // Never offer a blank setup while the account's real shop may still be
+    // on its way from the cloud. The waiting sheet explains and retries.
+    if (!force && T.cloudWaiting?.()) return openCloudWaiting();
     const store = T.state?.store || {};
     const roster = T.staffRoster ? T.staffRoster() : [];
     const keeperListed = roster.length > 0;
@@ -3278,7 +3326,7 @@
 
 
   T.sheets = {
-    open, close, isOpen, openManual, manualError, openUnknown, openOutOfStock,
+    open, close, isOpen, closeCloudWaiting, openManual, manualError, openUnknown, openOutOfStock,
     openWeigh, openWastage, openTarget, openStockDay, openPinSheet, openInfo,
     openDiscount, setDiscountMode, discountError, openProductEditor, renderProductEditor,    readProductForm, productEditorError, openSaveInfo, confirm, runConfirm,
     openMiniScan, closeMiniScan,
@@ -3289,6 +3337,7 @@
     openStaffPicker,
     openStaffGate, refreshStaffGate,
     openFirstRunGate,
+    openCloudWaiting,
     openDeleteAccount,
     openStockDays,
     openStockIn, openMpesaCode, openSubscriptionPayment,

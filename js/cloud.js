@@ -48,6 +48,12 @@
   // empty locally-seeded till (pinHash blank, no products, My Store) must
   // never be allowed to overwrite a populated cloud shop on first sync.
   let pulledOnce = false;
+  // True when the last successful pull proved the account has no cloud shop
+  // yet. A fresh device must not push its blank seed just because the cloud
+  // is empty: the shop may still be sitting on the owner's other phone,
+  // waiting for its first sync. The seed goes up only when the shopkeeper
+  // actually sets the shop up.
+  let cloudEmpty = false;
   let lastError = "";
   let phase = "signed-out";
   let lastSyncAt = 0;
@@ -137,8 +143,12 @@
     try { return localStorage.getItem(pendingKey()) === "1"; } catch { return false; }
   }
   function stateHash() {
+    // Hash the state exactly the way the fence hashes a cloud copy. A raw
+    // seed and its normalized form are not byte-equal, and that mismatch
+    // used to make every push after a fresh seed look like "the cloud
+    // moved" — so the shopkeeper's setup silently never left the device.
     try {
-      return stateHashOf(T.state);
+      return stateHashOf(T.normalizeState ? T.normalizeState(T.state) : T.state);
     } catch { return ""; }
   }
   function stateHashOf(obj) {
@@ -191,6 +201,81 @@
     const needs = hasPending() || stateHash() !== stored;
     if (!needs) return false;
     return push({ immediate: true });
+  }
+
+  /* ---------- Which copy is the shop? ----------
+     One account can end up holding two different shops: a second phone that
+     signed in and set itself up before its first pull finished, or a cloud
+     document that was wiped and replaced by a blank seed. Clocks and hashes
+     cannot answer "is this the same shop?", but the content and the shop's
+     permanent code can. The rules below are deliberately one-sided: a blank
+     seed never wins against a shop with anything real in it. */
+
+  function shopSubstance(state) {
+    const data = state && typeof state === "object" ? state : {};
+    const store = data.store && typeof data.store === "object" ? data.store : {};
+    const count = (list) => (Array.isArray(list) ? list.filter((item) => item != null).length : 0);
+    const roster = Array.isArray(store.staffList)
+      ? store.staffList.map((name) => String(name || "").trim()).filter(Boolean)
+      : (String(store.staff || "").trim() ? [String(store.staff).trim()] : []);
+    const name = String(store.name || "").trim();
+    const payments = Array.isArray(store.subscription?.payments) ? store.subscription.payments.length : 0;
+    const named = Boolean(name) && name.toLowerCase() !== "my store";
+    const products = count(data.products);
+    const transactions = count(data.transactions);
+    const customers = count(data.customers);
+    const suppliers = count(data.suppliers);
+    return {
+      code: String(store.shopCode || "").trim(),
+      createdAt: String(data.createdAt || "").trim().slice(0, 40),
+      name,
+      named,
+      roster: roster.length,
+      products,
+      transactions,
+      customers,
+      suppliers,
+      payments,
+      score: (named ? 1 : 0) + roster.length + products + transactions + customers + suppliers + payments
+    };
+  }
+
+  /** The blank till the app starts with — no shop in it at all. */
+  function shopIsSeed(state) {
+    const shop = shopSubstance(state);
+    // shopCode and subscription.startedAt are generated automatically, so
+    // they say nothing about whether a shopkeeper has set anything up.
+    return !shop.named && !shop.roster && !shop.products && !shop.transactions
+      && !shop.customers && !shop.suppliers && !shop.payments;
+  }
+
+  /**
+   * Which copy is the shop this account has been using?
+   * "same"   — same permanent code (or two blank seeds): normal sync decides.
+   * "local"  — keep this device's copy and repair the cloud.
+   * "remote" — adopt the cloud copy.
+   */
+  function shopConflict(local, remote) {
+    const mine = shopSubstance(local);
+    const theirs = shopSubstance(remote);
+    // A reset keeps the shopCode. Same code means the same shop, so a reset
+    // is an ordinary edit and must never be mistaken for a second shop.
+    if (mine.code && theirs.code && mine.code === theirs.code) return "same";
+    const mineSeed = shopIsSeed(local);
+    const theirsSeed = shopIsSeed(remote);
+    if (mineSeed && theirsSeed) return "same";
+    // A blank till never beats a real shop, and a real shop never loses to
+    // a blank seed — this is the wipe that must never happen again.
+    if (mineSeed) return "remote";
+    if (theirsSeed) return "local";
+    // Two real shops under one account: the one that existed first is the
+    // shop the account has been selling with. The other was created by
+    // mistake on a second phone before its first pull.
+    const mineAt = Date.parse(mine.createdAt) || 0;
+    const theirsAt = Date.parse(theirs.createdAt) || 0;
+    if (mineAt && theirsAt && mineAt !== theirsAt) return mineAt < theirsAt ? "local" : "remote";
+    if (mine.score !== theirs.score) return mine.score > theirs.score ? "local" : "remote";
+    return "remote";
   }
 
   function friendlyError(error) {
@@ -313,6 +398,7 @@
     announcements = [];
     notifiedUnread = new Set();
     pulledOnce = false;
+    cloudEmpty = false;
     if (user && fs) beatOff();
     user = null;
     setPhase("signed-out");
@@ -338,9 +424,16 @@
       markPending();
       return Promise.resolve(false);
     }
+    // The cloud has no shop for this account and this till is still blank.
+    // Sending the seed up would make every other device adopt an empty shop
+    // — the wipe that starts on a second phone. Wait for the real shop.
+    if (!force && cloudEmpty && shopIsSeed(T.state)) return Promise.resolve(false);
     clearTimeout(pushTimer);
     const run = async () => {
       try {
+        // A pull may have landed between the check above and this timer:
+        // never send a blank seed over an account with no cloud shop.
+        if (!force && cloudEmpty && shopIsSeed(T.state)) return false;
         // Never write on top of changes this device has not seen. Reading
         // the cloud copy first — exactly what pull does — is the difference
         // between "local wins because it was saved later" (which silently
@@ -362,18 +455,21 @@
             // business overwriting it. The next pull adopts the cloud copy.
             : true;
           if (remoteMoved) {
-            // Another device advanced the shop since this copy was based
-            // on. Put that copy in place instead of overwriting it — the
-            // cloud keeps every change; this till's unpushed local edits
-            // are superseded, and the shopkeeper re-applies them.
+            // The cloud moved under this till. Before adopting it, make sure
+            // it really is this shop: a blank seed or a different, weaker
+            // shop must never replace the shop this device has been using.
             const carriedUserWork = stateHash() !== lastSyncedHash();
-            applyRemote(fenceData.state, remoteAt);
-            lastError = "";
-            setPhase("synced");
-            if (carriedUserWork) {
-              T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+            if (applyRemote(fenceData.state, remoteAt)) {
+              lastError = "";
+              setPhase("synced");
+              if (carriedUserWork) {
+                T.toast?.("Another device had newer changes — your till matches it now. Any change you were making may need re-doing.", "i-info");
+              }
+              return false;
             }
-            return false;
+            // applyRemote refused: the cloud copy is a blank seed or a
+            // different, weaker shop. Keep this device's shop and repair the
+            // cloud with it below.
           }
         }
         // Refresh this device's shopkeeper claim so it does not expire while
@@ -404,6 +500,7 @@
         // The device and the cloud now agree, so remember when.
         try { localStorage.setItem(SAVED_AT_KEY, String(Date.now())); } catch { /* ignore */ }
         window.Till?.setSavedAt?.(Date.now());
+        cloudEmpty = false;
         clearPending();
         rememberSyncedHash();
         setPhase("synced");
@@ -437,13 +534,53 @@
       const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
       const data = snap.exists ? snap.data() : null;
       if (!data || !data.state) {
-        // Nothing in the cloud yet — send this device's copy up.
+        // The account has no cloud shop yet. Never send this device's blank
+        // seed: the real shop may still be sitting on the owner's other
+        // phone, waiting for its first sync. A device that already holds a
+        // real shop is different — that copy belongs in the cloud now.
         pulledOnce = true;
-        await push({ immediate: true });
-        return { ok: true, applied: false, reason: "empty" };
+        cloudEmpty = true;
+        lastSyncAt = Date.now();
+        setPhase("synced");
+        const pushed = shopIsSeed(T.state) ? false : await push({ immediate: true });
+        return { ok: true, applied: false, reason: "empty", pushed };
       }
+      // An older build could have pushed its blank seed. That is not a shop:
+      // when this device is blank too (and the code is not this shop's own),
+      // wait for the owner's real shop instead of offering a blank setup.
+      if (shopIsSeed(data.state) && shopIsSeed(T.state)) {
+        const remoteCode = String(data.state?.store?.shopCode || "").trim();
+        const localCode = String(T.state?.store?.shopCode || "").trim();
+        if (!remoteCode || !localCode || remoteCode !== localCode) {
+          pulledOnce = true;
+          cloudEmpty = true;
+          lastSyncAt = Date.now();
+          setPhase("synced");
+          return { ok: true, applied: false, reason: "empty-seed" };
+        }
+      }
+      cloudEmpty = false;
       const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
       const localAt = localSavedAt();
+      // Decide which copy is this account's shop before comparing clocks or
+      // hashes: a second phone that set itself up early, or a cloud document
+      // replaced by a blank seed, must not wipe the real shop.
+      const conflict = shopConflict(T.state, data.state);
+      if (conflict === "local") {
+        // This device holds the real shop. Keep it and repair the cloud copy
+        // with it — a deliberate, authoritative write (the cloud copy was
+        // just read, so this is not a blind overwrite).
+        pulledOnce = true;
+        lastSyncAt = Date.now();
+        setPhase("synced");
+        const pushed = await push({ immediate: true, force: true });
+        if (pushed) {
+          T.toast?.("This phone's shop is the one saved to your account — the cloud copy has been repaired", "i-check");
+        }
+        return { ok: true, applied: false, reason: "kept-local", pushed };
+      }
+      const remoteWins = conflict === "remote";
+      const localWasSeed = shopIsSeed(T.state);
       // Content decides whether the cloud moved under this till, not the
       // clock: a local edit stamps savedAt on every save, so a stale till can
       // look newer than the remote copy. If anything in the cloud changed
@@ -456,7 +593,7 @@
         if (stored && T.normalizeState) remoteHash = stateHashOf(T.normalizeState(data.state));
       } catch { remoteHash = ""; }
       const drift = stored && remoteHash ? remoteHash !== stored : null;
-      if (!force && drift === false && remoteAt && remoteAt <= localAt) {
+      if (!force && !remoteWins && drift === false && remoteAt && remoteAt <= localAt) {
         lastSyncAt = Date.now();
         pulledOnce = true;
         setPhase("synced");
@@ -466,11 +603,23 @@
         const flushed = await flushPending();
         return { ok: true, applied: false, reason: "local-newer", flushed };
       }
-      applyRemote(data.state, remoteAt);
+      const applied = applyRemote(data.state, remoteAt);
       pulledOnce = true;
       lastSyncAt = Date.now();
       setPhase("synced");
-      return { ok: true, applied: true, reason: drift === null ? "remote-first" : "remote-moved" };
+      if (!applied) {
+        // applyRemote refused (the cloud copy is a seed or a weaker shop).
+        // Keep this device's shop and send it up instead of claiming the
+        // cloud copy is in place.
+        const pushed = await push({ immediate: true, force: true });
+        return { ok: true, applied: false, reason: "kept-local", pushed };
+      }
+      if (remoteWins && !localWasSeed) {
+        // This device had started setting up its own shop; the account's
+        // real shop just arrived from the other phone.
+        T.toast?.("Your shop from the other phone is now on this device — its products and shopkeepers replaced the new shop started here", "i-info");
+      }
+      return { ok: true, applied: true, reason: remoteWins ? "remote-shop" : (drift === null ? "remote-first" : "remote-moved") };
     } catch (error) {
       lastError = friendlyError(error);
       if (serviceDisabled(error)) {
@@ -497,13 +646,46 @@
       const snap = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
       const data = snap.exists ? snap.data() : null;
       if (data && data.state) {
+        // A blank seed is not a shop. If this device is blank too, wait for
+        // the owner's real shop instead of treating the seed as an answer.
+        if (shopIsSeed(data.state) && shopIsSeed(T.state)) {
+          const remoteCode = String(data.state?.store?.shopCode || "").trim();
+          const localCode = String(T.state?.store?.shopCode || "").trim();
+          if (!remoteCode || !localCode || remoteCode !== localCode) {
+            pulledOnce = true;
+            cloudEmpty = true;
+            lastSyncAt = Date.now();
+            setPhase("synced");
+            return { ok: true, data, empty: true };
+          }
+        }
+        cloudEmpty = false;
+        if (shopConflict(T.state, data.state) === "local") {
+          // This device holds the real shop; the cloud copy is a blank seed
+          // or a different, weaker shop. Repair the cloud instead of
+          // adopting the intruder.
+          pulledOnce = true;
+          const pushed = await push({ immediate: true, force: true });
+          lastSyncAt = Date.now();
+          setPhase("synced");
+          return { ok: true, data, keptLocal: true, pushed };
+        }
         const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
-        applyRemote(data.state, remoteAt);
+        if (!applyRemote(data.state, remoteAt)) {
+          pulledOnce = true;
+          lastSyncAt = Date.now();
+          setPhase("synced");
+          return { ok: true, data, keptLocal: true };
+        }
+        pulledOnce = true;
        // Re-assert this device's claim: applying a remote copy replaced state,
        // which may have dropped our own claim.
        if (T.hasDeviceStaff?.() && T.activeStaff?.()) T.claimStaff?.(T.activeStaff());
       } else {
-        await push({ immediate: true });
+        // Nothing in the cloud yet. A blank seed must not be sent up.
+        pulledOnce = true;
+        cloudEmpty = true;
+        if (!shopIsSeed(T.state)) await push({ immediate: true });
       }
       lastSyncAt = Date.now();
       setPhase("synced");
@@ -521,6 +703,10 @@
 
   /** Put the cloud copy in place on this device. */
   function applyRemote(remote, stamp = 0) {
+    // The last line of defence: no path may replace a real shop with a
+    // blank seed or a different, weaker shop. Callers that get false keep
+    // their local copy and repair the cloud.
+    if (shopConflict(T.state, remote) === "local") return false;
     const merged = T.normalizeState(remote);
     // A device with no synced hash was about to (or had just) seen a till
     // that it knows nothing about — say it out loud instead of looking
@@ -531,6 +717,7 @@
     const localCart = T.state && T.state.cart ? T.state.cart : { items: [], discount: null };
     merged.cart = localCart;
     T.state = merged;
+    cloudEmpty = false;
     // The cloud copy won; anything this device wanted to send no longer
     // exists, so forget the marker.
     clearPending();
@@ -551,6 +738,7 @@
     if (freshJoin && T.state?.store?.name && String(T.state.store.name) !== "My Store") {
       T.toast?.(`${T.state.store.name} loaded from the cloud — this device is in step`, "i-info");
     }
+    return true;
   }
 
   /** The shop's payment request, if it is waiting for the developer. */
@@ -820,9 +1008,11 @@
             window.render?.();
             // The shop just cleared its plan — send a fresh till straight into
             // the one-time setup so it can start selling. Existing shops are
-            // not disturbed.
+            // not disturbed. If the account's shop is still on its way from
+            // the cloud, show the waiting sheet instead of a blank setup.
             try {
               if (window.Till?.firstRunNeeded?.()) window.Till?.sheets?.openFirstRunGate?.();
+              else if (window.Till?.cloudWaiting?.()) window.Till?.sheets?.openCloudWaiting?.();
             } catch { /* ignore */ }
           }
         }
@@ -1119,6 +1309,10 @@
     myPayment: () => myPayment,
     /** True once this device has completed a pull (or confirmed the cloud is empty) for the signed-in account. */
     hydrated: () => pulledOnce,
+    /** True when the last completed pull found no cloud shop for this account. */
+    empty: () => cloudEmpty,
+    /** True when a state holds nothing but the app's blank starting shop. */
+    isSeed: (state) => shopIsSeed(state || T.state),
     requestPayment,
     confirmPayment,
     declinePayment,
