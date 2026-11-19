@@ -666,7 +666,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
           actual: Number.isFinite(Number(it?.actual)) ? Math.max(0, Math.round(Number(it.actual))) : 0,
           match: it?.match === true
         })) : [],
-        note: String(a.note || "").slice(0, 200)
+        note: String(a.note || "").slice(0, 200),
+        staff: String(a.staff || "").trim().slice(0, 60) || null
       }))
       .slice(-50);
     const activityLog = (Array.isArray(data.activityLog) ? data.activityLog : [])
@@ -678,7 +679,8 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // hash changes and cloud probes false-flag conflicts.
         at: entry.at ? String(entry.at) : "1970-01-01T00:00:00.000Z",
         kind: String(entry.kind || "other").slice(0, 20),
-        summary: String(entry.summary || "Activity").slice(0, 140)
+        summary: String(entry.summary || "Activity").slice(0, 140),
+        staff: String(entry.staff || "").trim().slice(0, 40)
       }))
       .slice(0, 300);
     return {
@@ -2435,16 +2437,20 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   /**
    * Append a line to the shop's activity log (kept in the synced state, capped
    * at 300 entries). Kinds: add | edit | delete | sale | stock | security | reset.
+   * Every line carries the name of the shopkeeper who did it — two devices
+   * can be adding and deleting the same shop, so the log must say who.
    */
   T.logActivity = (kind, summary) => {
     const clean = String(summary || "").trim().slice(0, 140);
     if (!clean) return;
     if (!Array.isArray(T.state.activityLog)) T.state.activityLog = [];
+    const staff = String(T.activeStaff?.() || T.state?.store?.staff || "").trim().slice(0, 40);
     T.state.activityLog.unshift({
       id: uid("log"),
       at: new Date().toISOString(),
       kind: String(kind || "other").slice(0, 20).replace(/[^a-z]/g, "") || "other",
-      summary: clean
+      summary: clean,
+      staff
     });
     if (T.state.activityLog.length > 300) T.state.activityLog.length = 300;
     T.save({ quiet: true });

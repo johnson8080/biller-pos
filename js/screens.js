@@ -792,7 +792,7 @@
                 ${badge}
                 <span style="font-size:calc(10px * var(--fs));color:var(--muted)">${a.mismatches} unchecked</span>
               </div>
-              <p class="report-note" style="margin:5px 0 0;font-size:calc(11px * var(--fs))">${a.items.length} item${a.items.length === 1 ? "" : "s"} audited${a.note ? " · " + esc(a.note) : ""}</p>
+              <p class="report-note" style="margin:5px 0 0;font-size:calc(11px * var(--fs))">${a.items.length} item${a.items.length === 1 ? "" : "s"} audited${a.staff ? " · by " + esc(a.staff) : ""}${a.note ? " · " + esc(a.note) : ""}</p>
             </div>`;
           }).join("")
         : `<p class="report-note">No audits recorded yet.</p>`;
@@ -3103,9 +3103,10 @@
   const logIcon = (kind) => ({ add: "i-plus", edit: "i-pencil", delete: "i-trash", sale: "i-receipt", stock: "i-box", security: "i-lock", reset: "i-refresh" }[kind] || "i-info");
   const logRows = (entries) => entries.map((entry) => {
     const kind = logCleanKind(entry.kind);
+    const staff = String(entry.staff || "").trim();
     return `<div class="activity-row">
       <span class="activity-icon kind-${kind}">${icon(logIcon(kind))}</span>
-      <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${esc(logTimeAgo(entry.at))}</small></span>
+      <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${staff ? `${esc(staff)} · ` : ""}${esc(logTimeAgo(entry.at))}</small></span>
     </div>`;
   }).join("");
 

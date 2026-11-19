@@ -582,8 +582,62 @@
       if (isOwner()) watchPayments();
       watchMyPayment();
       watchAnnouncements();
+      watchShop();
       notify();
     });
+  }
+
+  /** Keep this till in step with the cloud in real time. Whatever the other
+      device saves lands here within seconds, without a reload or a manual
+      sync — same three-way merge as the pull path. */
+  function watchShop() {
+    if (!fs || !user) return;
+    try {
+      const unsub = fs.collection(SHOP_COLLECTION).doc(user.uid).onSnapshot((snap) => {
+        const data = snap && snap.exists ? snap.data() : null;
+        if (!data || !data.state) return;
+        const remoteAt = Number(data.updatedAt) || (data.serverAt?.toMillis?.() || 0);
+        let remote = null;
+        try { remote = T.normalizeState(data.state); } catch { return; }
+        const conflict = shopConflict(T.state, remote);
+        if (conflict === "local") return; // this till holds the real shop; keep it
+        if (conflict === "remote") {
+          // A blank/foreign cloud seed vs this till's shop, or the account's
+          // real shop arriving: adopt the cloud copy exactly like a pull.
+          applyRemote(data.state, remoteAt);
+          maybeRepaint();
+          return;
+        }
+        const localHash = stateHash();
+        const remoteHash = stateHashOf(remote);
+        if (remoteHash && localHash === remoteHash) {
+          // Identical to what this device holds — usually our own write
+          // echoing back. Refresh the base so the next merge is cheap.
+          rememberSynced(remote);
+          return;
+        }
+        const base = loadBase();
+        const baseHash = base ? stateHashOf(T.normalizeState ? T.normalizeState(base) : base) : "";
+        const localDelta = baseHash ? localHash !== baseHash : true;
+        if (base && localDelta) {
+          const merged = mergeState(base, T.state, remote);
+          if (stateHashOf(merged) !== remoteHash) {
+            // Both sides have changes: put them together and send them up.
+            T.state = merged;
+            try { T.save({ quiet: true, stamp: false, sync: false }); } catch { /* ignore */ }
+            push({ immediate: true }).catch(() => {});
+            T.toast?.("Merged the other device's changes with yours — nothing was lost", "i-check");
+            maybeRepaint();
+            T.sheets?.refreshStaffGate?.();
+            return;
+          }
+        }
+        // We have nothing of our own beyond the cloud copy; take it as is.
+        applyRemote(data.state, remoteAt);
+        maybeRepaint();
+      }, () => { /* the rules may not allow it yet; the reload path still works */ });
+      unsubscribers.push(unsub);
+    } catch { /* ignore */ }
   }
 
   function detach() {

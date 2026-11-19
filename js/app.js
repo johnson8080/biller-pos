@@ -1815,7 +1815,9 @@ function runAction(btn, opts = {}) {
       passed,
       mismatches: unchecked,
       items,
-      note: ""
+      note: "",
+      // Who did the count — two tills audit the same shelf.
+      staff: String(T.activeStaff?.() || T.state.store.staff || "").trim().slice(0, 60) || null
     });
     T.save();
     T.ui.auditInProgress = false;
