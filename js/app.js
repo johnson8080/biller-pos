@@ -659,11 +659,16 @@ function runAction(btn, opts = {}) {
   const act = btn.dataset.act;
   const id = btn.dataset.id;
   const value = btn.dataset.value;
-  // Brand-new till: nothing meaningful has been set up yet. Every action
-  // bounces into the one-time setup sheet; only the setup itself runs.
+  // Brand-new till: nothing meaningful has been set up yet. Selling-related
+  // taps bounce into the one-time setup sheet; but anything needed to pay
+  // the plan or reach the developer still works, so a shop can settle the
+  // subscription first and only then run through shop set-up.
   const FIRST_RUN_ALLOW = new Set([
     "first-run-add-keeper", "first-run-save-shop", "first-run-save-mpesa", "first-run-skip-mpesa",
-    "sign-out"
+    "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
+    "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
+    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
+    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push"
   ]);
   if (T.firstRunNeeded?.() && !FIRST_RUN_ALLOW.has(act)) {
     T.sheets?.openFirstRunGate?.();
