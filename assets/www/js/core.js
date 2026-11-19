@@ -2138,7 +2138,9 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     return T.state.store.subscription;
   };
 
-  /** The shop says the money is on its way; the developer confirms later. */
+  /** The shop says the money is on its way; the developer confirms later.
+   *  This is the shopkeeper's own assertion — the stale-state fence must not
+   *  clobber it. Push it through forcefully so the confirmation actually lands. */
   T.setSubscriptionAwaiting = (reference = "") => {
     const sub = T.subscription();
     T.state.store.subscription = {
@@ -2146,7 +2148,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       awaiting: true,
       reference: String(reference || sub.reference || T.subscriptionReference()).slice(0, 24)
     };
-    T.save();
+    T.save({ quiet: true, force: true });
     return T.state.store.subscription;
   };
 
