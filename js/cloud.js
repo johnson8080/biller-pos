@@ -319,7 +319,7 @@
    * Copy the shop state to the cloud. Saves are debounced so a burst of
    * changes travels as one write.
    */
-  function push({ immediate = false } = {}) {
+  function push({ immediate = false, force = false } = {}) {
     if (!fs || !user) return Promise.resolve(false);
     if (!pulledOnce) {
       // Not allowed to write until a pull has completed — but the edit is
@@ -341,7 +341,7 @@
         // device based its edits on.
         const fence = await fs.collection(SHOP_COLLECTION).doc(user.uid).get({ source: "server" });
         const fenceData = fence.exists ? fence.data() : null;
-        if (fenceData && fenceData.state) {
+        if (!force && fenceData && fenceData.state) {
           const remoteAt = Number(fenceData.updatedAt) || (fenceData.serverAt?.toMillis?.() || 0);
           const storedHash = lastSyncedHash();
           const remoteHash = T.normalizeState ? stateHashOf(T.normalizeState(fenceData.state)) : "";
@@ -778,6 +778,9 @@
             if (window.Till?.state?.store?.subscription) {
               window.Till.state.store.subscription.lastConfirmedAt = confirmedAt;
               window.Till.save?.({ quiet: true });
+              // This mutation is itself the authoritative change from the
+              // developer's confirm — the fence must not stall it.
+              window.Till?.cloud?.push?.({ force: true, immediate: true }).catch(() => {});
             }
             // The lock is a paint — the shop must not have to reload to see it vanish.
             window.render?.();
@@ -789,6 +792,9 @@
           const applied = Number(sub.revertedAt || 0);
           if (revertedAt > applied) {
             window.Till?.revertSubscription?.({ revertedAt, reason: data.reason || "" });
+            // This mutation is itself the authoritative change from the
+            // developer's revert — the fence must not stall it.
+            window.Till?.cloud?.push?.({ force: true, immediate: true }).catch(() => {});
             // The lock is a paint — the shop must see it come back too.
             window.render?.();
           }
