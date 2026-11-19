@@ -872,7 +872,7 @@
           <span class="product-row-tile">${productTile(p)}</span>
           <span class="product-row-copy">
             <strong>${esc(p.name)}</strong>
-            <small>${[detailLine, stockText].filter(Boolean).map(esc).join(" · ")}</small>
+            <small>${[detailLine, stockText, p.savedBy ? `saved by ${p.savedBy}` : null].filter(Boolean).map(esc).join(" · ")}</small>
           </span>
           <span class="product-row-price">${esc(price)}</span>
         </button>

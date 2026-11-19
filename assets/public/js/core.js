@@ -461,7 +461,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         // one pack/box/dozen carries.
       // The parent item sells by default alongside its variants.
       sellParent: true,
-        packSize: Number.isFinite(Number(p.packSize)) ? Math.max(0, Math.round(Number(p.packSize))) : 0
+        packSize: Number.isFinite(Number(p.packSize)) ? Math.max(0, Math.round(Number(p.packSize))) : 0,
+        // Who saved the item last (stock-in, edit, write-off, restock). The
+        // Stock page shows it so everyone knows whose work it is.
+        savedBy: String(p.savedBy || "").trim().slice(0, 60) || null
       };
     });
     const suppliers = (Array.isArray(data.suppliers) ? data.suppliers : []).filter((s) => s && typeof s === "object").map((s, index) => {
@@ -1182,6 +1185,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
           category: String(line.category || "") || T.categories()[0] || "General",
           soldByMass: false
         };
+        T.touchProduct(product);
         T.state.products.unshift(product);
         applied.push({
           productId: product.id,
@@ -1198,6 +1202,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       const cost = clampInt(line.cost, 0, 100000000);
       // Stock that came in at a known price sets the buying price.
       if (cost > 0) product.cost = cost;
+      T.touchProduct(product);
       applied.push({
         productId: product.id,
         name: product.name,
@@ -1234,6 +1239,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (packSize !== null && packSize !== undefined && Number.isFinite(packSize) && packSize > 0) {
         product.packSize = Math.min(100000, Math.round(packSize));
       }
+      T.touchProduct(product);
       T.save();
       T.logActivity("stock", `Stock in: ${amount} × ${product.name} (${variant.label || "variant"})`);
       return { ok: true, product, variant };
@@ -1250,9 +1256,18 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       product.packSize = Math.min(100000, Math.round(packSize));
     }
     product.stock = clampInt(product.stock + amount, 0, 1000000);
+    T.touchProduct(product);
     T.save();
     T.logActivity("stock", `Stock in: ${amount} × ${product.name}`);
     return { ok: true, product };
+  };
+
+  /** Record who last touched this product — shown on the Stock item card. */
+  T.touchProduct = (product) => {
+    if (product && typeof product === "object" && !Array.isArray(product)) {
+      product.savedBy = String(T.activeStaff?.() || T.state?.store?.staff || "").trim().slice(0, 60) || null;
+    }
+    return product;
   };
 
   /* ---------- Customer debt ---------- */
@@ -1639,6 +1654,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     }
     const cleanReason = T.WASTAGE_REASONS.includes(String(reason)) ? String(reason) : "Other";
     product.stock = clampInt(product.stock - amount, 0, 1000000);
+    T.touchProduct(product);
     T.state.wastage = T.state.wastage || [];
     T.state.wastage.unshift({
       id: uid("w"),
@@ -2471,9 +2487,14 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
 
   T.save = ({ quiet = false, stamp = true, sync = true, force = false } = {}) => {
     clearTimeout(T.ui.saveTimer);
-    T.ui.saving = true;
-    T.ui.saveError = false;
-    T.setSaveState("saving");
+    // A purely-internal bookkeeping save (a stash sync, the cloud base echo)
+    // must not make the save badge flash — the shopkeeper would see it pulse
+    // every minute even when they did not touch anything.
+    if (!quiet) {
+      T.ui.saving = true;
+      T.ui.saveError = false;
+      T.setSaveState("saving");
+    }
     // The daily stock book rides along with every save: openings on the
     // first save of a day, the last level seen on every one.
     T.markStockDay();
@@ -2485,11 +2506,12 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       if (stamp) {
         try { localStorage.setItem("biller.pos.savedAt", String(Date.now())); } catch { /* ignore */ }
       }
-      // The cloud copy follows a moment later, so a burst of edits is one write.
+      // The cloud copy follows a moment later, so a burst of edits is one
+      // write.
       if (sync) T.cloud?.push?.({ force });
       T.ui.saveTimer = setTimeout(() => {
         T.ui.saving = false;
-        T.setSaveState("saved");
+        if (!quiet) T.setSaveState("saved");
       }, 620);
       return true;
     } catch (error) {

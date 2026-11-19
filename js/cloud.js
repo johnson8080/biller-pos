@@ -391,11 +391,16 @@
     return T.normalizeState ? T.normalizeState(merged) : merged;
   }
 
-  /** Re-paint only when the shopkeeper is not typing. A sync that lands
-      behind the shopkeeper replaces the screen, and replacing a screen with
-      a form on it throws whatever they were writing away. */
+  /** Re-paint (quietly) unless the shopkeeper is mid-edit. Sync that lands
+      behind the shopkeeper goes through Till.softRender, which waits for a
+      quiet moment — the DOM they are touching is never replaced under them. */
   function maybeRepaint() {
     try {
+      // Prefer the app's softRender — it defers while the shopkeeper is
+      // typing or touching. Without it (stale caller), stay out of the way
+      // while editing instead of yanking the screen away.
+      const repaint = window.Till?.softRender;
+      if (typeof repaint === "function") { repaint(); return; }
       const active = document.activeElement;
       const tag = String(active?.tagName || "").toLowerCase();
       const editing = Boolean(active) && (tag === "input" || tag === "textarea" || tag === "select" || active.isContentEditable);

@@ -2199,7 +2199,12 @@ function cloudSyncStateHash() {
     if (!T) return "none";
     const parts = [];
     for (const account of T.cloud?.accounts?.() || []) {
-      parts.push(`a:${account.id}:${account.t || 0}:${account.off ? 1 : 0}:${account.sub?.status || ""}`);
+      const lastSeen = Number(account.t || 0);
+      // Bucket the heartbeat into a 15-minute window instead of using the raw
+      // timestamp — otherwise every 60-second beat changes the fingerprint and
+      // the dev panel re-paints itself once a minute for nothing.
+      const seenBucket = Math.floor(lastSeen / 900000);
+      parts.push(`a:${account.id}:${account.off ? 1 : 0}:${seenBucket}:${account.sub?.status || ""}`);
     }
     for (const request of T.cloud?.paymentRequests?.() || []) {
       parts.push(`p:${request.id}:${request.status}:${request.at || 0}`);
@@ -2305,10 +2310,13 @@ function render() {
   const previousRouteName = T.ui.route?.name;
   T.ui.route = route;
   const routeKey = `${route.name}/${route.param || ""}`;
+  const scrollBefore = viewport.scrollTop;
+  let routeChanged = false;
   if (renderedRouteKey !== routeKey) {
     renderedRouteKey = routeKey;
-    // The scroll container is .viewport, not the window.
-    viewport.scrollTop = 0;
+    // The scroll container is .viewport, not the window. Applied when we
+    // actually repaint below.
+    routeChanged = true;
   }
 
   // Opening the Settings tab starts with every category dropdown closed.
@@ -2351,7 +2359,9 @@ function render() {
   // Update UI chrome
   const isAuthRoute = route.name === "auth";
   if (appbarEl) {
-    appbarEl.innerHTML = T.screens.appbar(route);
+    const nextAppbar = T.screens.appbar(route);
+    // Same visible content — keep the DOM exactly as it is.
+    if (appbarEl.innerHTML !== nextAppbar) appbarEl.innerHTML = nextAppbar;
     // The login screen carries its own branding, and the scanner is a
     // full-screen camera view — neither needs the app bar.
     appbarEl.classList.toggle("is-hidden", isAuthRoute || route.name === "scan");
@@ -2368,7 +2378,8 @@ function render() {
     // on the one-off flows (login, cart, payment, receipt, scanner).
     const showTabs = ["sell", "orders", "debt", "stock", "suppliers", "reports", "audit", "more"].includes(route.name) && !(route.name === "debt" && route.param);
 
-    tabbarEl.innerHTML = showTabs ? T.screens.tabbar(route) : "";
+    const nextTabbar = showTabs ? T.screens.tabbar(route) : "";
+    if (tabbarEl.innerHTML !== nextTabbar) tabbarEl.innerHTML = nextTabbar;
     tabbarEl.classList.toggle("is-hidden", !showTabs);
   }
 
@@ -2428,7 +2439,11 @@ function render() {
     html = T.screens.lockedScreen();
   }
 
-  viewport.innerHTML = html;
+  const replace = viewport.innerHTML !== html;
+  if (replace) {
+    viewport.innerHTML = html;
+    viewport.scrollTop = routeChanged ? 0 : scrollBefore;
+  }
   viewport.classList.toggle("is-auth", screenName === "auth");
   // Keep the cloud fingerprint in step with what the shop actually sees, so
   // the next snapshot only re-renders when something genuinely changed.
@@ -2438,7 +2453,7 @@ function render() {
   if (document.getElementById("notify-status")) updateReminderRow();
 
   // The login screen wires its own form and segmented control.
-  if (screenName === "auth") {
+  if (replace && screenName === "auth") {
     T.auth?.attach?.(viewport);
   }
 
@@ -2458,6 +2473,10 @@ function render() {
   wireActions(tabbarEl);
   wireActions(layersEl);
 
+  // From here on, everything re-wires elements inside a freshly-painted screen.
+  // When nothing visible changed we skip it entirely: re-listening on the
+  // same DOM would double-fire listeners and grab the screen back mid-tap.
+  if (replace) {
   // Two or more shopkeepers on the roster and this device has not picked one
   // yet: ask who is selling, exactly once per device (not per visit), so the
   // right name lands on the receipts rung up here.
@@ -2648,7 +2667,48 @@ function render() {
   } else {
     T.scanner?.stopScreen?.();
   }
+  }
 }
+
+/* ============================================================
+   Silent, interruption-free live sync.
+   ============================================================ */
+// Any repaint triggered by the cloud must never yank the screen away from
+// the shopkeeper mid-gesture. We track interaction; sync-driven repaints
+// only land once the shopkeeper has stopped touching things (~1s of calm,
+// or when nothing is being typed). Real taps repaint instantly — this gate
+// is only for changes nobody asked for.
+let lastInteractAt = 0;
+let softRenderQueued = false;
+let softRenderTimer = 0;
+const markInteract = () => { lastInteractAt = Date.now(); };
+for (const evt of ["pointerdown", "keydown", "touchstart", "wheel"]) {
+  try { document.addEventListener(evt, markInteract, { passive: true, capture: true }); } catch { /* ignore */ }
+}
+
+/** Is the shopkeeper mid-edit right now? */
+function editingNow() {
+  const active = document.activeElement;
+  const tag = String(active?.tagName || "").toLowerCase();
+  return Boolean(active && (tag === "input" || tag === "textarea" || tag === "select" || active.isContentEditable));
+}
+
+/** Repaint triggered by sync — but never on top of a tap or a sentence. */
+function softRender() {
+  const busy = editingNow() || (Date.now() - lastInteractAt) < 960;
+  if (busy) {
+    if (softRenderQueued) return; // one quiet repaint is already coming
+    softRenderQueued = true;
+    clearTimeout(softRenderTimer);
+    softRenderTimer = setTimeout(() => {
+      softRenderQueued = false;
+      render();
+    }, 1000);
+    return;
+  }
+  render();
+}
+try { window.Till && (window.Till.softRender = softRender); } catch { /* ignore */ }
 
 // --- Sync ---
 //
@@ -2716,8 +2776,9 @@ function boot() {
       // moved; that kills the periodic flash while the app is open.
       const hash = cloudSyncStateHash();
       if (hash !== cloudSyncHash) {
+        // Re-paint quietly: never on top of a gesture or a sentence being typed.
         cloudSyncHash = hash;
-        render();
+        softRender();
         return;
       }
     }

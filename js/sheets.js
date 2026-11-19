@@ -876,6 +876,7 @@
 
       if (existing) {
         existing.name = values.name;
+        existing.savedBy = String(T.activeStaff?.() || T.state.store.staff || "").trim().slice(0, 60) || null;
         existing.detail = values.detail;
         existing.price = unitPrice;
         existing.cost = unitCost;
@@ -897,6 +898,7 @@
           id: T.uid(),
           name: values.name,
           detail: values.detail,
+          savedBy: String(T.activeStaff?.() || T.state.store.staff || "").trim().slice(0, 60) || null,
           price: unitPrice,
           cost: unitCost,
           stock,
