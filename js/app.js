@@ -913,7 +913,7 @@ function runAction(btn, opts = {}) {
     if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.setActiveStaff?.(name);
     T.claimStaff?.(name);
-    T.save();
+    T.save({ quiet: true, force: true });
     T.sheets?.close?.(true);
     render();
     T.toast(`Selling as ${name}`, "i-check");
@@ -938,7 +938,7 @@ function runAction(btn, opts = {}) {
     if (!String(T.state.store.staff || "").trim()) T.state.store.staff = name;
     T.setActiveStaff?.(name);
     T.claimStaff?.(name);
-    T.save();
+    T.save({ quiet: true, force: true });
     T.toast(`${name} added as the shopkeeper — now save your shop details`, "i-check");
     T.sheets?.openFirstRunGate?.();
   }
@@ -962,7 +962,7 @@ function runAction(btn, opts = {}) {
     T.state.store.name = name;
     T.state.store.phone = phone;
     T.state.store.address = address;
-    T.save();
+    T.save({ quiet: true, force: true });
     // Keep the sheet open and drop focus to the optional M-Pesa step.
     const mpesaName = document.getElementById("first-run-mpesa-paybill") || document.getElementById("first-run-mpesa-till");
     mpesaName?.focus({ preventScroll: true });
@@ -995,7 +995,7 @@ function runAction(btn, opts = {}) {
         backendKey: ""
       };
       T.logActivity?.("edit", "M-Pesa production saved at first-run setup");
-      T.save();
+      T.save({ quiet: true, force: true });
     }
     T.sheets?.close?.(true);
     go("#/stock");
@@ -1618,9 +1618,25 @@ function runAction(btn, opts = {}) {
       confirmLabel: "Reset everything",
       danger: true,
       onConfirm: () => {
+        // Keep the plan,Appearance, and shopkeeper claims intact — this reset
+        // wipes the till, not the subscription the shop already paid for.
+        const prevSub = JSON.parse(JSON.stringify(T.state.store.subscription || {}));
+        const prevTheme = T.state.store.theme;
+        const prevColor = T.state.store.colorScheme;
+        const prevText = T.state.store.textSize;
+        const prevView = T.state.store.sellView;
+        const prevSort = T.state.store.sellSort;
+        const prevCode = T.state.store.shopCode;
         T.state = T.seedState();
-        T.save();
-        T.logActivity?.("reset", "All data reset — shop started empty");
+        T.state.store.subscription = prevSub;
+        T.state.store.theme = prevTheme;
+        T.state.store.colorScheme = prevColor;
+        T.state.store.textSize = prevText;
+        T.state.store.sellView = prevView;
+        T.state.store.sellSort = prevSort;
+        T.state.store.shopCode = prevCode;
+        T.save({ quiet: true, force: true });
+        T.logActivity?.("reset", "All data reset — shop kept plans, theme and shopCode");
         T.ui.category = "All";
         T.ui.search = "";
         T.ui.stockSearch = "";

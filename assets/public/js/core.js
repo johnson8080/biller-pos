@@ -673,7 +673,10 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       .filter((entry) => entry && typeof entry === "object")
       .map((entry, index) => ({
         id: String(entry.id || `log_${index}`).slice(0, 40),
-        at: String(entry.at || new Date().toISOString()),
+        // Do not invent fresh timestamps on every normalize pass — an
+        // unstamped entry must stay unstamped, otherwise the content
+        // hash changes and cloud probes false-flag conflicts.
+        at: entry.at ? String(entry.at) : "1970-01-01T00:00:00.000Z",
         kind: String(entry.kind || "other").slice(0, 20),
         summary: String(entry.summary || "Activity").slice(0, 140)
       }))
@@ -2446,7 +2449,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
     if (label) label.textContent = mode === "saving" ? "Saving" : mode === "error" ? "Not saved" : "Saved";
   };
 
-  T.save = ({ quiet = false, stamp = true, sync = true } = {}) => {
+  T.save = ({ quiet = false, stamp = true, sync = true, force = false } = {}) => {
     clearTimeout(T.ui.saveTimer);
     T.ui.saving = true;
     T.ui.saveError = false;
@@ -2463,7 +2466,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
         try { localStorage.setItem("biller.pos.savedAt", String(Date.now())); } catch { /* ignore */ }
       }
       // The cloud copy follows a moment later, so a burst of edits is one write.
-      if (sync) T.cloud?.push?.();
+      if (sync) T.cloud?.push?.({ force });
       T.ui.saveTimer = setTimeout(() => {
         T.ui.saving = false;
         T.setSaveState("saved");
