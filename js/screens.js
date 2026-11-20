@@ -1494,6 +1494,7 @@
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
         ${clockTampered || waiting ? "" : ""}
         <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
+        <button class="btn btn-ghost btn-block" data-act="open-wastage" style="opacity:.85">${icon("i-alert")} Record wastage</button>
         <button class="btn btn-ghost btn-block" data-act="sign-out" style="opacity:.85">${icon("i-user")} Sign out</button>
         ${T.getSession?.() ? `<button class="btn btn-ghost btn-block" data-act="open-delete-account" style="opacity:.85">${icon("i-trash")} Delete this account</button>` : ""}
       </div>

@@ -688,7 +688,9 @@ function runAction(btn, opts = {}) {
     "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
     "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
     "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
-    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push"
+    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push",
+    // Stock bookkeeping is not selling — available even during first-run setup.
+    "open-wastage", "open-stock-day", "open-stock-days"
   ]);
   if (T.firstRunNeeded?.() && !FIRST_RUN_ALLOW.has(act)) {
     T.sheets?.openFirstRunGate?.();
@@ -700,7 +702,9 @@ function runAction(btn, opts = {}) {
   const STAFF_GATE_ALLOW = new Set([
     "add-staff-gate", "pick-staff", "choose-staff",
     "sign-out", "retry-connection", "continue-offline",
-    "close-sheet"
+    "close-sheet",
+    // Stock bookkeeping is not selling — available even when the staff gate is up.
+    "open-wastage", "open-stock-day", "open-stock-days"
   ]);
   if (T.staffBlocked?.() && !STAFF_GATE_ALLOW.has(act)) {
     T.sheets?.openStaffGate?.();
@@ -714,6 +718,9 @@ function runAction(btn, opts = {}) {
       "pay-subscription", "subscription-sent", "cloud-sync", "refresh-data",
       "open-subscription", "open-date-settings", "open-developer-chat",
       "copy-value", "close-sheet", "exit-app", "continue-offline", "retry-connection", "sign-out",
+      // Stock bookkeeping (wastage, daily counts) is not selling — an unpaid
+      // shop must still be able to record spoilage and check its books.
+      "open-wastage", "open-stock-day", "open-stock-days",
       // An unpaid shop may always walk out for good, the same one-tap act that
       // already exists in Settings — it is what many "I gave up" calls funnel into.
       "open-delete-account"
