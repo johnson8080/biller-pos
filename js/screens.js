@@ -933,7 +933,7 @@
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="stock-side">
-      <button class="stock-side-link is-danger" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
+      <button class="stock-side-link is-danger" data-act="open-wastage" onclick="window.Till?.sheets?.openWastage?.()">${icon("i-alert")} Record wastage</button>
       <button class="stock-side-link" data-act="${latestDay ? `open-stock-day` : `open-stock-days`}" ${latestDay ? `data-value="${esc(latestDay.date)}"` : ""}>${icon("i-box")} Todays stock</button>
       <button class="stock-side-link" data-act="open-stock-days">${icon("i-box")} ${olderDays > 0 ? `+${olderDays} older days` : "Older days"}</button>
     </div>`;
@@ -1494,7 +1494,7 @@
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
         ${clockTampered || waiting ? "" : ""}
         <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
-        <button class="btn btn-ghost btn-block" data-act="open-wastage" style="opacity:.85">${icon("i-alert")} Record wastage</button>
+        <button class="btn btn-ghost btn-block" data-act="open-wastage" style="opacity:.85" onclick="window.Till?.sheets?.openWastage?.()">${icon("i-alert")} Record wastage</button>
         <button class="btn btn-ghost btn-block" data-act="sign-out" style="opacity:.85">${icon("i-user")} Sign out</button>
         ${T.getSession?.() ? `<button class="btn btn-ghost btn-block" data-act="open-delete-account" style="opacity:.85">${icon("i-trash")} Delete this account</button>` : ""}
       </div>
