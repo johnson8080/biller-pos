@@ -1,5 +1,5 @@
-﻿/* ============================================================
-   Biller POS â€” visual system
+/* ============================================================
+   Biller POS — visual system
    Mobile-first point of sale: warm paper, forest ink, lime accents.
    ============================================================ */
 :root {
@@ -1170,8 +1170,8 @@ h1, h2, h3, h4, p { margin: 0; }
   line-height: 1;
 }
 .sell-status-box:active { transform: scale(.96); }
-/* The hero carries the app's standard border. The shop meta â€” name, date,
-   serving shopkeeper, version â€” stays on one single line, wrapped in one
+/* The hero carries the app's standard border. The shop meta — name, date,
+   serving shopkeeper, version — stays on one single line, wrapped in one
    border that spans across all four items. */
 .sell-head {
   margin-bottom: 0;
@@ -1435,7 +1435,7 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 
 /* First-run gate: shop set-up step shown only on the very first fresh
-   till — step 1 name a shopkeeper, step 2 save shop details, lands on
+   till � step 1 name a shopkeeper, step 2 save shop details, lands on
    Stock so the first item gets saved before selling starts. */
 .first-run-gate { display: flex; flex-direction: column; gap: 2px; }
 .first-run-step {
@@ -2442,6 +2442,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .cash-amount.placeholder { color: var(--faint); }
 .cash-amount.change { color: var(--forest-3); }
 .cash-amount.short { color: var(--amber); }
+.cash-input { width: 100%; min-width: 0; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; letter-spacing: inherit; font-variant-numeric: tabular-nums; }
+.cash-input::placeholder { color: var(--faint); }
+.cash-input:focus { outline: 2px solid var(--forest-3); outline-offset: 2px; border-radius: 3px; }
+
 .quick-cash { display: flex; gap: 5px; overflow-x: auto; padding: 10px 0 3px; scrollbar-width: none; }
 .quick-cash::-webkit-scrollbar { display: none; }
 .quick-cash .chip { min-height: 34px; padding: 0 10px; font-size: calc(10px * var(--fs)); }

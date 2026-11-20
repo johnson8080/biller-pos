@@ -2737,9 +2737,11 @@
     const cashBoard = method === "cash" ? `
       <div class="cash-board">
         <div class="cash-display">
-          <div class="cash-cell"><div class="cash-label">Cash received</div><div class="cash-amount ${cash ? "" : "placeholder"} money">${cash ? money(cash) : "—"}</div></div>
-          <div class="cash-cell"><div class="cash-label">${change >= 0 && cash ? "Change due" : "Remaining"}</div>
-            <div class="cash-amount money ${change >= 0 && cash ? "change" : cash ? "short" : "placeholder"}">${cash ? money(Math.abs(change)) : "—"}</div>
+          <div class="cash-cell"><div class="cash-label">Cash received</div>
+            <input class="cash-amount cash-input money" id="cash-manual" type="text" inputmode="decimal" autocomplete="off" placeholder="—" value="${cash ? esc(String(cash / 100)) : ""}" aria-label="Cash received">
+          </div>
+          <div class="cash-cell"><div class="cash-label" id="cash-change-label">${change >= 0 && cash ? "Change due" : "Remaining"}</div>
+            <div class="cash-amount money ${change >= 0 && cash ? "change" : cash ? "short" : "placeholder"}" id="cash-change">${cash ? money(Math.abs(change)) : "—"}</div>
           </div>
         </div>
         <div class="quick-cash" aria-label="Quick cash amounts">${quick}</div>

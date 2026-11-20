@@ -2652,8 +2652,9 @@ function render() {
       if (key === "del") {
         T.ui.cash = String(T.ui.cash || "").slice(0, -1);
       } else {
-        // The keypad types shillings ("500" is KES 500), not cents.
-        const next = (String(T.ui.cash || "") + key).replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "");
+        // The keypad types shillings ("500" is KES 500), not cents. A typed
+        // decimal is dropped first, since the keypad only deals in whole ones.
+        const next = (String(T.ui.cash || "").split(".")[0] + key).replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "");
         T.ui.cash = next.slice(0, 9);
       }
       render();
@@ -2668,6 +2669,45 @@ function render() {
       render();
     });
   });
+
+  // The cash amount can also be typed, for a customer who hands over an odd
+  // figure the keypad never guesses. Typing repaints the change cell in place
+  // so the field keeps focus instead of re-rendering the whole screen.
+  const cashManual = document.getElementById("cash-manual");
+  if (cashManual) {
+    const paintCash = () => {
+      const total = T.cartTotals().total;
+      const cents = Math.round((Number(T.ui.cash) || 0) * 100);
+      const change = cents - total;
+      const changeEl = document.getElementById("cash-change");
+      if (changeEl) {
+        changeEl.textContent = cents ? T.money(Math.abs(change)) : "—";
+        changeEl.classList.toggle("change", Boolean(cents) && change >= 0);
+        changeEl.classList.toggle("short", Boolean(cents) && change < 0);
+        changeEl.classList.toggle("placeholder", !cents);
+      }
+      const changeLabel = document.getElementById("cash-change-label");
+      if (changeLabel) changeLabel.textContent = cents && change >= 0 ? "Change due" : "Remaining";
+      const payBtn = document.getElementById("cash-complete");
+      const ok = cents >= total && total > 0;
+      if (payBtn) payBtn.disabled = !ok;
+      const hint = document.getElementById("pay-hint");
+      if (hint) hint.textContent = cents
+        ? (ok ? `Change due ${T.money(change)}` : `Add ${T.money(total - cents)} more to complete`)
+        : "Enter the cash received, or tap Exact.";
+    };
+    cashManual.addEventListener("input", () => {
+      const cleaned = cashManual.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+      if (cleaned !== cashManual.value) cashManual.value = cleaned;
+      T.ui.cash = cleaned;
+      paintCash();
+    });
+    cashManual.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      document.getElementById("cash-complete")?.click();
+    });
+  }
 
   // The M-Pesa phone field keeps its text between renders, and Enter sends.
   const mpesaPhone = document.getElementById("mpesa-phone");
