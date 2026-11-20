@@ -673,8 +673,8 @@
         <div class="report-card-head"><h2>Sales (last 7 days)</h2><span class="report-total">${compactMoney(weekTotal)}</span></div>
         <div class="report-chart" role="img" aria-label="Sales for the last seven days">
           ${days.map((day) => `<div class="chart-col ${day.today ? "is-today" : ""}" title="${esc(day.label)}: ${money(day.total)}">
-            <span class="chart-amount">${esc(String(compactMoney(day.total)).replace(/[^0-9.,k]/gi, ""))}</span>
-            <span class="chart-bar" style="height:${Math.max(3, Math.round((day.total / maxDay) * 82))}px"></span>
+            <span class="chart-amount">${esc(Math.round(day.total / 100).toLocaleString("en-US"))}</span>
+            <span class="chart-bar" style="height:${Math.max(3, Math.round((day.total / maxDay) * 96))}px"></span>
             <span class="chart-day">${esc(day.label)}</span>
           </div>`).join("")}
         </div>
