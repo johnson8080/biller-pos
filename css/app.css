@@ -1861,7 +1861,7 @@ html[data-color-scheme="light"] .chip.is-active {
 .stock-day-card > summary::-webkit-details-marker { display: none; }
 .stock-day-card > summary .chev { margin-left: auto; transition: transform .15s ease; }
 .stock-day-card[open] > summary .chev { transform: rotate(90deg); }
-.stock-day-body { padding: 0 10px 10px; border-top: 1px solid var(--ui-line); }
+.stock-day-body { padding: 10px; }
 .inventory-alert {
   display: flex;
   align-items: flex-start;
