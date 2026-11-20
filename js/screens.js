@@ -933,18 +933,18 @@
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="flat-panel stock-side">
-      <div class="stock-side-row">
-        <div class="stock-side-item">
+      <div class="stock-side-grid">
+        <div class="stock-side-col">
           <span class="stock-side-label">${icon("i-alert")} Wastage</span>
           <span class="stock-side-value ${hadLoss ? "is-loss" : ""}">${hadLoss ? `−${compactMoney(wastageCost)}` : "Clean"}</span>
           <button class="text-btn" data-act="open-wastage">${icon("i-plus")} Record</button>
         </div>
         <span class="stock-side-div" aria-hidden="true"></span>
-        <div class="stock-side-item">
+        <div class="stock-side-col">
           <span class="stock-side-label">${icon("i-box")} Daily stock</span>
           <span class="stock-side-value">${latestWhen ? esc(latestWhen) : "—"}</span>
-          ${latestDay ? `<button class="text-btn" data-act="open-stock-day" data-value="${esc(latestDay.date)}">Open</button>` : ""}
-          ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">+${olderDays}</button>` : ""}
+          ${latestDay ? `<button class="text-btn" data-act="open-stock-day" data-value="${esc(latestDay.date)}">Open book</button>` : `<span class="stock-side-sub">Fills in as you trade</span>`}
+          ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">+${olderDays} older</button>` : ""}
         </div>
       </div>
     </div>`;
