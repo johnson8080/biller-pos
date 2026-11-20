@@ -933,18 +933,9 @@
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="stock-side">
-      <span class="stock-side-item">
-        <span class="stock-side-label">${icon("i-alert")} Wastage</span>
-        <span class="stock-side-value ${hadLoss ? "is-loss" : ""}">${hadLoss ? `−${compactMoney(wastageCost)}` : "Clean"}</span>
-        <button class="text-btn" data-act="open-wastage">${icon("i-plus")} Record</button>
-      </span>
-      <span class="stock-side-sep" aria-hidden="true">·</span>
-      <span class="stock-side-item">
-        <span class="stock-side-label">${icon("i-box")} Daily</span>
-        <span class="stock-side-value">${latestWhen ? esc(latestWhen) : "—"}</span>
-        ${latestDay ? `<button class="text-btn" data-act="open-stock-day" data-value="${esc(latestDay.date)}">Open</button>` : `<span class="stock-side-sub">fills as you trade</span>`}
-        ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">+${olderDays}</button>` : ""}
-      </span>
+      <button class="stock-side-link" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
+      <button class="stock-side-link" data-act="${latestDay ? `open-stock-day` : `open-stock-days`}" ${latestDay ? `data-value="${esc(latestDay.date)}"` : ""}>${icon("i-box")} Todays stock</button>
+      ${latestDay && olderDays > 0 ? `<button class="stock-side-link" data-act="open-stock-days">+${olderDays} older days</button>` : ""}
     </div>`;
   }
 
