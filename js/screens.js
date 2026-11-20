@@ -2969,6 +2969,15 @@
       // Only the paper itself gets a fixed width; inner blocks size from it,
       // so a phone whose font runs wider wraps where the screen wraps.
       copy.style.width = `${size.width}px`;
+      // The spare pixels that guard the last line from serialisation reflow
+      // go *inside* the card's padding, not below its border — otherwise the
+      // border box sits 12px high and the white frame around the image looks
+      // lopsided.
+      const basePad = parseFloat(getComputedStyle(paper).paddingBottom) || 16;
+      copy.style.paddingBottom = `${basePad + 12}px`;
+      // Pin the border box to the height the SVG allots it, so the white frame
+      // is identical on all four sides.
+      copy.style.height = `${size.height}px`;
     } finally {
       host.remove();
     }
