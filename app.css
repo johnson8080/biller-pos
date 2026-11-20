@@ -1826,16 +1826,17 @@ html[data-color-scheme="light"] .chip.is-active {
 .flat-panel { padding: 9px 10px; border: 1px solid var(--ui-line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow-card); margin: 9px 0; }
 .stock-side {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: stretch;
   gap: 8px;
   margin: 6px 0 10px;
 }
 .stock-side-link {
+  flex: 1 1 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--ui-line);
   border-radius: 6px;
   background: var(--surface);
@@ -1845,6 +1846,7 @@ html[data-color-scheme="light"] .chip.is-active {
   letter-spacing: .02em;
   cursor: pointer;
   transition: background .12s ease, border-color .12s ease;
+  text-align: center;
 }
 .stock-side-link:hover { background: var(--surface-2, var(--surface)); border-color: var(--accent, var(--ui-line)); }
 .stock-side-link .ico { width: 12px; height: 12px; }
