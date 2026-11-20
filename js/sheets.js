@@ -3066,7 +3066,7 @@
             <input class="input weigh-input" id="pack-pieces" name="pieces" type="number" min="1" step="1" inputmode="numeric" value="1" required>
             <div class="variant-chips" role="group" aria-label="Quick pick">
               ${[1, 2, 3, 6].map((n) => `<button type="button" class="variant-chip" data-pieces="${n}">${n} pc</button>`).join("")}
-              ${[1, 2, 5].map((n) => `<button type="button" class="variant-chip" data-packs="${n}">${n === 1 ? "1" : n} pack${n === 1 ? "" : "s"} (${n * packSize})</button>`).join("")}
+              ${[1, 2].map((n) => `<button type="button" class="variant-chip" data-packs="${n}">${n === 1 ? "1" : n} pack${n === 1 ? "" : "s"} (${n * packSize})</button>`).join("")}
             </div>
           </div>
           <div class="weigh-total">
