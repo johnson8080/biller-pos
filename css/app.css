@@ -1824,40 +1824,42 @@ html[data-color-scheme="light"] .chip.is-active {
 /* Wastage + daily stock book as one flat card, pinned under the retail
    value stat so they never sink below a long inventory list. */
 .flat-panel { padding: 9px 10px; border: 1px solid var(--ui-line); border-radius: 7px; background: var(--surface); box-shadow: var(--shadow-card); margin: 9px 0; }
-.stock-side { margin: 0 0 8px; }
-.stock-side-grid {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  gap: 8px;
-  align-items: stretch;
+.stock-side { margin: 0 0 6px; }
+.stock-side-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.stock-side-div { background: var(--line); }
-.stock-side-col { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.stock-side-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.stock-side-div { display: none; }
 .stock-side-label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: calc(7px * var(--fs));
+  gap: 3px;
+  font-size: calc(8px * var(--fs));
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--muted);
 }
-.stock-side-label .ico { width: 11px; height: 11px; }
+.stock-side-label .ico { width: 10px; height: 10px; }
 .stock-side-value {
-  font-size: calc(12px * var(--fs));
+  font-size: calc(11px * var(--fs));
   font-weight: 750;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 .stock-side-value.is-loss { color: var(--red); }
-.stock-side-sub { font-size: calc(9px * var(--fs)); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.stock-side-col .btn { margin-top: 4px; padding: 3px 8px; min-height: 28px; font-size: calc(9.5px * var(--fs)); }
-.stock-side-col .text-btn { margin-top: 2px; font-size: calc(9px * var(--fs)); }
+.stock-side-item .text-btn { font-size: calc(9px * var(--fs)); padding: 2px 6px; }
 .inventory-alert {
   display: flex;
   align-items: flex-start;

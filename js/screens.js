@@ -933,20 +933,18 @@
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="flat-panel stock-side">
-      <div class="stock-side-grid">
-        <div class="stock-side-col">
+      <div class="stock-side-row">
+        <div class="stock-side-item">
           <span class="stock-side-label">${icon("i-alert")} Wastage</span>
           <span class="stock-side-value ${hadLoss ? "is-loss" : ""}">${hadLoss ? `−${compactMoney(wastageCost)}` : "Clean"}</span>
-          <span class="stock-side-sub">${hadLoss ? `${wastage.count} ${wastage.count === 1 ? "record" : "records"} written off · 30 days` : "Nothing written off · 30 days"}</span>
-          <button class="btn btn-ghost btn-sm" data-act="open-wastage">${icon("i-alert")} Record</button>
+          <button class="text-btn" data-act="open-wastage">${icon("i-plus")} Record</button>
         </div>
         <span class="stock-side-div" aria-hidden="true"></span>
-        <div class="stock-side-col">
+        <div class="stock-side-item">
           <span class="stock-side-label">${icon("i-box")} Daily stock</span>
           <span class="stock-side-value">${latestWhen ? esc(latestWhen) : "—"}</span>
-          <span class="stock-side-sub">${latestWhen ? `${openingCount} opening · ${closingCount} closing` : "Fills in as you trade"}</span>
-          ${latestDay ? `<button class="btn btn-ghost btn-sm" data-act="open-stock-day" data-value="${esc(latestDay.date)}">${icon("i-box")} Open book</button>` : ""}
-          ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">Older days (${olderDays})</button>` : ""}
+          ${latestDay ? `<button class="text-btn" data-act="open-stock-day" data-value="${esc(latestDay.date)}">Open</button>` : ""}
+          ${latestDay && olderDays > 0 ? `<button class="text-btn" data-act="open-stock-days">+${olderDays}</button>` : ""}
         </div>
       </div>
     </div>`;
