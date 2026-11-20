@@ -3141,7 +3141,7 @@
    * already been written off lately.
    */
   function openWastage() {
-    const products = [...(T.state.products || [])].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    const products = [...(Array.isArray(T.state.products) ? T.state.products : [])].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
     const recent = (T.state.wastage || []).slice(0, 6);
     const defaultEmployee = String((T.activeStaff ? T.activeStaff() : "") || T.state.store?.staff || T.getSession?.()?.email?.split("@")[0] || "").trim();
     const reasons = T.WASTAGE_REASONS || ["Spoiled", "Damaged", "Expired", "Spilled", "Missing", "Other"];
