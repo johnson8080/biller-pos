@@ -935,7 +935,7 @@
     return `<div class="stock-side">
       <button class="stock-side-link is-primary" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
       <button class="stock-side-link" data-act="${latestDay ? `open-stock-day` : `open-stock-days`}" ${latestDay ? `data-value="${esc(latestDay.date)}"` : ""}>${icon("i-box")} Todays stock</button>
-      ${latestDay && olderDays > 0 ? `<button class="stock-side-link" data-act="open-stock-days">+${olderDays} older days</button>` : ""}
+      <button class="stock-side-link" data-act="open-stock-days">${icon("i-box")} ${olderDays > 0 ? `+${olderDays} older days` : "Older days"}</button>
     </div>`;
   }
 
