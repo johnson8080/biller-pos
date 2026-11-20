@@ -1741,6 +1741,8 @@
     declinePayment,
     revertPayment,
     deleteAccount,
+    beat,
+    refreshPresence,
     onPaymentPrompt: (fn) => { onPaymentPrompt = fn; },
     devEmails: () => DEV_EMAILS.slice()
   };

@@ -2423,7 +2423,15 @@ function render() {
       : T.screens.audit();
   }
   else if (screenName === "more") html = T.screens.more();
-  else if (screenName === "plans") html = T.screens.plans();
+  else if (screenName === "plans") {
+    // Keep the subscription panel fresh: presence beats can lag a minute, so
+    // pull the latest presence the moment the developer opens the page.
+    if (!window.__plansRefreshAt || Date.now() - window.__plansRefreshAt > 8000) {
+      window.__plansRefreshAt = Date.now();
+      try { T.cloud?.refreshPresence?.(); } catch { /* ignore */ }
+    }
+    html = T.screens.plans();
+  }
   else if (screenName === "store") html = T.screens.storeSettings();
   else if (screenName === "mpesa") {
     html = (T.pinEnabled?.() && !T.ui.mpesaUnlocked)
@@ -2564,6 +2572,7 @@ function render() {
       event.preventDefault();
       applyStoreForm(T);
       T.save();
+      try { T.cloud?.beat?.(); } catch { /* offline: the next heartbeat carries it */ }
       T.toast("Store settings saved", "i-check");
       render();
     });

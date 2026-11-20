@@ -1637,7 +1637,7 @@
         currency: request.currency || "KES",
         reference: request.reference || "",
         mpesaCode: request.mpesaCode || sub.mpesaCode || "",
-        phone: request.phone || "",
+        phone: request.phone || sub.phone || "",
         paidAt: request.confirmedAt || sub.lastPaidAt || 0,
         at: request.at || 0,
         pending: liveStatus === "pending",
