@@ -1772,7 +1772,10 @@ function runAction(btn, opts = {}) {
   }
   else if (act === "add-stock" && id) {    T.sheets?.openStockIn?.(id);
   }
-  else if (act === "open-wastage") { T.sheets?.openWastage?.(); }
+  else if (act === "open-wastage") {
+    try { T.sheets?.openWastage?.(); }
+    catch (error) { console.warn(error); T.toast("Could not open wastage: " + (error?.message || "unknown error"), "i-alert"); }
+  }
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
   else if (act === "refresh-data") {
     Promise.resolve(T.cloud?.refreshNow?.()).then((result) => {
