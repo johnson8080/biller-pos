@@ -1996,7 +1996,7 @@
         <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}" aria-label="${esc(title)}${badge ? ` — ${esc(sub)}` : ""}">
           <span class="data-icon">${icon(iconName)}</span>
           <span class="data-copy"><strong>${esc(title)}</strong><small>${esc(sub)}</small></span>
-          ${badge ? `<span class="count-badge" aria-hidden="true">${badge > 9 ? "9+" : badge}</span>` : ""}
+          ${badge ? `<span class="box-badge" aria-hidden="true">${badge > 9 ? "9+" : badge}</span>` : ""}
           <span class="chev">${icon("i-chevron")}</span>
         </button>
         <div class="settings-group-body" ${openGroups[id] ? "" : "hidden"}>${body}</div>
@@ -2188,7 +2188,7 @@
             <strong>SUBSCRIPTIONS</strong>
             <small>${planCount ? `${planCount} waiting for confirmation — every shop, plan and payment` : "Every shop, its plan and what it paid"}</small>
           </span>
-          ${planCount ? `<span class="count-badge">${planCount > 9 ? "9+" : planCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
+          ${planCount ? `<span class="box-badge">${planCount > 9 ? "9+" : planCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
         </button>` : ""}
         ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories · ${T.state.products.length} products`, catalogBody)}
         ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} · ${T.colorScheme() === "dark" ? "Dark" : "Light"} · ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
@@ -2203,7 +2203,7 @@
           <strong>ANNOUNCEMENTS</strong>
           <small>${announceCount ? `${announceCount} new — tap to read` : "Announcement from the developer"}</small>
         </span>
-        ${announceCount ? `<span class="announce-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
+        ${announceCount ? `<span class="box-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
       </button>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
