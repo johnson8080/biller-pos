@@ -673,7 +673,10 @@ function runAction(btn, opts = {}) {
     "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
     "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
     "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
-    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push"
+    "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push",
+    // Stock bookkeeping is not selling — a shop waiting on its cloud copy can
+    // still record spoilage against whatever it already holds locally.
+    "open-wastage", "open-stock-day", "open-stock-days"
   ]);
   if (T.cloudWaiting?.() && !CLOUD_WAIT_ALLOW.has(act)) {
     T.sheets?.openCloudWaiting?.();
