@@ -1641,7 +1641,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
    * expired, spilled or gone missing. The shelf goes down by the same
    * amount, so the books stay honest.
    */
-  T.recordWastage = (productId, { qty = 0, reason = "", note = "", employee = "" } = {}) => {
+  T.recordWastage = (productId, { qty = 0, reason = "", note = "", employee = "", date = "" } = {}) => {
     const product = T.findProduct(productId);
     if (!product) return { ok: false, error: "That item is no longer in the catalog." };
     const mass = product.soldByMass === true;
@@ -1665,7 +1665,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
       reason: cleanReason,
       note: String(note || "").trim().slice(0, 140),
       employee: String(employee || "").trim().slice(0, 60),
-      date: isoDay(),
+      date: date ? isoDay(date) : isoDay(),
       createdAt: new Date().toISOString()
     });
     if (T.state.wastage.length > 300) T.state.wastage.length = 300;

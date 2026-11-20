@@ -3175,6 +3175,10 @@
             </select>
           </div>
           <div class="field">
+            <label for="wastage-date">Date</label>
+            <input class="input" id="wastage-date" name="date" type="date" value="${esc(isoDay())}" max="${esc(isoDay())}">
+          </div>
+          <div class="field">
             <label for="wastage-note">Note <span class="field-optional">Optional</span></label>
             <input class="input" id="wastage-note" name="note" placeholder="e.g. Power cut" maxlength="140">
           </div>
@@ -3230,7 +3234,8 @@
         qty,
         reason: String(reasonSelect?.value || "Other"),
         note: String(data.get("note") || ""),
-        employee: String(data.get("employee") || "")
+        employee: String(data.get("employee") || ""),
+        date: String(data.get("date") || "")
       });
       if (!result.ok) {
         setFormError(form, result.error || "Could not record that.");
@@ -3342,20 +3347,52 @@
   function openStockDays() {
     const days = T.stockDaysList ? T.stockDaysList() : [];
     if (!days.length) return;
-    open({
+    const body = days.map((day) => {
+      const detail = T.stockDayDetail ? T.stockDayDetail(day.date) : null;
+      const openingCount = Object.keys(day.opening || {}).length;
+      const closingCount = Object.keys(day.closing || day.latest || {}).length;
+      const when = T.dayLabel(`${day.date}T00:00:00`);
+      const openedAt = detail?.openingAt ? T.timeFmt.format(new Date(detail.openingAt)) : "";
+      const closedAt = detail?.closingAt ? T.timeFmt.format(new Date(detail.closingAt)) : "";
+      const rows = detail?.rows?.map((row) => {
+        const qtyText = (value) => row.mass ? T.massLabel(value) : `${value} ${esc(row.unit)}`;
+        const moved = row.sold || row.wasted;
+        return `<div class="report-row">
+          <span class="report-row-copy"><strong>${esc(row.name)}</strong><small>${qtyText(row.opening)} → ${qtyText(row.closing)}${moved ? ` · sold ${row.mass ? T.massLabel(row.sold) : row.sold}${row.wasted ? ` · wasted ${row.mass ? T.massLabel(row.wasted) : row.wasted}` : ""}` : ""}</small></span>
+          <span class="report-amount ${row.closing < row.opening ? "is-profit" : ""}">${row.closing === row.opening ? "same" : `${row.closing > row.opening ? "+" : "−"}${qtyText(Math.abs(row.closing - row.opening))}`}</span>
+        </div>`;
+      }).join("") || `<p class="report-empty">Nothing counted.</p>`;
+      return `<details class="stock-day-card">
+        <summary class="stock-day-summary">
+          <span class="report-rank">${icon("i-box")}</span>
+          <span class="report-row-copy"><strong>${esc(when)}</strong><small>${openingCount} opening · ${closingCount} closing${openedAt ? ` · opened ${openedAt}` : ""}${closedAt ? ` · closed ${closedAt}` : ""}</small></span>
+          <span class="chev">${icon("i-chevron")}</span>
+        </summary>
+        <div class="stock-day-body">
+          <div class="report-list">${rows}</div>
+          <p class="report-note">The opening count is taken at the first save of the day; the closing count is the last level seen that day.</p>
+        </div>
+      </details>`;
+    }).join("");
+open({
       title: "Stock book",
       subtitle: "Opening and closing counts by day",
       iconName: "i-box",
-      body: `<div class="report-list">${days.map((day) => {
-        const openingCount = Object.keys(day.opening || {}).length;
-        const closingCount = Object.keys(day.closing || day.latest || {}).length;
-        const when = T.dayLabel(`${day.date}T00:00:00`);
-        return `<button class="report-row report-row-btn" data-act="open-stock-day" data-value="${esc(day.date)}">
-          <span class="report-rank">${icon("i-box")}</span>
-          <span class="report-row-copy"><strong>${esc(when)}</strong><small>${openingCount} opening · ${closingCount} closing</small></span>
-          <span class="chev">${icon("i-chevron")}</span>
-        </button>`;
-      }).join("")}</div>`
+      size: "default",
+      body: `<div class="stock-day-list">${body}</div>`
+    });
+    // Single-open accordion: opening one day collapses the others so every
+    // card stays reachable without scrolling past a tall expanded block.
+    requestAnimationFrame(() => {
+      const root = layers();
+      if (!root) return;
+      const cards = root.querySelectorAll("details.stock-day-card");
+      cards.forEach((card) => {
+        card.addEventListener("toggle", () => {
+          if (!card.open) return;
+          cards.forEach((other) => { if (other !== card) other.open = false; });
+        });
+      });
     });
   }
 

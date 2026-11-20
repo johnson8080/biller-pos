@@ -1851,6 +1851,14 @@ html[data-color-scheme="light"] .chip.is-active {
 .stock-side-link:hover { background: var(--surface-2, var(--surface)); border-color: var(--accent, var(--ui-line)); }
 .stock-side-link .ico { width: 12px; height: 12px; }
 
+
+.stock-day-list { display: flex; flex-direction: column; gap: 6px; }
+.stock-day-card { border: 1px solid var(--ui-line); border-radius: 7px; background: var(--surface); overflow: hidden; }
+.stock-day-card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.stock-day-card > summary::-webkit-details-marker { display: none; }
+.stock-day-card > summary .chev { margin-left: auto; transition: transform .15s ease; }
+.stock-day-card[open] > summary .chev { transform: rotate(90deg); }
+.stock-day-body { padding: 0 10px 10px; border-top: 1px solid var(--ui-line); }
 .inventory-alert {
   display: flex;
   align-items: flex-start;
