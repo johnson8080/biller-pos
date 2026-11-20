@@ -2203,7 +2203,7 @@
           <strong>ANNOUNCEMENTS</strong>
           <small>${announceCount ? `${announceCount} new — tap to read` : "Announcement from the developer"}</small>
         </span>
-        ${announceCount ? `<span class="count-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
+        ${announceCount ? `<span class="announce-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
       </button>
 
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
