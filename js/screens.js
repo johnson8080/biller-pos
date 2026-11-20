@@ -934,8 +934,7 @@
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="stock-side">
       <button class="stock-side-link" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
-      <button class="stock-side-link" data-act="${latestDay ? `open-stock-day` : `open-stock-days`}" ${latestDay ? `data-value="${esc(latestDay.date)}"` : ""}>${icon("i-box")} Todays stock</button>
-      ${latestDay && olderDays > 0 ? `<button class="stock-side-link" data-act="open-stock-days">+${olderDays} older days</button>` : ""}
+      <button class="stock-side-link" data-act="open-stock-days">${icon("i-box")} Todays stock</button>
     </div>`;
   }
 
