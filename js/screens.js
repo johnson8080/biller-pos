@@ -933,7 +933,7 @@
     const openingCount = latestDay ? Object.keys(latestDay.opening || {}).length : 0;
     const closingCount = latestDay ? Object.keys(latestDay.closing || latestDay.latest || {}).length : 0;
     return `<div class="stock-side">
-      <button class="stock-side-link" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
+      <button class="stock-side-link is-primary" data-act="open-wastage">${icon("i-alert")} Record wastage</button>
       <button class="stock-side-link" data-act="open-stock-days">${icon("i-box")} Todays stock</button>
     </div>`;
   }
