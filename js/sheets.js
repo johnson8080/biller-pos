@@ -3176,7 +3176,7 @@
           </div>
           <div class="field">
             <label for="wastage-date">Date</label>
-            <input class="input" id="wastage-date" name="date" type="date" value="${esc(isoDay())}" max="${esc(isoDay())}">
+            <input class="input" id="wastage-date" name="date" type="date" value="${esc(T.isoDay())}" max="${esc(T.isoDay())}">
           </div>
           <div class="field">
             <label for="wastage-note">Note <span class="field-optional">Optional</span></label>
@@ -3396,6 +3396,29 @@ open({
     });
   }
 
+
+  /* Keep a sheet's submit button visible above the on-screen keyboard. */
+  function adjustSheetForKeyboard() {
+    const sheet = dialogEl;
+    if (!sheet) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const keyboardHeight = Math.max(0, window.innerHeight - vv.height);
+    if (keyboardHeight > 120) {
+      sheet.style.maxHeight = Math.max(240, vv.height - 24) + "px";
+      const active = document.activeElement;
+      if (active && sheet.contains(active)) {
+        setTimeout(() => { try { active.scrollIntoView({ block: "center", behavior: "smooth" }); } catch { } }, 120);
+      }
+    } else {
+      sheet.style.maxHeight = "";
+    }
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", adjustSheetForKeyboard);
+    window.visualViewport.addEventListener("scroll", adjustSheetForKeyboard);
+  }
+  document.addEventListener("focusin", () => { setTimeout(adjustSheetForKeyboard, 250); });
 
   T.sheets = {
     open, close, isOpen, closeCloudWaiting, openManual, manualError, openUnknown, openOutOfStock,
