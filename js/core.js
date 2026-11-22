@@ -84,7 +84,7 @@ const OWNER_STAMP_KEY = "biller.pos.ownerOf";
   ];
 
   const moneyFmt = new Intl.NumberFormat("en-US", { style: "currency", currency: CURRENCY });
-  const timeFmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" });
+  const timeFmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   const shortDateFmt = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" });
   const longDateFmt = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" });
   const receiptDateFmt = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });

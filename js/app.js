@@ -672,7 +672,7 @@ function runAction(btn, opts = {}) {
     "first-run-add-keeper", "first-run-save-shop", "first-run-save-mpesa", "first-run-skip-mpesa",
     "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
     "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
-    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
+    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data", "start-tour",
     "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push",
     // Stock bookkeeping is not selling — a shop waiting on its cloud copy can
     // still record spoilage against whatever it already holds locally.
@@ -690,7 +690,7 @@ function runAction(btn, opts = {}) {
     "first-run-add-keeper", "first-run-save-shop", "first-run-save-mpesa", "first-run-skip-mpesa",
     "sign-out", "continue-offline", "retry-connection", "close-sheet", "exit-app",
     "pay-subscription", "subscription-sent", "open-subscription", "open-date-settings",
-    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data",
+    "open-developer-chat", "copy-value", "cloud-sync", "refresh-data", "start-tour",
     "mpesa-send", "mpesa-cancel", "mpesa-test", "mpesa-demo", "mpesa-test-push",
     // Stock bookkeeping is not selling — available even during first-run setup.
     "open-wastage", "open-stock-day", "open-stock-days"
@@ -705,7 +705,7 @@ function runAction(btn, opts = {}) {
   const STAFF_GATE_ALLOW = new Set([
     "add-staff-gate", "pick-staff", "choose-staff",
     "sign-out", "retry-connection", "continue-offline",
-    "close-sheet",
+    "close-sheet", "start-tour",
     // Stock bookkeeping is not selling — available even when the staff gate is up.
     "open-wastage", "open-stock-day", "open-stock-days"
   ]);
@@ -1042,11 +1042,15 @@ function runAction(btn, opts = {}) {
     T.toast(filled
       ? "M-Pesa production saved — save your first item to start selling"
       : "Skipped M-Pesa — save your first item to start selling", "i-check");
+    // A brand-new shop has just finished setup: walk it through the till
+    // once, starting on Stock so the first task is adding an item.
+    setTimeout(() => { try { T.tour?.start?.({ auto: true }); } catch (error) { console.warn(error); } }, 900);
   }
   else if (act === "first-run-skip-mpesa") {
     T.sheets?.close?.(true);
     go("#/stock");
     T.toast("Skipped M-Pesa — add it any time in Settings → M-Pesa", "i-info");
+    setTimeout(() => { try { T.tour?.start?.({ auto: true }); } catch (error) { console.warn(error); } }, 900);
   }
   else if (act === "set-debt-filter" && value) { T.ui.debtFilter = value; render(); }
   else if (act === "clear-debt-search") {
@@ -1779,6 +1783,7 @@ function runAction(btn, opts = {}) {
     try { T.sheets?.openWastage?.(); }
     catch (error) { console.warn(error); T.toast("Could not open wastage: " + (error?.message || "unknown error"), "i-alert"); }
   }
+  else if (act === "start-tour") { T.tour?.start(); }
   else if (act === "open-target") { T.sheets?.openTarget?.(); }
   else if (act === "refresh-data") {
     Promise.resolve(T.cloud?.refreshNow?.()).then((result) => {
@@ -2510,7 +2515,7 @@ function render() {
   // Two or more shopkeepers on the roster and this device has not picked one
   // yet: ask who is selling, exactly once per device (not per visit), so the
   // right name lands on the receipts rung up here.
-  if (screenName === "sell" && !T.ui.staffAsked && (T.staffRoster?.() || []).length >= 2 && !T.hasDeviceStaff?.()) {
+  if (screenName === "sell" && !T.ui.staffAsked && (T.staffRoster?.() || []).length >= 2 && !T.hasDeviceStaff?.() && !window.Till?.tour?.isActive?.()) {
     T.ui.staffAsked = true;
     T.sheets?.openStaffPicker?.();
   }
@@ -2738,6 +2743,15 @@ function render() {
   } else {
     T.scanner?.stopScreen?.();
   }
+
+  // A shop that has never rung a sale gets the guided tour on its first
+  // Sell paint. `auto()` checks the shop is set up, no sheet is open, and
+  // the tour has not been seen on this device.
+  if (screenName === "sell" && !T.firstRunNeeded?.() && !T.subscriptionLocked?.()) {
+    setTimeout(() => {
+      try { window.Till?.tour?.auto?.(); } catch (error) { console.warn(error); }
+    }, 700);
+  }
   }
 }
 
@@ -2869,7 +2883,7 @@ function boot() {
   setTimeout(() => { try { window.Till?.sheets?.refreshStaffGate?.(); } catch { /* ignore */ } }, 700);
   // This device's shopkeeper announces itself to the other devices.
   const _bootStaff = window.Till?.activeStaff?.();
-  if (T.hasDeviceStaff?.() && _bootStaff) window.Till?.claimStaff?.(_bootStaff);
+  if (window.Till?.hasDeviceStaff?.() && _bootStaff) window.Till?.claimStaff?.(_bootStaff);
   render();
   // Plan the reminders for the monthly plan once the app is up.
   setTimeout(() => { window.Till?.notify?.syncPlan?.(); }, 2500);

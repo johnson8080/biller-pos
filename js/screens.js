@@ -2195,6 +2195,15 @@
         ${announceCount ? `<span class="box-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
       </button>
 
+      <button type="button" class="account-card tour-launch" data-act="start-tour" style="margin-top:10px" aria-label="Take the quick tour">
+        <span class="data-icon">${icon("i-chart")}</span>
+        <span class="account-card-copy">
+          <strong>TAKE THE TOUR</strong>
+          <small>${T.tour?.seen?.() ? "Selling, stock, debts and reports in one minute" : "New — see how the whole till works in one minute"}</small>
+        </span>
+        <span class="chev">${icon("i-chevron")}</span>
+      </button>
+
       <button type="button" class="account-card support-card" data-act="open-developer-chat" style="margin-top:10px">
         <span class="data-icon">${icon("i-chat")}</span>
         <span class="account-card-copy">
