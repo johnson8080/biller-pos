@@ -57,7 +57,7 @@
     orders: {
       id: "orders",
       route: "#/orders",
-      target: [".orders-list .order-row", ".orders-list", ".empty-state", '#tabbar .tab[data-nav="#/orders"]'],
+      target: ['#tabbar .tab[data-nav="#/orders"]', ".orders-list .order-row", ".orders-list"],
       icon: "i-receipt",
       title: "Every sale is saved",
       body: "Orders keeps each receipt with its time, items and payment method. Tap one to view or share it."
@@ -351,6 +351,20 @@
     });
   }
 
+  // The screen underneath fades/slides in, so the first measurement can be a
+  // few pixels off (or the control not laid out yet). Re-measure for a few
+  // frames until the layout settles.
+  function settlePosition(token) {
+    let frames = 0;
+    const tick = () => {
+      if (!active || token !== stepToken) return;
+      const step = steps[index];
+      positionCard(step?.target ? findTarget(step) : null);
+      if (++frames < 24) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
   function waitForTarget(step, done) {
     clearTimeout(waitTimer);
     let tries = 0;
@@ -377,18 +391,13 @@
     }
 
     if (!step.target) {
-      requestAnimationFrame(() => {
-        if (active && token === stepToken) positionCard(null);
-      });
+      settlePosition(token);
       return;
     }
 
     waitForTarget(step, (target) => {
       if (!active || token !== stepToken) return;
-      requestAnimationFrame(() => {
-        if (!active || token !== stepToken) return;
-        positionCard(target);
-      });
+      settlePosition(token);
     });
   }
 
