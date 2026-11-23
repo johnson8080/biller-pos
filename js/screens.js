@@ -2134,8 +2134,81 @@
           <div><div class="about-name">BILLER POS</div><div class="about-version">${VERSION ? `V ${esc(VERSION)} · ` : ""}cloud-synced till</div></div>
         </div>
         <p class="about-oneliner">Client Brief — everything about the app you send to potential clients.</p>
-        <div class="about-brief-frame">
-          <iframe class="about-brief-page" src="/Biller-POS-Client-Brief.html" title="About Biller POS &amp; Inventory" allow="fullscreen"></iframe>
+        <div class="about-brief-static">
+          <h2>What it is</h2>
+          <p>Biller POS is a point-of-sale system built for the Kenyan shop floor: one-handed operation on a phone, fast number entry at the till, and everything stored <b>on the device by default</b> — no internet needed to sell, restock or ring up.</p>
+          <p>Core promise: <b>sell, stock, and know what you owe — even with a poor signal.</b> When the network returns, the app syncs automatically.</p>
+
+          <h2>Key benefits</h2>
+          <ul>
+            <li><b>Works offline by default</b> — data is saved locally; an "Offline" banner appears during a connection loss.</li>
+            <li><b>Instant and fast</b> — no server round-trips to ring a sale; receipts are instantly searchable by number.</li>
+            <li><b>Money for every payment method</b> — cash, M-Pesa (STK Push to the customer), card, and Customer Debt on one checkout pad.</li>
+            <li><b>Business intelligence built in</b> — weekly sales chart, top sellers, staff scoreboard, payment mix, wastage, and a monthly target with real-time progress.</li>
+            <li><b>Made for handhelds</b> — light/dark themes (Forest, Ocean, Clay, Plum, Black) and 3 text sizes.</li>
+            <li><b>Trust built in</b> — a 4-digit PIN to lock all edits and deletes, an activity history log, and nothing is visible until confirmed.</li>
+          </ul>
+
+          <h2>Features</h2>
+
+          <h3>Sell &amp; checkout</h3>
+          <ul>
+            <li><b>Fast number entry</b> — tap to add products or type quantities; edit price, tax and discount live on the cart.</li>
+            <li><b>One-handed friendly</b> — large, tapable targets; no jump between screens.</li>
+            <li><b>Discount &amp; split payment</b> — live discounts; mixed payments with per-tender amounts.</li>
+            <li><b>Receipts</b> — share to WhatsApp, email, or print; PDF, DOCX or screenshot export, no server needed.</li>
+            <li><b>M-Pesa STK Push</b> — Safaricom dials the customer's phone; you confirm with the PIN prompt on their phone. Record your Paybill/Till number in Settings → M-Pesa.</li>
+            <li><b>Card terminal</b> — for card terminal providers.</li>
+            <li><b>Customer Debt</b> — full debt ledger: add to debt, view and chase, due dates, reminders.</li>
+          </ul>
+
+          <h3>Stock &amp; inventory</h3>
+          <ul>
+            <li><b>Products</b> — add name, SKU, category, supplier, price, stock, photo. 30+ Kenya-specific categories; add your own in More → Categories.</li>
+            <li><b>Variants</b> — sizes/colours with each variant having its own stock + price.</li>
+            <li><b>Weigh mode</b> — for use by scale/spreadsheet based sales floorplan.</li>
+            <li><b>Shelf counting audit</b> — count shelf stock, mark each item as MATCH / VARIANCE / OVER / UNDER, print. Finds over-supply before you walk the shelves.</li>
+            <li><b>Wastage &amp; write-offs</b> — full history, reason tags, costs, and tracking.</li>
+            <li><b>Delivery, receipting</b> — stock enters when goods are bought.</li>
+            <li><b>Best-before warnings</b> — 30/90/180-day markers, auto-reallocation.</li>
+            <li><b>Sales checker</b> — see remaining stock after each sale; guardrails if you're running out.</li>
+          </ul>
+
+          <h3>Debt management</h3>
+          <ul>
+            <li><b>Add to Debt</b> — record credit sales with due date and pin.</li>
+            <li><b>Chase &amp; collect</b> — track payments, print statements, view collections.</li>
+            <li><b>Debt card on the dock</b> — shows total debt and due today at a glance.</li>
+          </ul>
+
+          <h3>Reports (dashboard)</h3>
+          <ul>
+            <li><b>Daily sales chart</b> — updated automatically after each sale. Week view. Daily sales goal for each day.</li>
+            <li><b>Sales, profit, best sellers</b> — see what sells and makes money, not just what moves most units.</li>
+            <li><b>Top sellers</b> — the shop's best-selling items of the month with sales records.</li>
+            <li><b>Payment mix</b> — cash vs. M-Pesa vs. card vs. debt split.</li>
+            <li><b>Staff scoreboard</b> — who sold what, by person and by amount.</li>
+            <li><b>Wastage reports</b> — track reasons and costs with each entry.</li>
+            <li><b>Monthly target</b> — set a sales goal and track actual vs. target on the Reports screen, auto-updated.</li>
+            <li><b>Export PDF, DOCX, or screenshot</b> — share the report with your team, accountant or client.</li>
+          </ul>
+
+          <h3>Security &amp; trust</h3>
+          <ul>
+            <li><b>Shop PIN</b> — a 4-digit PIN is required to edit stock, edit or delete orders, products, suppliers or shop data, and every write-off and restore.</li>
+            <li><b>History log</b> — every add, edit, delete, write-off and restore on the till, with a purge option.</li>
+            <li><b>Payment mode lock</b> — allow cash-only, M-Pesa-only, or card-only mode at checkout.</li>
+            <li><b>No-debt toggle</b> — "No debt allowed" is on by default; off lets customers pay later via Debt.</li>
+            <li><b>Subscription</b> — trial status per shop, monthly recurring plans (switch in Settings).</li>
+            <li><b>Export/Import</b> — Settings → Export data (products, orders and settings as JSON) and Restore from backup.</li>
+          </ul>
+
+          <h3>Appearance</h3>
+          <ul>
+            <li>5 themes: Forest, Ocean, Clay, Plum, Black — pick any per shop.</li>
+            <li>Light or Dark + 3 text sizes (Small/Medium/Large).</li>
+            <li>Full-screen app experience, material-style controls, and an animated, chart-styled boot splash: "Loading your shop data!"</li>
+          </ul>
         </div>
         <button type="button" class="btn btn-primary btn-sm about-brief-open" data-act="open-about-brief">${icon("i-info")} Open the client brief</button>
       </div>`;
