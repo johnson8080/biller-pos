@@ -1494,6 +1494,7 @@
         ${!clockTampered && fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
         ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
         ${clockTampered || waiting ? "" : ""}
+        <button class="btn btn-ghost btn-block" data-act="open-about-brief">${icon("i-info")} About Biller POS &amp; Inventory</button>
         <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
         <button class="btn btn-ghost btn-block" data-act="open-wastage" style="opacity:.85">${icon("i-alert")} Record wastage</button>
         <button class="btn btn-ghost btn-block" data-act="sign-out" style="opacity:.85">${icon("i-user")} Sign out</button>

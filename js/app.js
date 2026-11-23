@@ -726,7 +726,10 @@ function runAction(btn, opts = {}) {
       "open-wastage", "open-stock-day", "open-stock-days",
       // An unpaid shop may always walk out for good, the same one-tap act that
       // already exists in Settings — it is what many "I gave up" calls funnel into.
-      "open-delete-account"
+      "open-delete-account",
+      // The client brief is read-only marketing material — no risk, so it
+      // stays open to anyone: an unpaid shop might use it when selling.
+      "open-about-brief"
     ]);
     if (!LOCK_ALLOW.has(act)) {
       T.toast("Your plan needs paying first", "i-alert");
@@ -1778,6 +1781,13 @@ function runAction(btn, opts = {}) {
     }
   }
   else if (act === "add-stock" && id) {    T.sheets?.openStockIn?.(id);
+  }
+  else if (act === "open-about-brief") {
+    // The brief is a plain HTML page at the site root — a new tab in web
+    // view; in a bare WebView that cannot open a browser, the fallback is
+    // a toast so nothing silently does nothing.
+    const win = window.open("/Biller-POS-Client-Brief.html", "_blank");
+    if (!win) T.toast("About Biller POS & Inventory — see client brief", "i-info");
   }
   else if (act === "open-wastage") {
     try { T.sheets?.openWastage?.(); }

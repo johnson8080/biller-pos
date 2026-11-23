@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biller POS — Client Brief &amp; Usage Guide</title>
+<style>
+  :root {
+    --ink: #0b1c30; --muted: #434655; --faint: #5b5d6e;
+    --line: #d3e4fe; --line2: #b7c4ff; --paper: #f8f9ff; --paper2: #eff4ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto; max-width: 720px; padding: 52px 46px 86px;
+    font-family: "Plus Jakarta Sans", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink); background: #fff; line-height: 1.5;
+  }
+  .cover { text-align: center; padding-top: 60px; }
+  .cover .dot { color: #1d4ed8; }
+  h1 { font-size: 30px; margin: 0; letter-spacing: -.045em; }
+  h2 { font-size: 20px; border-bottom: 1px solid var(--line); padding-bottom: 9px; margin: 34px 0 14px; }
+  h3 { font-size: 15px; margin: 16px 0 6px; color: #1d4ed8; }
+  small { color: var(--muted); font-size: 12px; }
+  .kicker { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .2em;
+            padding: 6px 14px; border: 1px solid var(--line2); border-radius: 999px; color: #1d4ed8; }
+  .meta { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; margin-top: 30px; color: var(--muted); font-size: 12.5px; }
+  .meta b { color: #1d4ed8; font-weight: 700; }
+  ul { margin: 8px 0 16px; padding-left: 20px; }
+  li { font-size: 13.5px; margin: 6px 0; }
+  .note { background: var(--paper2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--muted); }
+  footer { margin-top: 52px; font-size: 11.5px; color: var(--faint); border-top: 1px solid var(--line); padding-top: 14px; text-align: center; }
+  @media print { body { max-width: 100%; padding: 0; margin: 0; } footer { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Biller POS<span class="dot">.</span><br>Client Brief &amp; Usage Guide</h1>
+  <p style="margin-top:16px; color:var(--faint)">One-handed, fast, offline-first — version 3.9.9.</p>
+  <div class="meta">
+    <span>Version: <b>3.9.9</b></span>
+    <span>Updated: <b>[2026-11-23]</b></span>
+    <span>Platform: Web app + Android APK</span>
+  </div>
+</div>
+
+<h2>What it is</h2>
+<p>Biller POS is a point-of-sale system built for the Kenyan shop floor: one-handed operation on a phone, fast number entry at the till, and everything stored <b>on the device by default</b> — no internet needed to sell, restock or ring up.</p>
+<p>Core promise: <b>sell, stock, and know what you owe — even with a poor signal.</b> When the network returns, the app syncs automatically.</p>
+
+<h2>Key benefits</h2>
+<ul>
+  <li><b>Works offline by default</b> — data is saved locally; an "Offline" banner appears during a connection loss.</li>
+  <li><b>Instant and fast</b> — no server round-trips to ring a sale; receipts are instantly searchable by number.</li>
+  <li><b>Money for every payment method</b> — cash, M-Pesa (STK Push to the customer), card, and Customer Debt on one checkout pad.</li>
+  <li><b>Business intelligence built in</b> — weekly sales chart, top sellers, staff scoreboard, payment mix, wastage, and a monthly target with real-time progress.</li>
+  <li><b>Made for handhelds</b> — light/dark themes (Forest, Ocean, Clay, Plum, Black) and 3 text sizes.</li>
+  <li><b>Trust built in</b> — a 4-digit PIN to lock all edits and deletes, an activity history log, and nothing is visible until confirmed.</li>
+</ul>
+
+<h2>How it runs</h2>
+<table>
+  <thead><tr><th>Platform</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>Web app</td><td>Open <b>https://johnson8080.github.io/biller-pos/</b>. New data is saved locally; install to get it on the home screen.</td></tr>
+    <tr><td>Android APK</td><td>Bundled with your shop. Loads the hosted site through a WebView (app id <code>com.biller.pos</code>), so updates land without resubmitting to Play.</td></tr>
+    <tr><td>Cloud sync</td><td>Account sign-in with Firestore — for multi-till setups that keep rotating.</td></tr>
+    <tr><td>Asset version</td><td>APP <b>3.9.9</b> — browsers/APKs refresh to the latest automatically.</td></tr>
+  </tbody>
+</table>
+
+<h2>Getting started (5 steps)</h2>
+<ol style="margin-left:0; padding-left:0;">
+  <li><b>Install.</b> Web: long-press the URL → Add to Home Screen. Android: install the APK and open it from your home screen.</li>
+  <li><b>Open the guided tour.</b> A friendly tour walks new shopkeepers through Sell, Cart, Orders, Debt, Suppliers and Reports. New shops auto-start it after first sale; manual: Settings → TAKE THE TOUR. Skippable anytime.</li>
+  <li><b>Add a few products (Stock screen).</b> Name, category, price, stock, supplier. Choose categories like Groceries/Beauty/Agrovet — presets exist; add your own.</li>
+  <li><b>Set your monthly target.</b> Dashboard tracks actual vs. target monthly sales (target card on the Reports screen).</li>
+  <li><b>Go sell (Sell screen).</b> Tap products or tap numbers, add discount, and checkout with cash, M-Pesa, card, or add to customer debt.</li>
+  <li><b>Review (Reports screen).</b> Sales per day, profit, best sellers, payment mix — all automatic after a sale.</li>
+</ol>
+
+<h2>Features</h2>
+
+<h3>Sell &amp; checkout</h3>
+<ul>
+  <li><b>Fast number entry</b> — tap to add products or type quantities; edit price, tax and discount live on the cart.</li>
+  <li><b>One-handed friendly</b> — large, tapable targets; no jump between screens.</li>
+  <li><b>Discount &amp; split payment</b> — live discounts; mixed payments with per-tender amounts.</li>
+  <li><b>Receipts</b> — share to WhatsApp, email, or print; PDF, DOCX or screenshot export, no server needed.</li>
+  <li><b>M-Pesa STK Push</b> — Safaricom dials the customer's phone; you confirm with the PIN prompt on their phone. Record your Paybill/Till number in Settings → M-Pesa.</li>
+  <li><b>Card terminal</b> — for card terminal providers.</li>
+  <li><b>Customer Debt</b> — full debt ledger: add to debt, view and chase, due dates, reminders.</li>
+</ul>
+
+<h2>Stock &amp; inventory</h2>
+<ul>
+  <li><b>Products</b> — add name, SKU, category, supplier, price, stock, photo. 30+ Kenya-specific categories; add your own in More → Categories.</li>
+  <li><b>Variants</b> — sizes/colours with each variant having its own stock + price.</li>
+  <li><b>Weigh mode</b> — for use by scale/spreadsheet based sales floorplan.</li>
+  <li><b>Shelf counting audit</b> — count shelf stock, mark each item as MATCH / VARIANCE / OVER / UNDER, print. Finds over-supply before you walk the shelves.</li>
+  <li><b>Wastage &amp; write-offs</b> — full history, reason tags, costs, and tracking.</li>
+  <li><b>Delivery, receipting</b> — stock enters when goods are bought.</li>
+  <li><b>Best-before warnings</b> — 30/90/180-day markers, auto-reallocation.</li>
+  <li><b>Sales checker</b> — see remaining stock after each sale; guardrails if you're running out.</li>
+</ul>
+
+<h2>Debt management</h2>
+<ul>
+  <li><b>Add to Debt</b> — record credit sales with due date and pin.</li>
+  <li><b>Chase &amp; collect</b> — track payments, print statements, view collections.</li>
+  <li><b>Debt card on the dock</b> — shows total debt and due today at a glance.</li>
+</ul>
+
+<h2>Reports (dashboard)</h2>
+<ul>
+  <li><b>Daily sales chart</b> — updated automatically after each sale. Week view. Daily sales goal for each day.</li>
+  <li><b>Sales, profit, best sellers</b> — see what sells and makes money, not just what moves most units.</li>
+  <li><b>Top sellers</b> — the shop's best-selling items of the month with sales records.</li>
+  <li><b>Payment mix</b> — cash vs. M-Pesa vs. card vs. debt split.</li>
+  <li><b>Staff scoreboard</b> — who sold what, by person and by amount.</li>
+  <li><b>Wastage reports</b> — track reasons and costs with each entry.</li>
+  <li><b>Monthly target</b> — set a sales goal and track actual vs. target on the Reports screen, auto-updated.</li>
+  <li><b>Export PDF, DOCX, or screenshot</b> — share the report with your team, accountant or client.</li>
+</ul>
+
+<h2>Security &amp; trust</h2>
+<ul>
+  <li><b>Shop PIN</b> — a 4-digit PIN is required to edit stock, edit or delete orders, products, suppliers or shop data, and every write-off and restore.</li>
+  <li><b>History log</b> — every add, edit, delete, write-off and restore on the till, with a purge option.</li>
+  <li><b>Payment mode lock</b> — allow cash-only, M-Pesa-only, or card-only mode at checkout.</li>
+  <li><b>No-debt toggle</b> — "No debt allowed" is on by default; off lets customers pay later via Debt.</li>
+  <li><b>Subscription</b> — trial status per shop, monthly recurring plans (switch in Settings).</li>
+  <li><b>Export/Import</b> — Settings → Export data (products, orders and settings as JSON) and Restore from backup.</li>
+</ul>
+
+<h2>Appearance</h2>
+<ul>
+  <li>5 themes: Forest, Ocean, Clay, Plum, Black — pick any per shop.</li>
+  <li>Light or Dark + 3 text sizes (Small/Medium/Large).</li>
+  <li>Full-screen app experience, material-style controls, and an animated, chart-styled boot splash: "Loading your shop data!"</li>
+</ul>
+
+<h2>Onboarding &amp; support</h2>
+<ul>
+  <li>Ready on day one — getting started in minutes, guided tour on first open.</li>
+  <li>Support &amp; training — reachable via [your contact details]; we hold training calls with new shops.</li>
+</ul>
+
+<h2>Sample walkthrough (new shop, one stock of [e.g., sell-through items])</h2>
+<ol style="margin-left:0; padding-left:0;">
+  <li><b>Install the app.</b> Long-press the URL and Add to Home Screen, or open the bundled APK.</li>
+  <li><b>Open the app.</b> A chart-styled splash reads "Loading your shop data!" and fades into the main screen.</li>
+  <li><b>On the Stock screen, add a few products:</b> name, category (e.g., "Groceries"), supplier, price, count.</li>
+  <li><b>Go to Sell.</b> Tap products or type in quantities; add a discount.</li>
+  <li><b>Checkout.</b> Take cash, then verify the stock levels drop correctly. Orders list opens instantly.</li>
+  <li><b>On Orders, open the receipt — share to WhatsApp or print.</b> Filter by time.</li>
+  <li><b>On the Reports screen — daily sales, profit, best sellers, payment mix, monthly target: auto-refreshed after each sale.</b> Set your monthly target first.</li>
+  <li><b>Done.</b> No manual filing, no end-of-month scramble: the dashboard holds it all.</li>
+</ol>
+
+<h2>Technical spec for your IT team</h2>
+<ul>
+  <li>Android 6+ (minSdk 22); iOS not supported; Android PWA fallback available. Server is SaaS at <code>biller-91aaf.web.app</code>, build 1.0.6.</li>
+  <li>Host: GitHub Pages + Firebase (johnson8080.github.io/biller-pos); Firestore sync for account sign-in.</li>
+  <li>M-Pesa: Daraja STK Push; sandbox available for tests.</li>
+  <li>PWA manifest, installable; every deployment auto-bumps <code>ASSET_VERSION</code>.</li>
+  <li>No Google Play billing; direct invoice billing per-shop monthly recurring.
+</ul>
+
+<h2>Client pricing &amp; licensing</h2>
+<ul>
+  <li>Version <b>3.9.9</b>.</li>
+  <li>Suggested monthly price: <b>[e.g., KES 1,500–3,000 per active shop]</b> — adjust to your market.</li>
+  <li>Setup is quick — enable the shop in Settings; the dashboard begins tracking as soon as the first sale is taken.</li>
+  <li>Plans: trial status, monthly recurring — sign off when ready; free within the trial.</li>
+  <li>For a formal quote or SLA, refer to <a href="https://johnson8080.github.io/biller-pos/">the official site</a> or contact the developer at [your contact details].</li>
+</ul>
+
+<div class="note">
+  <p>This brief is for reference only. For a formal quote or SLA, contact the developer at [your contact details]. The app described matches the live version at the URL above (3.9.9).</p>
+</div>
+
+<footer>
+  <p>&copy; [Year] [Your Name/Developer]. Biller POS by [Developer]. Built for Kenyan shops. All rights reserved. <span style="color:var(--faint)">| Sample output — replace bracketed [sections] with your real details.</span></p>
+</footer>
+
+</body>
+</html>
