@@ -1,5 +1,5 @@
-Ôªø/* ============================================================
-   Till ‚Äî screen templates
+/* ============================================================
+   Till ó screen templates
    ============================================================ */
 (() => {
   "use strict";
@@ -33,9 +33,9 @@
     const pieceLike = ["pcs", "each", "", "piece", "pieces"].includes(String(unit || "").toLowerCase());
     const countLabel = `${stock} ${pieceLike ? "pieces" : unit}`;
     const sizeLabel = T.unitSizeLabel(product);
-    // "10 pieces ¬∑ 100 g/piece" ‚Äî what one sale removes from the shelf.
-    const sizeSuffix = pieceLike && sizeLabel ? ` ¬∑ ${sizeLabel}/piece` : "";
-    const variantSuffix = (product.variants || []).length ? ` ¬∑ ${product.variants.length} variants` : "";
+    // "10 pieces ∑ 100 g/piece" ó what one sale removes from the shelf.
+    const sizeSuffix = pieceLike && sizeLabel ? ` ∑ ${sizeLabel}/piece` : "";
+    const variantSuffix = (product.variants || []).length ? ` ∑ ${product.variants.length} variants` : "";
     const copy = esc(countLabel + sizeSuffix);
     if (stock <= product.lowStockAt) return `<span class="stock-note low"><span class="dot"></span>${copy}${variantSuffix}</span>`;
     return `<span class="stock-note">${copy}${variantSuffix}</span>`;
@@ -47,14 +47,14 @@
     if (!variants.length) return "";
     const parts = [];
     if (product.sellParent) {
-      // Plain line sellable alongside its variants ‚Äî show the parent's own stock.
+      // Plain line sellable alongside its variants ó show the parent's own stock.
       const plainLabel = (T.unitSizeLabel ? T.unitSizeLabel(product) : "") || product.detail || "Plain item";
       parts.push(`${plainLabel} ${product.stock}`);
     }
     parts.push(...variants.map((v) => `${v.label} ${v.stock}`));
     const visible = parts.slice(0, 3);
     if (parts.length > 3) visible.push(`+${parts.length - 3} more`);
-    return visible.join(" ¬∑ ");
+    return visible.join(" ∑ ");
   }
 
   /** "The price a product sells at: min variant price, or per kg / per bundle. */
@@ -133,7 +133,7 @@
         <span class="brand-name">Biller POS</span>
       </a>
       <div class="appbar-right">
-        ${isSell ? `${developerMode ? `<button class="hero-btn hero-plan" data-nav="#/plans" aria-label="Open the Subscriptions panel${planCount ? `, ${planCount} waiting for confirmation` : ""}" title="Subscriptions${planCount ? ` ‚Äî ${planCount} waiting` : ""}">${icon("i-card")}${planCount ? `<span class="cart-hero-count">${planCount > 9 ? "9+" : planCount}</span>` : ""}</button>` : ""}<button class="hero-btn hero-scan" data-act="open-scanner" aria-label="Scan barcode">${icon("i-scan")}</button>
+        ${isSell ? `${developerMode ? `<button class="hero-btn hero-plan" data-nav="#/plans" aria-label="Open the Subscriptions panel${planCount ? `, ${planCount} waiting for confirmation` : ""}" title="Subscriptions${planCount ? ` ó ${planCount} waiting` : ""}">${icon("i-card")}${planCount ? `<span class="cart-hero-count">${planCount > 9 ? "9+" : planCount}</span>` : ""}</button>` : ""}<button class="hero-btn hero-scan" data-act="open-scanner" aria-label="Scan barcode">${icon("i-scan")}</button>
         <button class="hero-btn hero-search ${T.ui.searchOpen ? "is-active" : ""}" data-act="toggle-search" aria-label="${T.ui.searchOpen ? "Close search" : "Search products"}" aria-pressed="${T.ui.searchOpen ? "true" : "false"}">${icon("i-search")}</button>` : ""}
         <button class="cart-hero" data-act="open-cart" aria-label="Checkout, ${cartCount} ${cartCount === 1 ? "item" : "items"} in the cart">
           ${icon("i-bag")}
@@ -147,8 +147,8 @@
   }
 
   /**
-   * The top bar's contents ‚Äî app icon and name, the scan/eye/cart actions and
-   * the account avatar ‚Äî sit inside one bordered bar, the same border design
+   * The top bar's contents ó app icon and name, the scan/eye/cart actions and
+   * the account avatar ó sit inside one bordered bar, the same border design
    * used elsewhere in the app.
    */
   function appbar(route) {
@@ -227,7 +227,7 @@
       <span class="product-row-tile">${productTile(product)}</span>
       <span class="product-row-copy">
         <strong>${esc(product.name)}</strong>
-        <small>${[variantStockLine(product) || [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" ¬∑ "), stockText].filter(Boolean).map(esc).join(" ¬∑ ")}</small>
+        <small>${[variantStockLine(product) || [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" ∑ "), stockText].filter(Boolean).map(esc).join(" ∑ ")}</small>
       </span>
       <span class="product-row-price">${esc(price)}</span>
       ${badge ? `<span class="qty-badge">${esc(badge)}</span>` : ""}
@@ -252,9 +252,9 @@
       </div>`
         : `<div class="empty-state">
         <div class="empty-icon">${icon("i-search")}</div>
-        <h3>No items match${query ? ` ‚Äú${esc(query)}‚Äù` : ""}</h3>
+        <h3>No items match${query ? ` ì${esc(query)}î` : ""}</h3>
         <p>Try a different name, category, or barcode.</p>
-        ${canAdd ? `<button class="btn btn-primary" data-act="new-from-search">Add ‚Äú${esc(query)}‚Äù as a product</button>` : `<button class="btn btn-ghost" data-act="clear-search">Clear search</button>`}
+        ${canAdd ? `<button class="btn btn-primary" data-act="new-from-search">Add ì${esc(query)}î as a product</button>` : `<button class="btn btn-ghost" data-act="clear-search">Clear search</button>`}
       </div>`;
     } else {
       // The Sell tab is always one item per row.
@@ -334,7 +334,7 @@
               : `<span class="sell-meta-empty">No shopkeeper</span>`;
           })()}
           <span class="sell-meta-sep" aria-hidden="true"></span>
-          ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : `<span class="sell-meta-item">‚Äî</span>`}
+          ${VERSION ? `<span class="sell-version">V ${esc(VERSION)}</span>` : `<span class="sell-meta-item">ó</span>`}
         </div>
         <div class="sell-title-row">
           <button class="sell-title-col" data-nav="#/stock" aria-label="RETAIL VALUE ${money(retail)}, open inventory">
@@ -391,16 +391,16 @@
           const tone = method === "cash" ? "fresh" : method === "card" ? "goods" : method === "mpesa" ? "fresh" : "bakery";
           const methodLabel = method === "mpesa" ? "M-Pesa" : method;
           // The shopkeeper who rang the sale up, shown in the open middle of
-          // the card. Sales made before staff tracking carry no stamp ‚Äî they
+          // the card. Sales made before staff tracking carry no stamp ó they
           // show a dash instead of guessing one person for all of them.
           const staffName = String(tx.staff || "").trim();
           return `<button class="order-row" data-nav="#/receipt/${esc(tx.id)}" aria-label="Open receipt ${tx.receiptNo}, ${money(tx.total)}${staffName ? `, sold by ${esc(staffName)}` : ""}">
             <span class="tile tile-sm tone-${tone}" aria-hidden="true">${icon(methodIcon, "ico")}</span>
             <span class="order-main">
               <span class="order-title">#${tx.receiptNo} <span class="method ${method}">${icon(methodIcon, "ico")}${methodLabel}</span></span>
-              <span class="order-sub">${count} ${count === 1 ? "item" : "items"} ¬∑ ${T.timeFmt.format(new Date(tx.createdAt))}</span>
+              <span class="order-sub">${count} ${count === 1 ? "item" : "items"} ∑ ${T.timeFmt.format(new Date(tx.createdAt))}</span>
             </span>
-            <span class="order-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "‚Äî"}</span>
+            <span class="order-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "ó"}</span>
             <span class="order-total">${money(tx.total)}</span>
             <span class="order-chevron">${icon("i-chevron")}</span>
           </button>`;
@@ -421,7 +421,7 @@
         <p class="sub">Every sale, receipt, and payment method.</p>
       </div>
       <div class="sales-hero">
-        <p class="eyebrow">Today‚Äôs sales</p>
+        <p class="eyebrow">Todayís sales</p>
         <div class="sales-hero-top">
           <div class="sales-amount money">${money(todayTotal)}</div>
           <div class="sales-hero-date">${esc(T.shortDateFmt.format(new Date()))}</div>
@@ -542,7 +542,7 @@
 
     // Staff scoreboard: how the shopkeepers' sales compare over the window,
     // so a multi-staff shop can see who is moving the most stock. Sales from
-    // before staff tracking have no stamp ‚Äî they stay unattributed and out
+    // before staff tracking have no stamp ó they stay unattributed and out
     // of the ranking instead of piling onto one person's name.
     const sellerPeriod = T.ui.sellerPeriod === "30" ? 30 : 7;
     const sellerStart = startOfDay(now);
@@ -620,7 +620,7 @@
       <p class="sub" style="margin-top:-4px">Sales, profit, best sellers, and payment mix.</p>
 
       <div class="sales-hero">
-        <p class="eyebrow">Today‚Äôs revenue</p>
+        <p class="eyebrow">Todayís revenue</p>
         <div class="sales-hero-top">
           <div class="sales-amount money">${money(todayTotal)}</div>
           <div class="sales-hero-date">${esc(T.shortDateFmt.format(now))}</div>
@@ -690,7 +690,7 @@
         ${(topPeriod === 7 ? topWeek : top).length ? `<div class="report-list">${(topPeriod === 7 ? topWeek : top).map((item, index) => `
           <div class="report-row">
             <span class="report-rank">${index + 1}</span>
-            <span class="report-row-copy"><strong>${esc(item.name)}</strong><small>${item.mass ? esc(T.massLabel(item.qty)) : item.qty} sold${item.detail ? ` ¬∑ ${esc(item.detail)}` : ""}</small></span>
+            <span class="report-row-copy"><strong>${esc(item.name)}</strong><small>${item.mass ? esc(T.massLabel(item.qty)) : item.qty} sold${item.detail ? ` ∑ ${esc(item.detail)}` : ""}</small></span>
             <span class="report-amount">${money(item.revenue)}</span>
           </div>`).join("")}</div>`
           : `<p class="report-empty">No items sold in this window yet.</p>`}
@@ -708,7 +708,7 @@
           ${staffBoard.map((row, index) => `
             <div class="report-row ${index === 0 ? "is-top" : ""}">
               <span class="report-rank">${index + 1}</span>
-              <span class="report-row-copy"><strong>${esc(row.name)}</strong><small>${row.count} ${row.count === 1 ? "sale" : "sales"} ¬∑ ${row.items} ${row.items === 1 ? "item" : "items"}${index === 0 ? ` ¬∑ ${Math.round((row.total / (staffBoard.reduce((sum, r) => sum + r.total, 0)) || 1) * 100)}% of sales` : ""}</small></span>
+              <span class="report-row-copy"><strong>${esc(row.name)}</strong><small>${row.count} ${row.count === 1 ? "sale" : "sales"} ∑ ${row.items} ${row.items === 1 ? "item" : "items"}${index === 0 ? ` ∑ ${Math.round((row.total / (staffBoard.reduce((sum, r) => sum + r.total, 0)) || 1) * 100)}% of sales` : ""}</small></span>
               <span class="report-amount ${index === 0 ? "is-profit" : ""}">${money(row.total)}</span>
             </div>`).join("")}
         </div>
@@ -719,7 +719,7 @@
         <div class="report-card-head"><h2>Profit by item</h2><span class="report-total">Last 30 days</span></div>
         ${profitTop.length ? `<div class="report-list">${profitTop.map((item) => `
           <div class="report-row">
-            <span class="report-row-copy"><strong>${esc(item.name)}</strong><small>${item.qty} sold ¬∑ cost ${money(item.cost)}</small></span>
+            <span class="report-row-copy"><strong>${esc(item.name)}</strong><small>${item.qty} sold ∑ cost ${money(item.cost)}</small></span>
             <span class="report-amount is-profit">${money(item.profit)}</span>
           </div>`).join("")}</div>` : `<p class="report-empty">No items sold yet.</p>`}
         ${profitTop.length ? `<p class="report-note">Profit is the selling price minus the buying price, before tax.</p>` : ""}
@@ -742,7 +742,7 @@
             </div>`;
           }).join("")}
         </div>
-        <p class="report-note">${mixTxs.length} ${mixTxs.length === 1 ? "sale" : "sales"} ¬∑ ${compactMoney(mixTotal)} taken in this window.</p>
+        <p class="report-note">${mixTxs.length} ${mixTxs.length === 1 ? "sale" : "sales"} ∑ ${compactMoney(mixTotal)} taken in this window.</p>
       </div>
 
       <div class="settings-card">
@@ -752,11 +752,11 @@
           </span>
         </div>
         ${(wastageReport.count || 0) ? `
-          <p class="report-note" style="margin-top:0"><strong>${wastageReport.count}</strong> ${wastageReport.count === 1 ? "write-off" : "write-offs"} ¬∑ <strong>${wastageReport.qty}</strong> lost ¬∑ <strong>${money(wastageReport.cost || 0)}</strong> at cost${wastageTopReasons.length ? ` ¬∑ ${wastageTopReasons.map(([reason, count]) => `${reason} (${count})`).join(" ¬∑ ")}` : ""}</p>
+          <p class="report-note" style="margin-top:0"><strong>${wastageReport.count}</strong> ${wastageReport.count === 1 ? "write-off" : "write-offs"} ∑ <strong>${wastageReport.qty}</strong> lost ∑ <strong>${money(wastageReport.cost || 0)}</strong> at cost${wastageTopReasons.length ? ` ∑ ${wastageTopReasons.map(([reason, count]) => `${reason} (${count})`).join(" ∑ ")}` : ""}</p>
           <div class="report-list">${(wastageReport.entries || []).slice(0, 5).map((entry) => {
             const showQty = entry.unit === "kg" && T.findProduct(entry.productId)?.soldByMass ? T.massLabel(entry.qty) : `${entry.qty} ${esc(entry.unit)}`;
             return `<div class="report-row">
-              <span class="report-row-copy"><strong>${esc(entry.name)}</strong><small>${esc(T.dayLabel(`${entry.date}T00:00:00`))} ¬∑ ${esc(entry.reason)}${entry.employee ? ` ¬∑ ${esc(entry.employee)}` : ""}${entry.note ? ` ¬∑ ${esc(entry.note)}` : ""}</small></span>
+              <span class="report-row-copy"><strong>${esc(entry.name)}</strong><small>${esc(T.dayLabel(`${entry.date}T00:00:00`))} ∑ ${esc(entry.reason)}${entry.employee ? ` ∑ ${esc(entry.employee)}` : ""}${entry.note ? ` ∑ ${esc(entry.note)}` : ""}</small></span>
               <span class="report-amount">${esc(showQty)}</span>
             </div>`;
           }).join("")}</div>
@@ -766,7 +766,7 @@
 
       <div class="settings-card">
         <div class="report-card-head"><h2>Exports</h2><span class="report-total">CSV</span></div>
-        <p class="report-note" style="margin-top:0">Each file opens as a spreadsheet. It saves to the phone‚Äôs Downloads, in Biller POS.</p>
+        <p class="report-note" style="margin-top:0">Each file opens as a spreadsheet. It saves to the phoneís Downloads, in Biller POS.</p>
         <div class="export-grid">
           <button class="btn btn-ghost" data-act="export-csv-sales">${icon("i-download")} Sales</button>
           <button class="btn btn-ghost" data-act="export-csv-items">${icon("i-download")} Sold items</button>
@@ -796,7 +796,7 @@
                 ${badge}
                 <span style="font-size:calc(10px * var(--fs));color:var(--muted)">${a.mismatches} unchecked</span>
               </div>
-              <p class="report-note" style="margin:5px 0 0;font-size:calc(11px * var(--fs))">${a.items.length} item${a.items.length === 1 ? "" : "s"} audited${a.staff ? " ¬∑ by " + esc(a.staff) : ""}${a.note ? " ¬∑ " + esc(a.note) : ""}</p>
+              <p class="report-note" style="margin:5px 0 0;font-size:calc(11px * var(--fs))">${a.items.length} item${a.items.length === 1 ? "" : "s"} audited${a.staff ? " ∑ by " + esc(a.staff) : ""}${a.note ? " ∑ " + esc(a.note) : ""}</p>
             </div>`;
           }).join("")
         : `<p class="report-note">No audits recorded yet.</p>`;
@@ -870,13 +870,13 @@
       const unit = T.stockCountUnit ? T.stockCountUnit(p) : (p.unit || "pcs");
       const price = priceTag(p);
       const stockText = out ? "Sold out" : p.soldByMass ? `${T.massLabel(T.productStock(p))} in stock` : `${T.productStock(p)} ${esc(unit)} in stock`;
-      const detailLine = [variantStockLine(p), [T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" ¬∑ ")].filter(Boolean)[0] || "";
+      const detailLine = [variantStockLine(p), [T.unitSizeLabel(p), T.bundleLabel(p), p.detail].filter(Boolean).join(" ∑ ")].filter(Boolean)[0] || "";
       return `<div class="inv-row">
         <button class="product-row ${out ? "is-out" : ""}" data-act="edit-product" data-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
           <span class="product-row-tile">${productTile(p)}</span>
           <span class="product-row-copy">
             <strong>${esc(p.name)}</strong>
-            <small>${[detailLine, stockText, p.savedBy ? `saved by ${p.savedBy}` : null].filter(Boolean).map(esc).join(" ¬∑ ")}</small>
+            <small>${[detailLine, stockText, p.savedBy ? `saved by ${p.savedBy}` : null].filter(Boolean).map(esc).join(" ∑ ")}</small>
           </span>
           <span class="product-row-price">${esc(price)}</span>
         </button>
@@ -911,7 +911,7 @@
         <div class="inv-stat"><span class="label">STOCK VALUE <span style="text-transform:none">[${esc(symbol)}]</span></span><strong>${esc(amountOnly(T.stockCost()))}</strong></div>
       </div>
       ${stockToolsCard({ wastage: monthWastage, wastageCost: monthWastageCost, latestDay, olderDays: Math.max(0, allDays.length - 1) })}
-      ${out ? `<div class="inventory-alert">${icon("i-alert")}<span><strong>${out} ${out === 1 ? "item is" : "items are"} out of stock.</strong> They‚Äôre shown first below.</span></div>` : ""}
+      ${out ? `<div class="inventory-alert">${icon("i-alert")}<span><strong>${out} ${out === 1 ? "item is" : "items are"} out of stock.</strong> Theyíre shown first below.</span></div>` : ""}
       <div class="search-field ${T.ui.stockSearch ? "has-value" : ""}" id="stock-search-wrap">
         ${icon("i-search")}
         <input id="stock-search" type="search" inputmode="search" autocomplete="off" spellcheck="false"
@@ -965,7 +965,7 @@
       const phoneHref = supplier.phone.replace(/[^\d+]/g, "");
       const totals = T.supplierTotals(supplier);
       const days = supplier.days || [];
-      const daysLabel = days.length ? days.map((day) => supplierDayLabel(day)).join(" ¬∑ ") : "No delivery days";
+      const daysLabel = days.length ? days.map((day) => supplierDayLabel(day)).join(" ∑ ") : "No delivery days";
       const balance = totals.balance;
       const pill = balance > 0
         ? `<span class="supplier-pill is-debt">Owe ${compactMoney(balance)}</span>`
@@ -978,7 +978,7 @@
             <span class="supplier-avatar" aria-hidden="true">${esc(T.initials(supplier.name))}</span>
             <span class="supplier-copy">
               <strong>${esc(supplier.name)}</strong>
-              <small>${esc(supplier.contact || "Supplier contact")}${supplier.supplies ? ` ¬∑ ${esc(supplier.supplies)}` : ""}</small>
+              <small>${esc(supplier.contact || "Supplier contact")}${supplier.supplies ? ` ∑ ${esc(supplier.supplies)}` : ""}</small>
             </span>
             <span class="chev">${icon("i-chevron")}</span>
           </button>
@@ -1073,7 +1073,7 @@
       const [year, month, day] = String(entry.date || "").split("-").map(Number);
       return T.shortDateFmt.format(new Date(year || 2026, (month || 1) - 1, day || 1));
     };
-    const subtitle = [supplier.contact, supplier.supplies].filter(Boolean).map((value) => esc(value)).join(" ¬∑ ");
+    const subtitle = [supplier.contact, supplier.supplies].filter(Boolean).map((value) => esc(value)).join(" ∑ ");
     const phoneHref = supplier.phone.replace(/[^\d+]/g, "");
 
     return `<section class="screen supplier-detail" aria-labelledby="supplier-title">
@@ -1153,7 +1153,7 @@
           const isPayment = entry.type === "payment";
           const method = entry.method === "mpesa" ? "M-Pesa" : "Cash";
           const stock = Array.isArray(entry.items) ? entry.items : [];
-          const stockText = stock.map((item) => `${item.qty} √ó ${item.name}`).join(", ");
+          const stockText = stock.map((item) => `${item.qty} ◊ ${item.name}`).join(", ");
           const remaining = unpaidById.get(entry.id);
           const billState = isPayment
             ? ""
@@ -1165,11 +1165,11 @@
             <span class="supplier-entry-icon ${entry.type} ${entry.method || ""}">${icon(isPayment ? (entry.method === "mpesa" ? "i-phone" : "i-cash") : "i-box")}</span>
             <span class="supplier-entry-copy">
               <strong>${isPayment ? `${method} payment` : "Stock bill"}</strong>
-              <small>${esc(entryDate(entry))}${entry.note ? ` ¬∑ ${esc(entry.note)}` : ""}${entryStaff ? ` ¬∑ ${esc(entryStaff)}` : ""}</small>
+              <small>${esc(entryDate(entry))}${entry.note ? ` ∑ ${esc(entry.note)}` : ""}${entryStaff ? ` ∑ ${esc(entryStaff)}` : ""}</small>
               ${stockText ? `<span class="supplier-entry-stock">${icon("i-box")} ${esc(stockText)}</span>` : ""}
               ${billState}
             </span>
-            <span class="supplier-entry-amount ${entry.type}">${isPayment ? "‚àí" : "+"}${money(entry.amount)}</span>
+            <span class="supplier-entry-amount ${entry.type}">${isPayment ? "-" : "+"}${money(entry.amount)}</span>
           </div>`;
         }).join("")}</div>` : `<p class="report-empty">Record a stock bill or a payment to start this supplier's account.</p>`}
       </div>
@@ -1202,7 +1202,7 @@
       const message = filter === "due"
         ? "Nothing due right now. All credit customers are on track."
         : search.trim()
-          ? `No customers match ‚Äú${esc(search.trim())}‚Äù.`
+          ? `No customers match ì${esc(search.trim())}î.`
           : "No customers to show.";
       return `<div class="empty-state">
         <div class="empty-icon">${icon("i-search")}</div>
@@ -1217,7 +1217,7 @@
       const pillClass = status === "overdue" || status === "due" ? "is-debt" : summary.balance < 0 ? "is-credit" : status === "open" ? "is-credit" : "is-settled";
       const dueInfo = summary.nextDue ? T.debtDueInfo(summary.nextDue) : { label: "No payment date" };
       const dueClass = summary.nextDue && (T.debtDueInfo(summary.nextDue).status === "overdue" || T.debtDueInfo(summary.nextDue).status === "due") ? "is-overdue" : "";
-      // The latest shopkeeper who served this customer ‚Äî entries are newest
+      // The latest shopkeeper who served this customer ó entries are newest
       // first, and T.entryStaff also reads the name off the linked sale.
       // History from before staff tracking stays unattributed (a dash)
       // rather than crediting one person for everything.
@@ -1237,7 +1237,7 @@
         </button>
         <div class="debt-card-foot">
           <span class="debt-due-inline ${dueClass}">${icon("i-clock")}<span>${esc(dueInfo.label)}</span></span>
-          <span class="debt-card-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "‚Äî"}</span>
+          <span class="debt-card-staff ${staffName ? "" : "is-empty"}" aria-hidden="true">${staffName ? esc(staffName) : "ó"}</span>
           <span class="supplier-pill ${pillClass}">${esc(statusLabel)}</span>
         </div>
       </article>`;
@@ -1384,7 +1384,7 @@
             <span class="debt-due-icon">${icon("i-clock")}</span>
             <span class="debt-due-copy">
               <strong>${esc(info.label)}</strong>
-              <small>${esc(debt.note || (tx ? `Receipt #${tx.receiptNo}` : "Goods on credit"))}${debt.note && tx ? ` ¬∑ #${tx.receiptNo}` : ""} ¬∑ ${esc(partial)}</small>
+              <small>${esc(debt.note || (tx ? `Receipt #${tx.receiptNo}` : "Goods on credit"))}${debt.note && tx ? ` ∑ #${tx.receiptNo}` : ""} ∑ ${esc(partial)}</small>
             </span>
             <span class="debt-due-amount">${money(remaining)}</span>
           </div>`;
@@ -1422,9 +1422,9 @@
             <span class="supplier-entry-icon ${isPayment ? `payment ${entry.method}` : "bill"}">${icon(isPayment ? (entry.method === "mpesa" ? "i-phone" : "i-cash") : "i-user")}</span>
             <span class="supplier-entry-copy">
               <strong>${isPayment ? `${method} payment` : "Goods on credit"}</strong>
-              <small>${esc(entryDate(entry))}${entry.note ? ` ¬∑ ${esc(entry.note)}` : tx ? ` ¬∑ #${tx.receiptNo}` : ""}${entryStaff ? ` ¬∑ ${esc(entryStaff)}` : ""}</small>
+              <small>${esc(entryDate(entry))}${entry.note ? ` ∑ ${esc(entry.note)}` : tx ? ` ∑ #${tx.receiptNo}` : ""}${entryStaff ? ` ∑ ${esc(entryStaff)}` : ""}</small>
             </span>
-            <span class="supplier-entry-amount ${isPayment ? "payment" : "bill"}">${isPayment ? "‚àí" : "+"}${money(entry.amount)}</span>
+            <span class="supplier-entry-amount ${isPayment ? "payment" : "bill"}">${isPayment ? "-" : "+"}${money(entry.amount)}</span>
           </div>`;
         }).join("")}</div>` : `<p class="report-empty">Record a credit sale or a payment to start this account.</p>`}
       </div>
@@ -1435,7 +1435,7 @@
 
   /* ---------- More / settings ---------- */
 
-  /** The Categories block on the More tab ‚Äî add, rename and remove groups. */
+  /** The Categories block on the More tab ó add, rename and remove groups. */
   function categorySection() {
     const categories = T.categories();
     return `<div class="settings-card cat-card" id="category-card">
@@ -1514,8 +1514,8 @@
 
   /**
    * A page protected by the shop PIN. Rendered instead of the page itself;
-   * the PIN sheet opens only from the explicit "Enter PIN" button ‚Äî never as
-   * a side effect of a re-render ‚Äî so someone who does not want to enter the
+   * the PIN sheet opens only from the explicit "Enter PIN" button ó never as
+   * a side effect of a re-render ó so someone who does not want to enter the
    * PIN can still leave the page with the bottom tabs or the back button.
    */
   function pinLocked(title, unlockAct) {
@@ -1562,13 +1562,13 @@
     // One row per shop: the payment request first, then the plan state from
     // the presence records. The presence heartbeat carries the shop's live
     // plan status (due / overdue / trial), so the panel always reflects the
-    // current state ‚Äî even if the developer has to do nothing.
+    // current state ó even if the developer has to do nothing.
     const norm = (s) => (["reverted", "declined"].includes(s) ? "due" : s);
     const accountsById = new Map(accounts.map((a) => [a.id, a]));
     const requestsById = new Map(requests.map((r) => [r.id, r]));
     const liveStatusFor = (id, fallback) => {
       const request = requestsById.get(id);
-      // The payment document is the strongest signal there is ‚Äî it wins over
+      // The payment document is the strongest signal there is ó it wins over
       // the presence heartbeat, which can lag a full minute behind and must
       // never make a confirmed shop look like it's waiting again.
       if (request) {
@@ -1702,7 +1702,7 @@
 
     // Payment authentication: shops that signed up more than 30 days ago,
     // never settled their plan (status is due/overdue), are heartbeating
-    // right now AND actually ringing sales ‚Äî likely free-riding.
+    // right now AND actually ringing sales ó likely free-riding.
     const DAY_MS = 24 * 60 * 60 * 1000;
     const cheaters = accounts
       .filter((a) => a.sub)
@@ -1724,12 +1724,12 @@
 
     const authCard = `<div class="settings-card auth-card">
       <div class="report-card-head"><h2>Payment authentication</h2><span class="report-total">${cheaters.length}</span></div>
-      <p class="report-note" style="margin-top:4px">Shops signing up 30+ days ago, never paid, live right now AND ringing sales ‚Äî likely free-riding.</p>
+      <p class="report-note" style="margin-top:4px">Shops signing up 30+ days ago, never paid, live right now AND ringing sales ó likely free-riding.</p>
       ${cheaters.length
         ? cheaters.map(({ account, days, salesMonth }) => `<div class="auth-row">
             <div class="auth-row-main">
               <strong>${esc(account.sub.shop || account.name || "Shop")}</strong>
-              <small>${esc(account.name || "")} ¬∑ ${days}d unpaid ¬∑ ${salesMonth} sale${salesMonth === 1 ? "" : "s"} this month ¬∑ seen ${seen(account.t)}</small>
+              <small>${esc(account.name || "")} ∑ ${days}d unpaid ∑ ${salesMonth} sale${salesMonth === 1 ? "" : "s"} this month ∑ seen ${seen(account.t)}</small>
             </div>
             <button class="btn btn-ghost" data-act="revert-payment" data-id="${esc(account.id)}">${icon("i-refresh")} Revert</button>
           </div>`).join("")
@@ -1786,7 +1786,7 @@
   }
 
   function planRow(row, seen) {
-    // `seen` is unused now ‚Äî the card's top center carries the live indicator.
+    // `seen` is unused now ó the card's top center carries the live indicator.
     const label = row.status === "active" ? "Paid"
       : row.status === "trial" ? "Trial"
         : row.status === "awaiting" ? "Waiting"
@@ -1799,7 +1799,7 @@
       : row.status === "trial" ? "is-good"
         : row.status === "overdue" ? "is-bad" : "is-warn";
     const isDev = (T.DEV_EMAILS || []).includes(String(row.email || "").trim().toLowerCase());
-    // Last seen / online indicator: "‚óè online" when the presence heartbeat is
+    // Last seen / online indicator: "? online" when the presence heartbeat is
     // fresh and the shop is not flagged off; otherwise a date or relative
     // text so nothing fake persists.
     const online = !row.off && row.lastSeenAt && (Date.now() - row.lastSeenAt < 180000);
@@ -1836,7 +1836,7 @@
       <div class="plan-row-top">
         <span class="plan-row-name"><strong>${esc(row.shop || "Shop")}</strong><small>${esc(row.email || "")}</small></span>
         ${row.phone ? phoneButton : ""}
-        <span class="plan-row-seen${online ? " is-online" : ""}">${esc(online ? "‚óè online" : seenText)}</span>
+        <span class="plan-row-seen${online ? " is-online" : ""}">${esc(online ? "? online" : seenText)}</span>
         <span class="plan-row-pill ${tone}">${esc(label)}</span>
       </div>
       <div class="plan-row-grid">
@@ -1846,20 +1846,20 @@
         </div>
         <div class="plan-cell">
           <span class="plan-cell-label">Active until</span>
-          <strong class="plan-cell-value">${esc(endDate || "‚Äî")}</strong>
+          <strong class="plan-cell-value">${esc(endDate || "ó")}</strong>
         </div>
         <div class="plan-cell">
           <span class="plan-cell-label">Days left</span>
-          <strong class="plan-cell-value">${daysLeft === null ? "‚Äî" : String(daysLeft)}</strong>
+          <strong class="plan-cell-value">${daysLeft === null ? "ó" : String(daysLeft)}</strong>
         </div>
       </div>
       <div class="plan-row-meta">
         <span class="plan-row-code"><strong>${esc(row.code || "no code")}</strong></span>
-        ${isDev ? ` ¬∑ <span class="plan-dup-flag">${icon("i-check")} You</span>` : ""}
-        ${row.amount ? ` ¬∑ <span>${esc(T.money(row.amount))}</span>` : ""}
-        ${row.reference ? ` ¬∑ <span>ref ${esc(row.reference)}</span>` : ""}
-        ${row.mpesaCode ? ` ¬∑ <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
-        ${row.dupCode ? ` ¬∑ <span class="plan-dup-flag">${icon("i-alert")} Same code</span>` : ""}
+        ${isDev ? ` ∑ <span class="plan-dup-flag">${icon("i-check")} You</span>` : ""}
+        ${row.amount ? ` ∑ <span>${esc(T.money(row.amount))}</span>` : ""}
+        ${row.reference ? ` ∑ <span>ref ${esc(row.reference)}</span>` : ""}
+        ${row.mpesaCode ? ` ∑ <span>M-Pesa ${esc(row.mpesaCode)}</span>` : ""}
+        ${row.dupCode ? ` ∑ <span class="plan-dup-flag">${icon("i-alert")} Same code</span>` : ""}
       </div>
       ${row.pending ? `<div class="plan-row-actions">
         <button class="btn btn-primary" data-act="confirm-payment" data-id="${esc(row.id)}">Confirm payment</button>
@@ -1893,7 +1893,7 @@
     const activeDays = T.subscriptionActiveDaysLeft?.();
     const amount = T.money(plan.amountCents);
     const reference = sub.reference || T.subscriptionReference();
-    // The developer's own account is free by definition ‚Äî show it plainly,
+    // The developer's own account is free by definition ó show it plainly,
     // no countdown and no payment asks.
     if (T.isDeveloperAccount?.()) {
       return `<div class="sub-card">
@@ -1904,7 +1904,7 @@
           </div>
           <span class="sub-pill is-good">Developer</span>
         </div>
-        <p class="field-small" style="margin-top:8px">You are the developer ‚Äî Biller POS is free for you, always. Reminders and the renewal card do not apply to this account.</p>
+        <p class="field-small" style="margin-top:8px">You are the developer ó Biller POS is free for you, always. Reminders and the renewal card do not apply to this account.</p>
         <div class="plan-reminders">
           <div class="plan-reminders-copy">
             <strong>Reminders</strong>
@@ -1923,7 +1923,7 @@
         <span class="data-icon">${icon("i-check")}</span>
         <span class="data-copy">
           <strong>${esc(T.money(entry.amountCents || plan.amountCents))}</strong>
-          <small>${esc(entry.method === "mpesa" ? "Paid by M-Pesa" : "Paid")}${entry.at ? ` ¬∑ ${esc(T.shortDateFmt.format(new Date(entry.at)))}` : ""}${entry.reference ? ` ¬∑ ${esc(entry.reference)}` : ""}</small>
+          <small>${esc(entry.method === "mpesa" ? "Paid by M-Pesa" : "Paid")}${entry.at ? ` ∑ ${esc(T.shortDateFmt.format(new Date(entry.at)))}` : ""}${entry.reference ? ` ∑ ${esc(entry.reference)}` : ""}</small>
         </span>
       </div>`).join("");
 
@@ -1952,7 +1952,7 @@
         ${icon("i-phone")} ${status === "awaiting"
           ? "Payment details"
           : status === "active"
-            ? `Renew ‚Äî ${esc(amount)} / month`
+            ? `Renew ó ${esc(amount)} / month`
             : status === "trial"
               ? `Pay ${esc(amount)} to activate`
               : `Pay ${esc(amount)}`}
@@ -1981,7 +1981,7 @@
     const openGroups = T.ui.settingsOpen && typeof T.ui.settingsOpen === "object" ? T.ui.settingsOpen : {};
     const settingsGroup = (id, iconName, title, sub, body, badge) => `
       <section class="settings-group ${openGroups[id] ? "is-open" : ""}" data-group="${esc(id)}">
-        <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}" aria-label="${esc(title)}${badge ? ` ‚Äî ${esc(sub)}` : ""}">
+        <button type="button" class="settings-group-head" data-act="toggle-settings-group" data-value="${id}" aria-expanded="${openGroups[id] ? "true" : "false"}" aria-label="${esc(title)}${badge ? ` ó ${esc(sub)}` : ""}">
           <span class="data-icon">${icon(iconName)}</span>
           <span class="data-copy"><strong>${esc(title)}</strong><small>${esc(sub)}</small></span>
           ${badge ? `<span class="box-badge" aria-hidden="true">${badge > 9 ? "9+" : badge}</span>` : ""}
@@ -1994,7 +1994,7 @@
       <div class="data-list">
         <button class="data-row" data-nav="#/store">
           <span class="data-icon">${icon("i-store")}</span>
-          <span class="data-copy"><strong>Store &amp; receipts</strong><small>${esc(store.name)} ¬∑ ${esc(store.currency)} ¬∑ tax ${esc(store.taxRate)}%</small></span>
+          <span class="data-copy"><strong>Store &amp; receipts</strong><small>${esc(store.name)} ∑ ${esc(store.currency)} ∑ tax ${esc(store.taxRate)}%</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
         <button class="data-row" data-nav="#/suppliers">
@@ -2061,7 +2061,7 @@
     const securityBody = `
       <div class="about-card">
         <div class="report-card-head"><h2>Shop PIN</h2><span class="status-pill ${T.pinEnabled() ? "is-good" : "is-warn"}"><span class="dot"></span>${T.pinEnabled() ? "On" : "Off"}</span></div>
-        <p class="card-sub">${T.pinEnabled() ? "A 4-digit PIN is required every time staff edit stock, edit or delete orders, products, suppliers or shop data ‚Äî and every write-off and restore." : "No PIN is set ‚Äî anyone with this till can edit stock, edit or delete records, write off wastage and restore backups."}</p>
+        <p class="card-sub">${T.pinEnabled() ? "A 4-digit PIN is required every time staff edit stock, edit or delete orders, products, suppliers or shop data ó and every write-off and restore." : "No PIN is set ó anyone with this till can edit stock, edit or delete records, write off wastage and restore backups."}</p>
         <div class="sheet-actions" style="margin-top:10px">
           ${T.pinEnabled()
             ? `<button class="btn btn-ghost btn-block" data-act="remove-pin">${icon("i-trash")} Remove PIN</button>
@@ -2083,7 +2083,7 @@
         <div class="switch-row">
           <div class="switch-copy">
             <strong>No debt allowed</strong>
-            <small>${debtBlocked ? "On ‚Äî ADD TO DEBT is grayed out at checkout. Every sale must be paid now." : "Off ‚Äî customers can buy now and pay later."}</small>
+            <small>${debtBlocked ? "On ó ADD TO DEBT is grayed out at checkout. Every sale must be paid now." : "Off ó customers can buy now and pay later."}</small>
           </div>
           <button class="switch${debtBlocked ? " is-on" : ""}" type="button" role="switch" aria-checked="${debtBlocked}" data-act="toggle-no-debt" aria-label="No debt allowed"><span class="switch-thumb"></span></button>
         </div>
@@ -2113,7 +2113,7 @@
         </button>
         <button class="data-row" data-nav="#/history">
           <span class="data-icon">${icon("i-receipt")}</span>
-          <span class="data-copy"><strong>History log</strong><small>${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} ¬∑ adds, edits, deletes` : "Every add, edit and delete on this till"}</small></span>
+          <span class="data-copy"><strong>History log</strong><small>${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} ∑ adds, edits, deletes` : "Every add, edit and delete on this till"}</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>
         <button class="data-row danger" data-act="reset-data">
@@ -2123,94 +2123,160 @@
         </button>
         ${session ? `<button class="data-row danger" data-act="open-delete-account">
           <span class="data-icon">${icon("i-trash")}</span>
-          <span class="data-copy"><strong>Delete this account</strong><small>Wipes the shop and its cloud data for good ‚Äî products, orders, settings, plan, staff</small></span>
+          <span class="data-copy"><strong>Delete this account</strong><small>Wipes the shop and its cloud data for good ó products, orders, settings, plan, staff</small></span>
           <span class="chev">${icon("i-chevron")}</span>
         </button>` : ""}
       </div>`;
-    const aboutBody = `
+        const aboutBody = `
       <div class="about-card">
         <div class="about-top">
-          <span class="about-mark">${icon("i-store")}</span>
+          <span class="about-mark"></span>
           <div><div class="about-name">BILLER POS</div><div class="about-version">${VERSION ? `V ${esc(VERSION)} ¬∑ ` : ""}cloud-synced till</div></div>
         </div>
         <p class="about-oneliner">Client Brief ‚Äî everything about the app you send to potential clients.</p>
-        <div class="about-brief-static">
-          <h2>What it is</h2>
-          <p>Biller POS is a point-of-sale system built for the Kenyan shop floor: one-handed operation on a phone, fast number entry at the till, and everything stored <b>on the device by default</b> ‚Äî no internet needed to sell, restock or ring up.</p>
-          <p>Core promise: <b>sell, stock, and know what you owe ‚Äî even with a poor signal.</b> When the network returns, the app syncs automatically.</p>
+        <div class="about-brief-static"><h2>What it is</h2>
+<p>Biller POS is a point-of-sale system built for the Kenyan shop floor: one-handed operation on a phone, fast number entry at the till, and everything stored <b>on the device by default</b> ‚Äî no internet needed to sell, restock or ring up.</p>
+<p>Core promise: <b>sell, stock, and know what you owe ‚Äî even with a poor signal.</b> When the network returns, the app syncs automatically.</p>
 
-          <h2>Key benefits</h2>
-          <ul>
-            <li><b>Works offline by default</b> ‚Äî data is saved locally; an "Offline" banner appears during a connection loss.</li>
-            <li><b>Instant and fast</b> ‚Äî no server round-trips to ring a sale; receipts are instantly searchable by number.</li>
-            <li><b>Money for every payment method</b> ‚Äî cash, M-Pesa (STK Push to the customer), card, and Customer Debt on one checkout pad.</li>
-            <li><b>Business intelligence built in</b> ‚Äî weekly sales chart, top sellers, staff scoreboard, payment mix, wastage, and a monthly target with real-time progress.</li>
-            <li><b>Made for handhelds</b> ‚Äî light/dark themes (Forest, Ocean, Clay, Plum, Black) and 3 text sizes.</li>
-            <li><b>Trust built in</b> ‚Äî a 4-digit PIN to lock all edits and deletes, an activity history log, and nothing is visible until confirmed.</li>
-          </ul>
+<h2>Key benefits</h2>
+<ul>
+  <li><b>Works offline by default</b> ‚Äî data is saved locally; an "Offline" banner appears during a connection loss.</li>
+  <li><b>Instant and fast</b> ‚Äî no server round-trips to ring a sale; receipts are instantly searchable by number.</li>
+  <li><b>Money for every payment method</b> ‚Äî cash, M-Pesa (STK Push to the customer), card, and Customer Debt on one checkout pad.</li>
+  <li><b>Business intelligence built in</b> ‚Äî weekly sales chart, top sellers, staff scoreboard, payment mix, wastage, and a monthly target with real-time progress.</li>
+  <li><b>Made for handhelds</b> ‚Äî light/dark themes (Forest, Ocean, Clay, Plum, Black) and 3 text sizes.</li>
+  <li><b>Trust built in</b> ‚Äî a 4-digit PIN to lock all edits and deletes, an activity history log, and nothing is visible until confirmed.</li>
+</ul>
 
-          <h2>Features</h2>
+<h2>How it runs</h2>
+<table>
+  <thead><tr><th>Platform</th><th>Details</th></tr></thead>
+  <tbody>
+    <tr><td>Web app</td><td>Open <b>https://johnson8080.github.io/biller-pos/</b>. New data is saved locally; install to get it on the home screen.</td></tr>
+    <tr><td>Android APK</td><td>Bundled with your shop. Loads the hosted site through a WebView (app id <code>com.biller.pos</code>), so updates land without resubmitting to Play.</td></tr>
+    <tr><td>Cloud sync</td><td>Account sign-in with Firestore ‚Äî for multi-till setups that keep rotating.</td></tr>
+    <tr><td>Asset version</td><td>APP <b>3.9.9</b> ‚Äî browsers/APKs refresh to the latest automatically.</td></tr>
+  </tbody>
+</table>
 
-          <h3>Sell &amp; checkout</h3>
-          <ul>
-            <li><b>Fast number entry</b> ‚Äî tap to add products or type quantities; edit price, tax and discount live on the cart.</li>
-            <li><b>One-handed friendly</b> ‚Äî large, tapable targets; no jump between screens.</li>
-            <li><b>Discount &amp; split payment</b> ‚Äî live discounts; mixed payments with per-tender amounts.</li>
-            <li><b>Receipts</b> ‚Äî share to WhatsApp, email, or print; PDF, DOCX or screenshot export, no server needed.</li>
-            <li><b>M-Pesa STK Push</b> ‚Äî Safaricom dials the customer's phone; you confirm with the PIN prompt on their phone. Record your Paybill/Till number in Settings ‚Üí M-Pesa.</li>
-            <li><b>Card terminal</b> ‚Äî for card terminal providers.</li>
-            <li><b>Customer Debt</b> ‚Äî full debt ledger: add to debt, view and chase, due dates, reminders.</li>
-          </ul>
+<h2>Getting started (5 steps)</h2>
+<ol style="margin-left:0; padding-left:0;">
+  <li><b>Install.</b> Web: long-press the URL ‚Üí Add to Home Screen. Android: install the APK and open it from your home screen.</li>
+  <li><b>Open the guided tour.</b> A friendly tour walks new shopkeepers through Sell, Cart, Orders, Debt, Suppliers and Reports. New shops auto-start it after first sale; manual: Settings ‚Üí TAKE THE TOUR. Skippable anytime.</li>
+  <li><b>Add a few products (Stock screen).</b> Name, category, price, stock, supplier. Choose categories like Groceries/Beauty/Agrovet ‚Äî presets exist; add your own.</li>
+  <li><b>Set your monthly target.</b> Dashboard tracks actual vs. target monthly sales (target card on the Reports screen).</li>
+  <li><b>Go sell (Sell screen).</b> Tap products or tap numbers, add discount, and checkout with cash, M-Pesa, card, or add to customer debt.</li>
+  <li><b>Review (Reports screen).</b> Sales per day, profit, best sellers, payment mix ‚Äî all automatic after a sale.</li>
+</ol>
 
-          <h3>Stock &amp; inventory</h3>
-          <ul>
-            <li><b>Products</b> ‚Äî add name, SKU, category, supplier, price, stock, photo. 30+ Kenya-specific categories; add your own in More ‚Üí Categories.</li>
-            <li><b>Variants</b> ‚Äî sizes/colours with each variant having its own stock + price.</li>
-            <li><b>Weigh mode</b> ‚Äî for use by scale/spreadsheet based sales floorplan.</li>
-            <li><b>Shelf counting audit</b> ‚Äî count shelf stock, mark each item as MATCH / VARIANCE / OVER / UNDER, print. Finds over-supply before you walk the shelves.</li>
-            <li><b>Wastage &amp; write-offs</b> ‚Äî full history, reason tags, costs, and tracking.</li>
-            <li><b>Delivery, receipting</b> ‚Äî stock enters when goods are bought.</li>
-            <li><b>Best-before warnings</b> ‚Äî 30/90/180-day markers, auto-reallocation.</li>
-            <li><b>Sales checker</b> ‚Äî see remaining stock after each sale; guardrails if you're running out.</li>
-          </ul>
+<h2>Features</h2>
 
-          <h3>Debt management</h3>
-          <ul>
-            <li><b>Add to Debt</b> ‚Äî record credit sales with due date and pin.</li>
-            <li><b>Chase &amp; collect</b> ‚Äî track payments, print statements, view collections.</li>
-            <li><b>Debt card on the dock</b> ‚Äî shows total debt and due today at a glance.</li>
-          </ul>
+<h3>Sell &amp; checkout</h3>
+<ul>
+  <li><b>Fast number entry</b> ‚Äî tap to add products or type quantities; edit price, tax and discount live on the cart.</li>
+  <li><b>One-handed friendly</b> ‚Äî large, tapable targets; no jump between screens.</li>
+  <li><b>Discount &amp; split payment</b> ‚Äî live discounts; mixed payments with per-tender amounts.</li>
+  <li><b>Receipts</b> ‚Äî share to WhatsApp, email, or print; PDF, DOCX or screenshot export, no server needed.</li>
+  <li><b>M-Pesa STK Push</b> ‚Äî Safaricom dials the customer's phone; you confirm with the PIN prompt on their phone. Record your Paybill/Till number in Settings ‚Üí M-Pesa.</li>
+  <li><b>Card terminal</b> ‚Äî for card terminal providers.</li>
+  <li><b>Customer Debt</b> ‚Äî full debt ledger: add to debt, view and chase, due dates, reminders.</li>
+</ul>
 
-          <h3>Reports (dashboard)</h3>
-          <ul>
-            <li><b>Daily sales chart</b> ‚Äî updated automatically after each sale. Week view. Daily sales goal for each day.</li>
-            <li><b>Sales, profit, best sellers</b> ‚Äî see what sells and makes money, not just what moves most units.</li>
-            <li><b>Top sellers</b> ‚Äî the shop's best-selling items of the month with sales records.</li>
-            <li><b>Payment mix</b> ‚Äî cash vs. M-Pesa vs. card vs. debt split.</li>
-            <li><b>Staff scoreboard</b> ‚Äî who sold what, by person and by amount.</li>
-            <li><b>Wastage reports</b> ‚Äî track reasons and costs with each entry.</li>
-            <li><b>Monthly target</b> ‚Äî set a sales goal and track actual vs. target on the Reports screen, auto-updated.</li>
-            <li><b>Export PDF, DOCX, or screenshot</b> ‚Äî share the report with your team, accountant or client.</li>
-          </ul>
+<h2>Stock &amp; inventory</h2>
+<ul>
+  <li><b>Products</b> ‚Äî add name, SKU, category, supplier, price, stock, photo. 30+ Kenya-specific categories; add your own in More ‚Üí Categories.</li>
+  <li><b>Variants</b> ‚Äî sizes/colours with each variant having its own stock + price.</li>
+  <li><b>Weigh mode</b> ‚Äî for use by scale/spreadsheet based sales floorplan.</li>
+  <li><b>Shelf counting audit</b> ‚Äî count shelf stock, mark each item as MATCH / VARIANCE / OVER / UNDER, print. Finds over-supply before you walk the shelves.</li>
+  <li><b>Wastage &amp; write-offs</b> ‚Äî full history, reason tags, costs, and tracking.</li>
+  <li><b>Delivery, receipting</b> ‚Äî stock enters when goods are bought.</li>
+  <li><b>Best-before warnings</b> ‚Äî 30/90/180-day markers, auto-reallocation.</li>
+  <li><b>Sales checker</b> ‚Äî see remaining stock after each sale; guardrails if you're running out.</li>
+</ul>
 
-          <h3>Security &amp; trust</h3>
-          <ul>
-            <li><b>Shop PIN</b> ‚Äî a 4-digit PIN is required to edit stock, edit or delete orders, products, suppliers or shop data, and every write-off and restore.</li>
-            <li><b>History log</b> ‚Äî every add, edit, delete, write-off and restore on the till, with a purge option.</li>
-            <li><b>Payment mode lock</b> ‚Äî allow cash-only, M-Pesa-only, or card-only mode at checkout.</li>
-            <li><b>No-debt toggle</b> ‚Äî "No debt allowed" is on by default; off lets customers pay later via Debt.</li>
-            <li><b>Subscription</b> ‚Äî trial status per shop, monthly recurring plans (switch in Settings).</li>
-            <li><b>Export/Import</b> ‚Äî Settings ‚Üí Export data (products, orders and settings as JSON) and Restore from backup.</li>
-          </ul>
+<h2>Debt management</h2>
+<ul>
+  <li><b>Add to Debt</b> ‚Äî record credit sales with due date and pin.</li>
+  <li><b>Chase &amp; collect</b> ‚Äî track payments, print statements, view collections.</li>
+  <li><b>Debt card on the dock</b> ‚Äî shows total debt and due today at a glance.</li>
+</ul>
 
-          <h3>Appearance</h3>
-          <ul>
-            <li>5 themes: Forest, Ocean, Clay, Plum, Black ‚Äî pick any per shop.</li>
-            <li>Light or Dark + 3 text sizes (Small/Medium/Large).</li>
-            <li>Full-screen app experience, material-style controls, and an animated, chart-styled boot splash: "Loading your shop data!"</li>
-          </ul>
-        </div>
-        <button type="button" class="btn btn-primary btn-sm about-brief-open" data-act="open-about-brief">${icon("i-info")} Open the client brief</button>
+<h2>Reports (dashboard)</h2>
+<ul>
+  <li><b>Daily sales chart</b> ‚Äî updated automatically after each sale. Week view. Daily sales goal for each day.</li>
+  <li><b>Sales, profit, best sellers</b> ‚Äî see what sells and makes money, not just what moves most units.</li>
+  <li><b>Top sellers</b> ‚Äî the shop's best-selling items of the month with sales records.</li>
+  <li><b>Payment mix</b> ‚Äî cash vs. M-Pesa vs. card vs. debt split.</li>
+  <li><b>Staff scoreboard</b> ‚Äî who sold what, by person and by amount.</li>
+  <li><b>Wastage reports</b> ‚Äî track reasons and costs with each entry.</li>
+  <li><b>Monthly target</b> ‚Äî set a sales goal and track actual vs. target on the Reports screen, auto-updated.</li>
+  <li><b>Export PDF, DOCX, or screenshot</b> ‚Äî share the report with your team, accountant or client.</li>
+</ul>
+
+<h2>Security &amp; trust</h2>
+<ul>
+  <li><b>Shop PIN</b> ‚Äî a 4-digit PIN is required to edit stock, edit or delete orders, products, suppliers or shop data, and every write-off and restore.</li>
+  <li><b>History log</b> ‚Äî every add, edit, delete, write-off and restore on the till, with a purge option.</li>
+  <li><b>Payment mode lock</b> ‚Äî allow cash-only, M-Pesa-only, or card-only mode at checkout.</li>
+  <li><b>No-debt toggle</b> ‚Äî "No debt allowed" is on by default; off lets customers pay later via Debt.</li>
+  <li><b>Subscription</b> ‚Äî trial status per shop, monthly recurring plans (switch in Settings).</li>
+  <li><b>Export/Import</b> ‚Äî Settings ‚Üí Export data (products, orders and settings as JSON) and Restore from backup.</li>
+</ul>
+
+<h2>Appearance</h2>
+<ul>
+  <li>5 themes: Forest, Ocean, Clay, Plum, Black ‚Äî pick any per shop.</li>
+  <li>Light or Dark + 3 text sizes (Small/Medium/Large).</li>
+  <li>Full-screen app experience, material-style controls, and an animated, chart-styled boot splash: "Loading your shop data!"</li>
+</ul>
+
+<h2>Onboarding &amp; support</h2>
+<ul>
+  <li>Ready on day one ‚Äî getting started in minutes, guided tour on first open.</li>
+  <li>Support &amp; training ‚Äî reachable via Johnson at [your contact details]; we hold training calls with new shops.</li>
+</ul>
+
+<h2>Sample walkthrough (new shop, one stock of [e.g., sell-through items])</h2>
+<ol style="margin-left:0; padding-left:0;">
+  <li><b>Install the app.</b> Long-press the URL and Add to Home Screen, or open the bundled APK.</li>
+  <li><b>Open the app.</b> A chart-styled splash reads "Loading your shop data!" and fades into the main screen.</li>
+  <li><b>On the Stock screen, add a few products:</b> name, category (e.g., "Groceries"), supplier, price, count.</li>
+  <li><b>Go to Sell.</b> Tap products or type in quantities; add a discount.</li>
+  <li><b>Checkout.</b> Take cash, then verify the stock levels drop correctly. Orders list opens instantly.</li>
+  <li><b>On Orders, open the receipt ‚Äî share to WhatsApp or print.</b> Filter by time.</li>
+  <li><b>On the Reports screen ‚Äî daily sales, profit, best sellers, payment mix, monthly target: auto-refreshed after each sale.</b> Set your monthly target first.</li>
+  <li><b>Done.</b> No manual filing, no end-of-month scramble: the dashboard holds it all.</li>
+</ol>
+
+<h2>Technical spec for your IT team</h2>
+<ul>
+  <li>Android 6+ (minSdk 22); iOS not supported; Android PWA fallback available. Server is SaaS at <code>biller-91aaf.web.app</code>, build 1.0.6.</li>
+  <li>Host: GitHub Pages + Firebase (johnson8080.github.io/biller-pos); Firestore sync for account sign-in.</li>
+  <li>M-Pesa: Daraja STK Push; sandbox available for tests.</li>
+  <li>PWA manifest, installable; every deployment auto-bumps <code>ASSET_VERSION</code>.</li>
+  <li>No Google Play billing; direct invoice billing per-shop monthly recurring.
+</ul>
+
+<h2>Client pricing &amp; licensing</h2>
+<ul>
+  <li>Version <b>3.9.9</b>.</li>
+  <li>Suggested monthly price: <b>[e.g., KES 1,500‚Äì3,000 per active shop]</b> ‚Äî adjust to your market.</li>
+  <li>Setup is quick ‚Äî enable the shop in Settings; the dashboard begins tracking as soon as the first sale is taken.</li>
+  <li>Plans: trial status, monthly recurring ‚Äî sign off when ready; free within the trial.</li>
+  <li>For a formal quote or SLA, refer to <a href="https://johnson8080.github.io/biller-pos/">the official site</a> or contact Johnson at [your contact details].</li>
+</ul>
+
+<div class="note">
+  <p>This brief is for reference only. For a formal quote or SLA, contact Johnson at [your contact details]. The app described matches the live version at the URL above (3.9.9).</p>
+</div>
+
+<footer>
+  <p>&copy; 2026 J&amp;J LTD &middot; Biller POS by Johnson ‚Äî Client Brief &middot; v3.9.9</p>
+  <p style="margin-top:6px; color:var(--faint)">Sample output ‚Äî fill in your details before sending to clients.</p>
+</footer>
+
+</body>
+</html></div>
       </div>`;
     return `<section class="screen">
       <div class="screen-head">
@@ -2219,29 +2285,29 @@
       </div>
 
       <div class="settings-groups">
-        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} ¬∑ Plan ${T.isDeveloperAccount?.() ? "Developer ‚Äî free" : (T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due")}`, shopBody)}
-        ${subscriptionBody ? settingsGroup("monthly", "i-card", "Monthly plan", (() => { if (T.isDeveloperAccount?.()) return "Developer account ¬∑ free forever"; const status = T.subscriptionStatus(); const days = T.subscriptionActiveDaysLeft?.(); if (status === "active") return `Active${days !== null ? ` ¬∑ ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "trial") return `Free trial${days !== null ? ` ¬∑ ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "awaiting") return "Awaiting confirmation"; if (status === "overdue") return "Payment overdue"; return "Payment due"; })(), subscriptionBody) : ""}
+        ${settingsGroup("shop", "i-store", "Shop & receipts", `${store.name} ∑ Plan ${T.isDeveloperAccount?.() ? "Developer ó free" : (T.subscriptionStatus() === "active" ? "active" : T.subscriptionStatus() === "trial" ? "trial" : T.subscriptionStatus() === "awaiting" ? "awaiting" : "due")}`, shopBody)}
+        ${subscriptionBody ? settingsGroup("monthly", "i-card", "Monthly plan", (() => { if (T.isDeveloperAccount?.()) return "Developer account ∑ free forever"; const status = T.subscriptionStatus(); const days = T.subscriptionActiveDaysLeft?.(); if (status === "active") return `Active${days !== null ? ` ∑ ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "trial") return `Free trial${days !== null ? ` ∑ ${days} day${days === 1 ? "" : "s"} left` : ""}`; if (status === "awaiting") return "Awaiting confirmation"; if (status === "overdue") return "Payment overdue"; return "Payment due"; })(), subscriptionBody) : ""}
         ${developerMode ? `
-        <button type="button" class="account-card plan-card" data-nav="#/plans" style="margin-top:10px" aria-label="Open the Subscriptions panel ‚Äî every shop and what it paid">
+        <button type="button" class="account-card plan-card" data-nav="#/plans" style="margin-top:10px" aria-label="Open the Subscriptions panel ó every shop and what it paid">
           <span class="data-icon">${icon("i-card")}</span>
           <span class="account-card-copy">
             <strong>SUBSCRIPTIONS</strong>
-            <small>${planCount ? `${planCount} waiting for confirmation ‚Äî every shop, plan and payment` : "Every shop, its plan and what it paid"}</small>
+            <small>${planCount ? `${planCount} waiting for confirmation ó every shop, plan and payment` : "Every shop, its plan and what it paid"}</small>
           </span>
           ${planCount ? `<span class="box-badge">${planCount > 9 ? "9+" : planCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
         </button>` : ""}
-        ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories ¬∑ ${T.state.products.length} products`, catalogBody)}
-        ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} ¬∑ ${T.colorScheme() === "dark" ? "Dark" : "Light"} ¬∑ ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
+        ${settingsGroup("catalog", "i-grid", "Catalog", `${T.categories().length} categories ∑ ${T.state.products.length} products`, catalogBody)}
+        ${settingsGroup("appearance", "i-pencil", "Appearance", `${themeName} ∑ ${T.colorScheme() === "dark" ? "Dark" : "Light"} ∑ ${T.textSizeId()[0].toUpperCase() + T.textSizeId().slice(1)} text`, appearanceBody)}
         ${settingsGroup("data", "i-lock", "Data & privacy", "Export, backup, reset and history", dataBody)}
         ${settingsGroup("account", "i-user", "Account", session ? session.email : "Not signed in", accountBody)}
-        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} ¬∑ ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " ¬∑ No debt" : ""}`, securityBody)}
+        ${settingsGroup("security", "i-lock", "Security", `${T.pinEnabled() ? "PIN on" : "No PIN"} ∑ ${paymentMode === "all" ? "All payments" : paymentMode === "cash" ? "Cash only" : paymentMode === "mpesa" ? "M-Pesa only" : "Card only"}${debtBlocked ? " ∑ No debt" : ""}`, securityBody)}
       </div>
 
       <button type="button" class="account-card announcement-card" data-nav="#/announcements" style="margin-top:10px" aria-label="Announcements${announceCount ? `, ${announceCount} unread` : ""}">
         <span class="data-icon">${icon("i-bell")}</span>
         <span class="account-card-copy">
           <strong>ANNOUNCEMENTS</strong>
-          <small>${announceCount ? `${announceCount} new ‚Äî tap to read` : "Announcement from the developer"}</small>
+          <small>${announceCount ? `${announceCount} new ó tap to read` : "Announcement from the developer"}</small>
         </span>
         ${announceCount ? `<span class="box-badge">${announceCount > 9 ? "9+" : announceCount}</span>` : `<span class="chev">${icon("i-chevron")}</span>`}
       </button>
@@ -2250,7 +2316,7 @@
         <span class="data-icon">${icon("i-chart")}</span>
         <span class="account-card-copy">
           <strong>TAKE THE TOUR</strong>
-          <small>${T.tour?.seen?.() ? "Selling, stock, debts and reports in one minute" : "New ‚Äî see how the whole till works in one minute"}</small>
+          <small>${T.tour?.seen?.() ? "Selling, stock, debts and reports in one minute" : "New ó see how the whole till works in one minute"}</small>
         </span>
         <span class="chev">${icon("i-chevron")}</span>
       </button>
@@ -2265,7 +2331,7 @@
       </button>
 
       <div class="settings-groups" style="margin-top:10px">
-        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)} ¬∑ what this app is for` : "What this app is for", aboutBody)}
+        ${settingsGroup("about", "i-info", "About Biller POS", VERSION ? `V ${esc(VERSION)} ∑ what this app is for` : "What this app is for", aboutBody)}
       </div>
     </section>`;
   }
@@ -2283,7 +2349,7 @@
           <p class="card-sub">Take Lipa na M-Pesa payments straight into your Paybill or Till. The customer gets a PIN prompt on their phone.</p>
           <ol class="mpesa-steps">
             <li><strong>Your shortcode.</strong> The Paybill or Till number that should receive the money.</li>
-            <li><strong>Your Daraja app.</strong> Consumer key, secret and the passkey for that number ‚Äî you do this once, then it is saved with your shop.</li>
+            <li><strong>Your Daraja app.</strong> Consumer key, secret and the passkey for that number ó you do this once, then it is saved with your shop.</li>
             <li><strong>Check it.</strong> Send a KES 1 prompt to your own phone and approve it.</li>
           </ol>
           <div class="field-row">
@@ -2366,7 +2432,7 @@
             <button type="button" class="btn btn-ghost" data-act="mpesa-test-push">${icon("i-phone")} Send KES 1 test prompt</button>
           </div>
           <span class="mpesa-test-note" id="mpesa-push-note" role="status"></span>
-          <p class="field-small">The KES 1 prompt proves the shortcode and passkey belong together ‚Äî the most common setup mistake. Approve it on your own phone to finish the check.</p>
+          <p class="field-small">The KES 1 prompt proves the shortcode and passkey belong together ó the most common setup mistake. Approve it on your own phone to finish the check.</p>
           <p class="field-small">Payments are recorded in Orders and on the receipt with the customer's number and the M-Pesa reference.</p>
         </div>
 
@@ -2408,10 +2474,10 @@
           ${roster.length ? `<select class="select" id="store-staff" name="staff">
             ${roster.map((name) => {
               const taken = name !== active && Boolean(T.staffClaimedBy?.(name));
-              return `<option value="${esc(name)}" ${String(active) === name ? "selected" : ""} ${taken ? "disabled" : ""}>${esc(name)}${taken ? " ‚Äî selling on another device" : ""}</option>`;
+              return `<option value="${esc(name)}" ${String(active) === name ? "selected" : ""} ${taken ? "disabled" : ""}>${esc(name)}${taken ? " ó selling on another device" : ""}</option>`;
             }).join("")}
           </select>` : `<input class="input" id="store-staff" name="staff" value="${esc(store.staff)}" autocomplete="name" placeholder="Add a shopkeeper below first">`}
-          <p class="field-help">Same choice as the Sell tab ‚Äî the name printed on this device's receipts. A name already selling on another till stays greyed out.</p>
+          <p class="field-help">Same choice as the Sell tab ó the name printed on this device's receipts. A name already selling on another till stays greyed out.</p>
         </div>
 
         <div class="section-head"><h2>Sales &amp; receipts</h2></div>
@@ -2423,7 +2489,7 @@
           <div class="field">
             <label for="store-currency">Currency</label>
             <select class="select" id="store-currency" name="currency">
-              ${["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].map((code) => `<option value="${esc(code)}" ${String(store.currency || "KES") === code ? "selected" : ""}>${esc(code)} ‚Äî ${code === "KES" ? "Kenyan shillings (KSh)" : code}</option>`).join("")}
+              ${["KES", "USD", "EUR", "GBP", "UGX", "TZS", "GHS", "NGN", "INR", "AUD", "CAD"].map((code) => `<option value="${esc(code)}" ${String(store.currency || "KES") === code ? "selected" : ""}>${esc(code)} ó ${code === "KES" ? "Kenyan shillings (KSh)" : code}</option>`).join("")}
             </select>
           </div>
         </div>
@@ -2453,7 +2519,7 @@
               ${taken ? `<button type="button" class="staff-chip-free" data-act="release-staff" data-value="${esc(name)}" aria-label="Free ${esc(name)} from the other device">Free</button>` : ""}
               <button type="button" class="staff-chip-x" data-act="remove-staff" data-value="${esc(name)}" aria-label="Remove ${esc(name)}">${icon("i-close")}</button>
             </div>`;
-          }).join("") : `<span class="staff-roster-empty">No shopkeepers yet ‚Äî add the first one below.</span>`}
+          }).join("") : `<span class="staff-roster-empty">No shopkeepers yet ó add the first one below.</span>`}
         </div>
         <div class="staff-gate-divider" aria-hidden="true"><span>or</span></div>
         <label class="field-label" for="new-staff-name">Add a new shopkeeper</label>
@@ -2470,7 +2536,7 @@
     const session = T.getSession();
     let status = "This device only";
     if (!session) status = "Sign in to sync";
-    else if (cloud.phase === "syncing") status = "Syncing‚Ä¶";
+    else if (cloud.phase === "syncing") status = "SyncingÖ";
     else if (cloud.phase === "synced") status = "Saved to Firebase";
     else if (cloud.phase === "error") status = cloud.error || "Cloud sync stopped";
     else if (cloud.mode === "local") status = cloud.error || "Firebase unavailable";
@@ -2492,7 +2558,7 @@
     </div>`;
   }
 
-  /** Only the developer account sees this card ‚Äî one tap to the full page. */
+  /** Only the developer account sees this card ó one tap to the full page. */
   function devPanel() {
     const cloud = T.cloud?.status?.();
     if (!T.isDeveloperAccount()) return "";
@@ -2500,7 +2566,7 @@
     return `<div class="settings-card dev-panel">
       ${cloud?.accountsError ? `<p class="dev-error">Cannot read other accounts (${esc(cloud.accountsError)}). Check the Firestore rules for the presence collection.</p>` : ""}
       <div class="section-head"><h2>Monthly plans</h2></div>
-      <p class="card-sub">Every shop, its code, its plan and what it paid ‚Äî on one full page, longest list first.${pending ? ` <strong>${pending} waiting for confirmation.</strong>` : ""}</p>
+      <p class="card-sub">Every shop, its code, its plan and what it paid ó on one full page, longest list first.${pending ? ` <strong>${pending} waiting for confirmation.</strong>` : ""}</p>
       <button class="btn btn-primary btn-block" data-nav="#/plans" style="margin-top:10px">${icon("i-card")} Open the subscriptions panel</button>
     </div>`;
   }
@@ -2534,8 +2600,8 @@
       ${(() => {
         const activated = T.subscriptionActivatedAt?.();
         const daysLeft = T.subscriptionActiveDaysLeft?.();
-        const activatedText = activated ? T.shortDateFmt.format(activated) : "‚Äî";
-        const daysText = daysLeft === null ? "‚Äî" : (daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`);
+        const activatedText = activated ? T.shortDateFmt.format(activated) : "ó";
+        const daysText = daysLeft === null ? "ó" : (daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : `${daysLeft} days left`);
         return `<div class="settings-card">
           <h2>Plan status</h2>
           <p class="card-sub">Your activation and remaining active days.</p>
@@ -2548,10 +2614,10 @@
         const online = st.online !== false && (typeof navigator === "undefined" || navigator.onLine !== false);
         const phase = String(st.phase || (st.mode === "cloud" ? "syncing" : "local"));
         const statusText = !online
-          ? "Offline ‚Äî changes save on this device"
+          ? "Offline ó changes save on this device"
           : (st.mode === "local"
-            ? "Local only ‚Äî sign in to sync"
-            : (phase === "synced" ? "Synced with the cloud" : (phase === "error" ? (st.error || "Could not reach the cloud") : "Syncing‚Ä¶")));
+            ? "Local only ó sign in to sync"
+            : (phase === "synced" ? "Synced with the cloud" : (phase === "error" ? (st.error || "Could not reach the cloud") : "SyncingÖ")));
         return `<div class="settings-card">
           <h2>Sync &amp; offline</h2>
           <p class="card-sub">Your data is saved on this device and syncs when online.</p>
@@ -2581,7 +2647,7 @@
     const session = T.getSession();
     // The Firebase SDK never loaded (blocked network / no signal on this
     // device). Be explicit about it instead of silently letting the user in
-    // ‚Äî that is what made new signups vanish without a trace.
+    // ó that is what made new signups vanish without a trace.
     if (window.localOnlyMode) {
       return `<section class="screen login-screen" id="login-screen" aria-labelledby="login-title">
         <div class="login-brand">
@@ -2593,7 +2659,7 @@
         <div class="login-card">
           <div class="login-alert offline-card" role="alert">
             ${icon("i-alert", "ico ico-sm")}
-            <span id="login-alert-text"><strong>You are offline.</strong> The sign-in service can‚Äôt be reached from this device, so accounts can‚Äôt be created right now.</span>
+            <span id="login-alert-text"><strong>You are offline.</strong> The sign-in service canít be reached from this device, so accounts canít be created right now.</span>
           </div>
           <p class="offline-copy">Your shop keeps working offline. Anything you do is saved on this phone and will sync once you are online and sign in.</p>
           <div class="offline-actions">
@@ -2631,7 +2697,7 @@
             <label for="login-password">Password</label>
             <div class="login-affix">
               <input class="input" id="login-password" name="password" type="password"
-                     autocomplete="current-password" placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢" data-input-for="password">
+                     autocomplete="current-password" placeholder="ïïïïïïïï" data-input-for="password">
               <button type="button" class="login-eye" data-login-toggle="login-password"
                       aria-label="Show password" aria-pressed="false">${icon("i-eye", "ico ico-sm")}</button>
             </div>
@@ -2642,7 +2708,7 @@
             <label for="login-confirm">Confirm password</label>
             <div class="login-affix">
               <input class="input" id="login-confirm" name="confirmPassword" type="password"
-                     autocomplete="new-password" placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢" data-input-for="confirmPassword">
+                     autocomplete="new-password" placeholder="ïïïïïïïï" data-input-for="confirmPassword">
               <button type="button" class="login-eye" data-login-toggle="login-confirm"
                       aria-label="Show password" aria-pressed="false">${icon("i-eye", "ico ico-sm")}</button>
             </div>
@@ -2685,9 +2751,9 @@
       const lineProfit = lineTotal - lineCost;
       const qtyLabel = mass ? T.massLabel(qty) : String(qty);
       const variantAttr = variant ? ` data-variant="${esc(variant.id)}"` : "";
-      const variantName = variant ? ` ¬∑ ${esc(variant.label)}` : "";
+      const variantName = variant ? ` ∑ ${esc(variant.label)}` : "";
       const fullName = `${esc(product.name)}${variantName}`;
-      const detail = variant ? [product.detail].filter(Boolean).join("") : [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" ¬∑ ");
+      const detail = variant ? [product.detail].filter(Boolean).join("") : [T.unitSizeLabel(product), T.bundleLabel(product), product.detail].filter(Boolean).join(" ∑ ");
       return `<div class="cart-item">
         <div class="cart-item-top">${productTile(product, "tile-sm")}
           <div class="cart-item-copy">
@@ -2733,21 +2799,21 @@
         <button class="discount-copy" data-act="open-discount" ${locked ? "disabled" : ""}>
           <strong>${esc(discountCopy.strong)}</strong><small>${esc(discountCopy.small)}</small>
         </button>
-        ${discount ? `<span class="discount-value">‚àí${money(totals.discountAmount)}</span><button class="remove-discount" data-act="remove-discount" aria-label="Remove discount" ${locked ? "disabled" : ""}>${icon("i-close")}</button>` : `<button class="remove-discount" data-act="open-discount" aria-label="Add discount" ${locked ? "disabled" : ""}>${icon("i-chevron")}</button>`}
+        ${discount ? `<span class="discount-value">-${money(totals.discountAmount)}</span><button class="remove-discount" data-act="remove-discount" aria-label="Remove discount" ${locked ? "disabled" : ""}>${icon("i-close")}</button>` : `<button class="remove-discount" data-act="open-discount" aria-label="Add discount" ${locked ? "disabled" : ""}>${icon("i-chevron")}</button>`}
       </div>
       <div class="totals-card">
         <div class="total-line"><span class="label">Subtotal</span><span class="value">${money(totals.subtotal)}</span></div>
-        ${totals.discountAmount ? `<div class="total-line"><span class="label">Discount</span><span class="value discount">‚àí${money(totals.discountAmount)}</span></div>` : ""}
+        ${totals.discountAmount ? `<div class="total-line"><span class="label">Discount</span><span class="value discount">-${money(totals.discountAmount)}</span></div>` : ""}
         <div class="total-line"><span class="label">Tax (${esc(T.state.store.taxRate)}%)</span><span class="value">${money(totals.tax)}</span></div>
         ${totals.cost ? `<div class="total-line"><span class="label">Buying cost</span><span class="value">${money(totals.cost)}</span></div>` : ""}
         <div class="total-divider"></div>
         <div class="grand-line"><span class="label">Total</span><span class="value">${money(totals.total)}</span></div>
-        ${totals.cost ? `<div class="total-line total-profit"><span class="label">Profit on this sale</span><span class="value">${money(totals.profit)} ¬∑ ${Math.round(totals.margin * 100)}%</span></div>` : ""}
+        ${totals.cost ? `<div class="total-line total-profit"><span class="label">Profit on this sale</span><span class="value">${money(totals.profit)} ∑ ${Math.round(totals.margin * 100)}%</span></div>` : ""}
       </div>
       <div class="flow-footer">
         <button class="btn btn-primary btn-block" data-act="checkout" ${locked ? "disabled" : ""}>SELL ITEMS</button>
         <button class="btn btn-debt btn-block${debtAllowed ? "" : " is-blocked"}" data-act="add-to-debt" ${locked || !count ? "disabled" : ""} aria-disabled="${debtAllowed ? "false" : "true"}">${icon("i-user")} ADD TO DEBT</button>
-        <p class="footer-hint">${locked ? "Pay the monthly plan to complete this sale. The cart is kept safe." : debtAllowed ? "Tax and discounts are included in this total." : "No debt allowed ‚Äî every sale must be paid now."}</p>
+        <p class="footer-hint">${locked ? "Pay the monthly plan to complete this sale. The cart is kept safe." : debtAllowed ? "Tax and discounts are included in this total." : "No debt allowed ó every sale must be paid now."}</p>
       </div>
     </section>`;
   }
@@ -2773,7 +2839,7 @@
     }
     const totals = T.cartTotals();
     const allows = (m) => (T.paymentAllows ? T.paymentAllows(m) : true);
-    // What the till will let through ‚Äî used for the hover description on the
+    // What the till will let through ó used for the hover description on the
     // locked buttons, so the shopkeeper reads the truth, not a guess.
     const mode = T.paymentMode?.() || "all";
     const allowedLabel = mode === "mpesa" ? "M-Pesa" : mode === "cash" ? "cash" : mode === "card" ? "card" : "";
@@ -2799,10 +2865,10 @@
       <div class="cash-board">
         <div class="cash-display">
           <div class="cash-cell"><div class="cash-label">Cash received</div>
-            <input class="cash-amount cash-input money" id="cash-manual" type="text" inputmode="decimal" autocomplete="off" placeholder="‚Äî" value="${cash ? esc(String(cash / 100)) : ""}" aria-label="Cash received">
+            <input class="cash-amount cash-input money" id="cash-manual" type="text" inputmode="decimal" autocomplete="off" placeholder="ó" value="${cash ? esc(String(cash / 100)) : ""}" aria-label="Cash received">
           </div>
           <div class="cash-cell"><div class="cash-label" id="cash-change-label">${change >= 0 && cash ? "Change due" : "Remaining"}</div>
-            <div class="cash-amount money ${change >= 0 && cash ? "change" : cash ? "short" : "placeholder"}" id="cash-change">${cash ? money(Math.abs(change)) : "‚Äî"}</div>
+            <div class="cash-amount money ${change >= 0 && cash ? "change" : cash ? "short" : "placeholder"}" id="cash-change">${cash ? money(Math.abs(change)) : "ó"}</div>
           </div>
         </div>
         <div class="quick-cash" aria-label="Quick cash amounts">${quick}</div>
@@ -2819,7 +2885,7 @@
       <div class="card-board">
         <span class="demo-pill">${icon("i-info", "ico")} Demo payment</span>
         <div class="card-illustration">${icon("i-card")}</div>
-        <h3>${T.ui.cardBusy ? "Waiting for the reader‚Ä¶" : "Use the demo card reader"}</h3>
+        <h3>${T.ui.cardBusy ? "Waiting for the readerÖ" : "Use the demo card reader"}</h3>
         <p>${T.ui.cardBusy ? "This usually takes a moment. Keep this screen open." : "Simulates an approved card payment. No card details are collected and no money is charged."}</p>
         <button class="btn btn-primary btn-block" data-act="start-card" ${T.ui.cardBusy ? "disabled" : ""}>
           ${T.ui.cardBusy ? `<span class="spinner"></span> Processing` : `Start demo payment ${icon("i-arrow")}`}
@@ -2833,7 +2899,7 @@
       <div class="pay-amount">
         <p class="eyebrow">Amount due</p>
         <div class="amount money" id="payment-title">${money(totals.total)}</div>
-        <p class="breakdown">Subtotal ${money(totals.subtotal)}${totals.discountAmount ? ` ¬∑ Discount ‚àí${money(totals.discountAmount)}` : ""} ¬∑ Tax ${money(totals.tax)}</p>
+        <p class="breakdown">Subtotal ${money(totals.subtotal)}${totals.discountAmount ? ` ∑ Discount -${money(totals.discountAmount)}` : ""} ∑ Tax ${money(totals.tax)}</p>
       </div>
       <div class="segmented seg-three" role="tablist" aria-label="Payment method">
         ${tenders.map((t) => {
@@ -2841,7 +2907,7 @@
           const active = method === t.method;
           const title = allowed
             ? `${t.label} payments are allowed`
-            : `Locked ‚Äî this shop takes only ${allowedLabel} payments (change in Settings ‚Üí Security)`;
+            : `Locked ó this shop takes only ${allowedLabel} payments (change in Settings ? Security)`;
           return `<button class="seg-btn ${active ? "is-active" : ""}${allowed ? "" : " is-blocked"}" data-act="set-payment" data-value="${t.method}" role="tab" aria-selected="${active}" aria-disabled="${!allowed}" title="${esc(title)}">${icon(t.iconName)} ${t.label}</button>`;
         }).join("")}
       </div>
@@ -2886,7 +2952,7 @@
       return `<div class="mpesa-board is-waiting" aria-live="polite">
         <span class="mpesa-brand"><span class="mpesa-word">M-PESA</span><span class="mpesa-target">${esc(target)}</span></span>
         <div class="mpesa-wait-mark"><span class="spinner"></span></div>
-        <h3>${sending ? "Sending the request‚Ä¶" : "Waiting for the customer"}</h3>
+        <h3>${sending ? "Sending the requestÖ" : "Waiting for the customer"}</h3>
         <p>${sending ? "Talking to Safaricom." : `An M-Pesa prompt was sent to <strong>${esc(api.formatPhone(state.phone))}</strong>. Ask the customer to enter their M-Pesa PIN.`}</p>
         <div class="mpesa-amount-line"><span>Amount</span><strong class="money">${money(amount * 100)}</strong></div>
         ${cfg.mode === "paybill" ? `<div class="mpesa-amount-line"><span>Account</span><strong>${esc(account)}</strong></div>` : ""}
@@ -2918,7 +2984,7 @@
         <p class="field-small">${accountReady ? "This is what appears on your M-Pesa statement." : "Enter the account number customers pay with."}</p>
       </div>` : ""}
       <div class="mpesa-amount-line"><span>They pay</span><strong class="money">${money(amount * 100)}</strong></div>
-      ${whole ? "" : `<p class="mpesa-small">Rounded from ${money(totals.total)} ‚Äî M-Pesa charges whole shillings.</p>`}
+      ${whole ? "" : `<p class="mpesa-small">Rounded from ${money(totals.total)} ó M-Pesa charges whole shillings.</p>`}
       ${note}
       ${blocker}
       <button class="btn btn-primary btn-block" data-act="mpesa-send" ${ready.ok && accountReady ? "" : "disabled"}>
@@ -2932,15 +2998,15 @@
 
   function receiptText(tx) {
     const store = tx.store || T.state.store;
-    const lines = tx.items.map((item) => `${T.qtyText(item)} √ó ${item.name}${item.detail ? ` (${item.detail})` : ""}  ${money(T.itemRevenue(item))}`);
+    const lines = tx.items.map((item) => `${T.qtyText(item)} ◊ ${item.name}${item.detail ? ` (${item.detail})` : ""}  ${money(T.itemRevenue(item))}`);
     const discount = tx.discountAmount ? `Discount: -${money(tx.discountAmount)}` : null;
     const payment = tx.payment.method === "cash"
       ? `Cash tendered: ${money(tx.payment.tendered)}  Change: ${money(tx.payment.change)}`
       : tx.payment.method === "card"
         ? `Card: demo approved (${tx.payment.reference})`
         : tx.payment.method === "mpesa"
-          ? `M-Pesa: ${money(tx.total)}${tx.payment.customerPhone ? ` from ${T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone}` : ""}${tx.payment.accountRef ? ` ¬∑ Account ${tx.payment.accountRef}` : ""}${tx.payment.reference ? ` ¬∑ Ref ${tx.payment.reference}` : ""}${!tx.payment.reference && tx.payment.checkoutId ? ` ¬∑ Request ${tx.payment.checkoutId}` : ""}`
-          : `Debt: ${tx.payment.customerName || "Customer"} (${tx.payment.customerPhone || ""}) ¬∑ Due ${tx.payment.dueDate}`;
+          ? `M-Pesa: ${money(tx.total)}${tx.payment.customerPhone ? ` from ${T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone}` : ""}${tx.payment.accountRef ? ` ∑ Account ${tx.payment.accountRef}` : ""}${tx.payment.reference ? ` ∑ Ref ${tx.payment.reference}` : ""}${!tx.payment.reference && tx.payment.checkoutId ? ` ∑ Request ${tx.payment.checkoutId}` : ""}`
+          : `Debt: ${tx.payment.customerName || "Customer"} (${tx.payment.customerPhone || ""}) ∑ Due ${tx.payment.dueDate}`;
     // Only the shopkeeper stamped on the transaction is shown. Sales made
     // before staff tracking print no name rather than crediting whoever
     // happens to hold the shop's staff field today.
@@ -2951,7 +3017,7 @@
       store.phone,
       "",
       `Receipt #${tx.receiptNo}`,
-      `${T.receiptDateFmt.format(new Date(tx.createdAt))} ¬∑ ${T.timeFmt.format(new Date(tx.createdAt))}`,
+      `${T.receiptDateFmt.format(new Date(tx.createdAt))} ∑ ${T.timeFmt.format(new Date(tx.createdAt))}`,
       servedBy ? `Served by ${servedBy}` : null,
       "",
       ...lines,
@@ -2959,13 +3025,13 @@
       `Subtotal: ${money(tx.subtotal)}`,
       ...(discount ? [discount] : []),
       `Tax (${tx.taxRate}%): ${money(tx.tax)}`,
-      tx.rounding ? `M-Pesa rounding: ${tx.rounding > 0 ? "+" : "‚àí"}${money(Math.abs(tx.rounding))}` : null,
+      tx.rounding ? `M-Pesa rounding: ${tx.rounding > 0 ? "+" : "-"}${money(Math.abs(tx.rounding))}` : null,
       `TOTAL: ${money(tx.total)}`,
       "",
       payment,
       "",
       store.footer,
-      `Digital receipt ¬∑ ${tx.id.slice(-8).toUpperCase()}`
+      `Digital receipt ∑ ${tx.id.slice(-8).toUpperCase()}`
     ].filter((line) => line !== null).join("\n");
   }
 
@@ -3000,7 +3066,7 @@
   }
 
   /**
-   * Render the receipt paper ‚Äî the same markup the screen shows ‚Äî into a PNG
+   * Render the receipt paper ó the same markup the screen shows ó into a PNG
    * data URL. The node is cloned with its computed styles and drawn through an
    * SVG foreignObject, so the download keeps the on-screen design.
    */
@@ -3033,7 +3099,7 @@
       // so a phone whose font runs wider wraps where the screen wraps.
       copy.style.width = `${size.width}px`;
       // The spare pixels that guard the last line from serialisation reflow
-      // go *inside* the card's padding, not below its border ‚Äî otherwise the
+      // go *inside* the card's padding, not below its border ó otherwise the
       // border box sits 12px high and the white frame around the image looks
       // lopsided.
       const basePad = parseFloat(getComputedStyle(paper).paddingBottom) || 16;
@@ -3080,32 +3146,32 @@
           <h3>${esc(store.name)}</h3>
           <p>${esc(store.address)}<br>${esc(store.phone)}</p>
         </div>
-        <div class="receipt-meta"><span>Receipt #${tx.receiptNo}</span><span>${esc(T.receiptDateFmt.format(new Date(tx.createdAt)))} ¬∑ ${T.timeFmt.format(new Date(tx.createdAt))}</span></div>
+        <div class="receipt-meta"><span>Receipt #${tx.receiptNo}</span><span>${esc(T.receiptDateFmt.format(new Date(tx.createdAt)))} ∑ ${T.timeFmt.format(new Date(tx.createdAt))}</span></div>
         <div class="dashes"></div>
         <div class="receipt-lines">
           ${tx.items.map((item) => `<div class="receipt-line">
             <span class="qty">${esc(T.qtyText(item))}</span>
-            <span class="name">${esc(item.name)}${item.detail ? `<span class="unit">${esc(item.detail)} ¬∑ ${money(item.price)}${item.soldByMass ? "/kg" : " each"}</span>` : ""}</span>
+            <span class="name">${esc(item.name)}${item.detail ? `<span class="unit">${esc(item.detail)} ∑ ${money(item.price)}${item.soldByMass ? "/kg" : " each"}</span>` : ""}</span>
             <span class="amount">${money(T.itemRevenue(item))}</span>
           </div>`).join("")}
         </div>
         <div class="dashes"></div>
         <div class="receipt-totals">
           <div class="r-line"><span>Subtotal</span><span class="val">${money(tx.subtotal)}</span></div>
-          ${tx.discountAmount ? `<div class="r-line"><span>Discount${tx.discount?.type === "percent" ? ` (${tx.discount.value}%)` : ""}</span><span class="val">‚àí${money(tx.discountAmount)}</span></div>` : ""}
+          ${tx.discountAmount ? `<div class="r-line"><span>Discount${tx.discount?.type === "percent" ? ` (${tx.discount.value}%)` : ""}</span><span class="val">-${money(tx.discountAmount)}</span></div>` : ""}
           <div class="r-line"><span>Tax (${tx.taxRate}%)</span><span class="val">${money(tx.tax)}</span></div>
-          ${tx.rounding ? `<div class="r-line"><span>M-Pesa rounding</span><span class="val">${tx.rounding > 0 ? "+" : "‚àí"}${money(Math.abs(tx.rounding))}</span></div>` : ""}
+          ${tx.rounding ? `<div class="r-line"><span>M-Pesa rounding</span><span class="val">${tx.rounding > 0 ? "+" : "-"}${money(Math.abs(tx.rounding))}</span></div>` : ""}
           <div class="r-line total"><span>Total</span><span class="val">${money(tx.total)}</span></div>
         </div>
         <div class="receipt-payment">
-          <div class="row"><span>Payment</span><strong>${tx.payment.method === "cash" ? "Cash" : tx.payment.method === "card" ? "Card ¬∑ demo" : tx.payment.method === "mpesa" ? "M-Pesa" : `Debt ¬∑ ${esc(tx.payment.customerName || "Customer")}`}</strong></div>
-          ${tx.payment.method === "cash" ? `<div class="row"><span>Tendered</span><span>${money(tx.payment.tendered)}</span></div><div class="row"><span>Change</span><span>${money(tx.payment.change)}</span></div>` : tx.payment.method === "card" ? `<div class="row"><span>Reference</span><span>${esc(tx.payment.reference || "‚Äî")}</span></div>` : tx.payment.method === "mpesa" ? `<div class="row"><span>Customer phone</span><span>${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone || "‚Äî")}</span></div>${tx.payment.accountRef ? `<div class="row"><span>Account number</span><span>${esc(tx.payment.accountRef)}</span></div>` : ""}<div class="row"><span>M-Pesa reference</span><span>${esc(tx.payment.reference || "Confirmed")}</span></div>${!tx.payment.reference && tx.payment.checkoutId ? `<div class="row"><span>Request ID</span><span>${esc(tx.payment.checkoutId)}</span></div>` : ""}${tx.payment.account ? `<div class="row"><span>Paid to</span><span>${esc(tx.payment.account)}</span></div>` : ""}` : `<div class="row"><span>Customer phone</span><span>${esc(tx.payment.customerPhone || "‚Äî")}</span></div><div class="row"><span>Due date</span><span>${esc(tx.payment.dueDate || "‚Äî")}</span></div>`}
-          <div class="row"><span>Served by</span><span>${esc(String(tx.staff || "").trim() || "‚Äî")}</span></div>
+          <div class="row"><span>Payment</span><strong>${tx.payment.method === "cash" ? "Cash" : tx.payment.method === "card" ? "Card ∑ demo" : tx.payment.method === "mpesa" ? "M-Pesa" : `Debt ∑ ${esc(tx.payment.customerName || "Customer")}`}</strong></div>
+          ${tx.payment.method === "cash" ? `<div class="row"><span>Tendered</span><span>${money(tx.payment.tendered)}</span></div><div class="row"><span>Change</span><span>${money(tx.payment.change)}</span></div>` : tx.payment.method === "card" ? `<div class="row"><span>Reference</span><span>${esc(tx.payment.reference || "ó")}</span></div>` : tx.payment.method === "mpesa" ? `<div class="row"><span>Customer phone</span><span>${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone || "ó")}</span></div>${tx.payment.accountRef ? `<div class="row"><span>Account number</span><span>${esc(tx.payment.accountRef)}</span></div>` : ""}<div class="row"><span>M-Pesa reference</span><span>${esc(tx.payment.reference || "Confirmed")}</span></div>${!tx.payment.reference && tx.payment.checkoutId ? `<div class="row"><span>Request ID</span><span>${esc(tx.payment.checkoutId)}</span></div>` : ""}${tx.payment.account ? `<div class="row"><span>Paid to</span><span>${esc(tx.payment.account)}</span></div>` : ""}` : `<div class="row"><span>Customer phone</span><span>${esc(tx.payment.customerPhone || "ó")}</span></div><div class="row"><span>Due date</span><span>${esc(tx.payment.dueDate || "ó")}</span></div>`}
+          <div class="row"><span>Served by</span><span>${esc(String(tx.staff || "").trim() || "ó")}</span></div>
           ${tx.payment.method === "mpesa" && !tx.payment.reference ? `<button class="text-btn mpesa-code-link" data-act="add-mpesa-code" data-id="${esc(tx.id)}">Add M-Pesa code</button>` : ""}
         </div>
         <div class="receipt-bar" aria-hidden="true"></div>
         <div class="receipt-code">${esc(tx.id.slice(-8).toUpperCase())}</div>
-        <p class="receipt-thanks">${esc(store.footer)}<br>Digital receipt ¬∑ keep for your records</p>
+        <p class="receipt-thanks">${esc(store.footer)}<br>Digital receipt ∑ keep for your records</p>
       </article>`;
   }
 
@@ -3115,7 +3181,7 @@
         <div class="success-check">${icon("i-check")}</div>
         <h2 id="receipt-title">${tx.payment.method === "debt" ? "Added to debt" : "Payment complete"}</h2>
         <div class="paid-total money">${money(tx.total)}</div>
-        <div class="paid-meta">${tx.payment.method === "cash" ? `Cash ¬∑ Change ${money(tx.payment.change)}` : tx.payment.method === "card" ? "Card ¬∑ Demo approved" : tx.payment.method === "mpesa" ? `M-Pesa${tx.payment.customerPhone ? ` ¬∑ ${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone)}` : ""}` : `On credit ¬∑ ${esc(tx.payment.customerName || "Customer")} ¬∑ Due ${esc(tx.payment.dueDate || "")}`} ¬∑ ${T.timeFmt.format(new Date(tx.createdAt))}</div>
+        <div class="paid-meta">${tx.payment.method === "cash" ? `Cash ∑ Change ${money(tx.payment.change)}` : tx.payment.method === "card" ? "Card ∑ Demo approved" : tx.payment.method === "mpesa" ? `M-Pesa${tx.payment.customerPhone ? ` ∑ ${esc(T.mpesa?.formatPhone(tx.payment.customerPhone) || tx.payment.customerPhone)}` : ""}` : `On credit ∑ ${esc(tx.payment.customerName || "Customer")} ∑ Due ${esc(tx.payment.dueDate || "")}`} ∑ ${T.timeFmt.format(new Date(tx.createdAt))}</div>
       </div>` : `<div class="history-hero">
         <div><p class="eyebrow" style="margin-bottom:5px">Receipt #${tx.receiptNo}</p><div class="paid-total" id="receipt-title">${money(tx.total)}</div></div>
         <span class="status-pill ${tx.payment.method === "debt" ? "is-debt" : ""}"><span class="dot"></span>${tx.payment.method === "debt" ? "On credit" : "Paid"}</span>
@@ -3189,19 +3255,19 @@
     const staff = String(entry.staff || "").trim();
     return `<div class="activity-row">
       <span class="activity-icon kind-${kind}">${icon(logIcon(kind))}</span>
-      <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${staff ? `${esc(staff)} ¬∑ ` : ""}${esc(logTimeAgo(entry.at))}</small></span>
+      <span class="activity-copy"><strong>${esc(entry.summary)}</strong><small>${staff ? `${esc(staff)} ∑ ` : ""}${esc(logTimeAgo(entry.at))}</small></span>
     </div>`;
   }).join("");
 
   /**
-   * The shop's activity log on its own page ‚Äî adds, edits, deletes, stock,
+   * The shop's activity log on its own page ó adds, edits, deletes, stock,
    * sales and security switches, newest first.
    */
   function history() {
     const activity = Array.isArray(T.state.activityLog) ? T.state.activityLog : [];
     return `<section class="screen" aria-labelledby="history-title">
       <div class="screen-head with-action">
-        <div><h1 id="history-title">HISTORY LOG</h1><p class="sub">${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} ¬∑ newest first` : "Every add, edit and delete, newest first"}</p></div>
+        <div><h1 id="history-title">HISTORY LOG</h1><p class="sub">${activity.length ? `${activity.length} recorded ${activity.length === 1 ? "entry" : "entries"} ∑ newest first` : "Every add, edit and delete, newest first"}</p></div>
         ${activity.length ? `<button class="text-btn danger" data-act="clear-activity-log">Clear</button>` : ""}
       </div>
       ${activity.length
@@ -3228,14 +3294,14 @@
       </div>
       <p class="card-sub" style="margin:4px 0 0;overflow-wrap:anywhere">${esc(item.body)}</p>
       <button class="chip announce-reads-toggle" data-act="toggle-announce-reads" data-value="${id}" aria-expanded="${open}">${readers ? `${readers.length} ${readers.length === 1 ? "shop" : "shops"} opened` : "Who opened it"} ${icon("i-chevron")}</button>
-      ${open ? `<div class="announce-readers">${cached === null ? `<p class="report-note">Loading‚Ä¶</p>` : readers.length ? readers.map((reader) => `<div class="reader-row"><span class="reader-dot"></span><span class="reader-copy"><strong>${esc(reader.shop || reader.email || "Shop")}</strong><small>${esc(reader.code ? `${reader.code} ¬∑ ` : "")}${esc(reader.email)} ¬∑ ${esc(announceWhen(reader.at))}</small></span></div>`).join("") : `<p class="report-note">No shop has opened it yet.</p>`}</div>` : ""}
+      ${open ? `<div class="announce-readers">${cached === null ? `<p class="report-note">LoadingÖ</p>` : readers.length ? readers.map((reader) => `<div class="reader-row"><span class="reader-dot"></span><span class="reader-copy"><strong>${esc(reader.shop || reader.email || "Shop")}</strong><small>${esc(reader.code ? `${reader.code} ∑ ` : "")}${esc(reader.email)} ∑ ${esc(announceWhen(reader.at))}</small></span></div>`).join("") : `<p class="report-note">No shop has opened it yet.</p>`}</div>` : ""}
     </div>`;
   };
 
   /**
    * Announcements. Every signed-in shop sees the same list; the developer
    * account also gets the composer at the top and the receipts expander on
-   * each entry ‚Äî the page is where the developer writes, sends and audits.
+   * each entry ó the page is where the developer writes, sends and audits.
    */
   function announcements(freshIds = []) {
     const fresh = new Set((freshIds || []).map(String));
