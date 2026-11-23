@@ -1492,11 +1492,9 @@
         ${clockTampered ? `<button class="btn btn-ghost btn-block" data-act="exit-app">${icon("i-close")} Close App</button>` : ""}
         ${clockTampered ? "" : `<button class="btn btn-primary btn-block" data-act="pay-subscription">${icon("i-phone")} ${waiting ? "Payment details" : `Pay ${esc(amount)}`}</button>`}
         ${!clockTampered && fee.mpesaNumber ? `<a class="btn btn-ghost btn-block" href="tel:${esc(fee.mpesaNumber.replace(/[^0-9+]/g, ""))}">${icon("i-phone")} Call the developer</a>` : ""}
-        ${clockTampered ? "" : `<button class="btn btn-ghost btn-block" data-act="open-developer-chat">${icon("i-chat")} Chat with developer</button>`}
-        ${clockTampered || waiting ? "" : ""}
+        ${clockTampered ? "" : ""}
         <button class="btn btn-ghost btn-block" data-act="open-about-brief">${icon("i-info")} About Biller POS &amp; Inventory</button>
         <button class="btn btn-ghost btn-block" data-act="refresh-data">${icon("i-refresh")} Check my payment</button>
-        <button class="btn btn-ghost btn-block" data-act="open-wastage" style="opacity:.85">${icon("i-alert")} Record wastage</button>
         <button class="btn btn-ghost btn-block" data-act="sign-out" style="opacity:.85">${icon("i-user")} Sign out</button>
         ${T.getSession?.() ? `<button class="btn btn-ghost btn-block" data-act="open-delete-account" style="opacity:.85">${icon("i-trash")} Delete this account</button>` : ""}
       </div>
@@ -2135,32 +2133,11 @@
           <span class="about-mark">${icon("i-store")}</span>
           <div><div class="about-name">BILLER POS</div><div class="about-version">${VERSION ? `V ${esc(VERSION)} · ` : ""}cloud-synced till</div></div>
         </div>
-        <p class="about-oneliner"><strong>Biller POS is an offline-capable, cloud-synced point-of-sale app for small shops — built to scan, sell and track stock from a single phone or till, for cash, M-Pesa and card.</strong></p>
-        <div class="about-points">
-          <section><h3>Who it&rsquo;s for</h3><ul>
-            <li>Neighborhood dukas, kiosks and small retailers selling daily goods</li>
-            <li>Shops that need cash, M-Pesa and card at the till, in shillings</li>
-            <li>Owners who want the whole shop on one device — no separate accounting suite</li>
-          </ul></section>
-          <section><h3>What it does</h3><ul>
-            <li><strong>Selling</strong> — barcode scanning or search, tap-to-add cart, variants and bundles (dozen, packet, box, crate — sold by the piece), discounts, shareable receipts</li>
-            <li><strong>Inventory</strong> — category catalog, low-stock alerts, stock-in tracking, wastage logging, stock audits (counted vs recorded)</li>
-            <li><strong>Money</strong> — cash, card and M-Pesa (Daraja) at checkout; supplier ledger with balances and payments; customer debt ledger with due dates and reminders</li>
-            <li><strong>Security</strong> — shop PIN on every edit, delete and stock change; checkout payment-mode restriction (cash / M-Pesa / card only); optional &ldquo;No debt allowed&rdquo; lock; locked audit and M-Pesa pages; activity history log</li>
-            <li><strong>Works anywhere</strong> — sells and saves locally with no connection; syncs to Firebase when back online; light and dark interface</li>
-          </ul></section>
-          <section><h3>Business model</h3><ul>
-            <li>Subscription-based monthly plan per shop</li>
-          </ul></section>
-          <section><h3>What it is not</h3><ul>
-            <li>Not a supermarket enterprise ERP or full accounting suite — no payroll, no eTIMS filing, no double-entry bookkeeping</li>
-            <li>Not a payment processor — the card reader is a demo; real M-Pesa requires a connected Paybill or Till</li>
-          </ul></section>
-          <section><h3>Good to know</h3><ul>
-            <li>M-Pesa charging is wired to Safaricom Daraja sandbox by default; production requires the shop&rsquo;s own Paybill/Till credentials</li>
-            <li>Debt is tracked in-app — reminders are prompts on the till, not SMS messages</li>
-          </ul></section>
+        <p class="about-oneliner">Client Brief — everything about the app you send to potential clients.</p>
+        <div class="about-brief-frame">
+          <iframe class="about-brief-page" src="/Biller-POS-Client-Brief.html" title="About Biller POS &amp; Inventory" allow="fullscreen"></iframe>
         </div>
+        <button type="button" class="btn btn-primary btn-sm about-brief-open" data-act="open-about-brief">${icon("i-info")} Open the client brief</button>
       </div>`;
     return `<section class="screen">
       <div class="screen-head">

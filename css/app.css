@@ -3105,6 +3105,67 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .ptr-pop-badge .ico { width: 13px; height: 13px; color: #fff; }
 .ptr-pop-text { white-space: nowrap; }
 
+/* About Biller POS section: the client brief inside the Settings About card */
+.about-brief-frame {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  margin: 14px 0 0;
+  height: 620px;
+  max-height: 60vh;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.about-brief-page {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* Client brief overlay -------------------------------------------- */
+.brief-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+.brief-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+.brief-page {
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+.brief-close {
+  flex: none;
+  align-self: center;
+  margin: 8px 0 14px;
+  padding: 8px 22px;
+  border: none;
+  border-radius: 999px;
+  background: var(--forest);
+  color: #fbf9f1;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 16px -10px rgba(var(--accent-rgb), .8);
+  transition: transform .12s ease;
+}
+.brief-close:active { transform: scale(.97); }
+.about-brief-open { width: min(280px, 90%); }
+
 /* Boot splash ------------------------------------------------------ */
 .boot {
   position: fixed;

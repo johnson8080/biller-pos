@@ -283,6 +283,25 @@ function wireNav(root) {
  * Make every [data-act] button inside a root run its action. Sheets are
  * rendered into #layers, outside the viewport, so both roots need wiring.
  */
+// The client brief is a plain HTML page; show it as a normal page inside the
+// app (an overlay iframe) rather than opening a new web page.
+function openClientBrief() {
+  const existing = document.getElementById("brief-overlay");
+  if (existing) { existing.querySelector(".brief-page")?.focus?.(); return; }
+  const overlay = document.createElement("div");
+  overlay.id = "brief-overlay";
+  overlay.className = "brief-overlay";
+  overlay.innerHTML = `
+    <div class="brief-frame">
+      <iframe class="brief-page" src="/Biller-POS-Client-Brief.html" title="About Biller POS &amp; Inventory" allow="fullscreen"></iframe>
+      <button type="button" class="brief-close">Close the brief</button>
+    </div>`;
+  overlay.addEventListener("click", (event) => {
+    if (event.target.closest(".brief-close") || event.target === overlay) overlay.remove();
+  });
+  document.body.appendChild(overlay);
+}
+
 function wireActions(root) {
   if (!root) return;
   root.querySelectorAll("[data-act]").forEach(btn => {
@@ -1783,11 +1802,7 @@ function runAction(btn, opts = {}) {
   else if (act === "add-stock" && id) {    T.sheets?.openStockIn?.(id);
   }
   else if (act === "open-about-brief") {
-    // The brief is a plain HTML page at the site root — a new tab in web
-    // view; in a bare WebView that cannot open a browser, the fallback is
-    // a toast so nothing silently does nothing.
-    const win = window.open("/Biller-POS-Client-Brief.html", "_blank");
-    if (!win) T.toast("About Biller POS & Inventory — see client brief", "i-info");
+    openClientBrief();
   }
   else if (act === "open-wastage") {
     try { T.sheets?.openWastage?.(); }
