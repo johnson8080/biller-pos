@@ -36,9 +36,29 @@
     }
   } catch (e) {}
 </script>
-<link rel="stylesheet" href="app.css?v=3.9.9">
+<link rel="stylesheet" href="app.css?v=4.0.0">
 </head>
 <body>
+
+<!-- Boot splash: covers the blank first paint until the shell renders.
+     Pure HTML + CSS so it shows before any script runs. -->
+<div class="boot" id="boot" aria-hidden="true">
+  <span class="boot-glow"></span>
+  <div class="boot-lockup">
+    <span class="boot-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/>
+        <path d="M9 10v3.5M12 7v6.5M15 11v2.5"/>
+      </svg>
+    </span>
+    <span class="boot-word">Biller POS<span class="boot-dot">.</span></span>
+    <p class="boot-tag">Point of sale, in one hand.</p>
+  </div>
+  <div class="boot-progress">
+    <span class="boot-track"><i></i></span>
+    <span class="boot-status">Loading your till</span>
+  </div>
+</div>
 
 <!-- Icon sprite ------------------------------------------------------- -->
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
@@ -126,22 +146,22 @@
 
 <!-- Bump ASSET_VERSION whenever app.css / js/*.js change, so browsers and
      the installed PWA never keep serving a stale copy of the login screen. -->
-<script>window.ASSET_VERSION = "3.9.9";</script>
-<script src="assets/vendor/zxing.min.js?v=3.9.9" defer></script>
-<script src="js/daraja.js?v=3.9.9" defer></script>
-<script src="js/core.js?v=3.9.9" defer></script>
-<script src="js/cloud.js?v=3.9.9" defer></script>
-<script src="js/notify.js?v=3.9.9" defer></script>
-<script src="js/mpesa.js?v=3.9.9" defer></script>
-<script src="js/screens.js?v=3.9.9" defer></script>
-<script src="js/sheets.js?v=3.9.9" defer></script>
-<script src="js/tour.js?v=3.9.9" defer></script>
-<script src="js/scanner.js?v=3.9.9" defer></script>
-<script src="js/auth.js?v=3.9.9" defer></script>
+<script>window.ASSET_VERSION = "4.0.0";</script>
+<script src="assets/vendor/zxing.min.js?v=4.0.0" defer></script>
+<script src="js/daraja.js?v=4.0.0" defer></script>
+<script src="js/core.js?v=4.0.0" defer></script>
+<script src="js/cloud.js?v=4.0.0" defer></script>
+<script src="js/notify.js?v=4.0.0" defer></script>
+<script src="js/mpesa.js?v=4.0.0" defer></script>
+<script src="js/screens.js?v=4.0.0" defer></script>
+<script src="js/sheets.js?v=4.0.0" defer></script>
+<script src="js/tour.js?v=4.0.0" defer></script>
+<script src="js/scanner.js?v=4.0.0" defer></script>
+<script src="js/auth.js?v=4.0.0" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js" defer></script>
-<script src="js/app.js?v=3.9.9" defer></script>
+<script src="js/app.js?v=4.0.0" defer></script>
 <script>
   /* Pull-to-refresh — Material-style circular indicator below the hero.
      Pull: the spinner scales in and rotates with the drag while the page

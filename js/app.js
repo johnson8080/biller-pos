@@ -2803,7 +2803,18 @@ try { window.Till && (window.Till.softRender = softRender); } catch { /* ignore 
 
 
 // --- Boot ---
+// The splash in index.html covers the blank first paint. Fade it out once the
+// shell has drawn something.
+function hideBootSplash() {
+  const el = document.getElementById("boot");
+  if (!el) return;
+  el.classList.add("is-done");
+  setTimeout(() => el.remove(), 340);
+}
+
 function boot() {
+  // Never leave the splash up if boot bails before the first paint.
+  setTimeout(hideBootSplash, 2500);
   // Paint the saved palette before the first render so the shell does not
   // flash the default one.
   window.Till?.applyTheme?.();
@@ -2885,6 +2896,7 @@ function boot() {
   const _bootStaff = window.Till?.activeStaff?.();
   if (window.Till?.hasDeviceStaff?.() && _bootStaff) window.Till?.claimStaff?.(_bootStaff);
   render();
+  hideBootSplash();
   // Plan the reminders for the monthly plan once the app is up.
   setTimeout(() => { window.Till?.notify?.syncPlan?.(); }, 2500);
   setTimeout(() => {
