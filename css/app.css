@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Biller POS — visual system
    Mobile-first point of sale: warm paper, forest ink, lime accents.
    ============================================================ */
@@ -1435,7 +1435,7 @@ html[data-color-scheme="light"] .chip.is-active {
 }
 
 /* First-run gate: shop set-up step shown only on the very first fresh
-   till � step 1 name a shopkeeper, step 2 save shop details, lands on
+   till — step 1 name a shopkeeper, step 2 save shop details, lands on
    Stock so the first item gets saved before selling starts. */
 .first-run-gate { display: flex; flex-direction: column; gap: 2px; }
 .first-run-step {
