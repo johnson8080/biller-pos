@@ -3186,7 +3186,9 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
   width: 42%;
   border-radius: 999px;
   background: var(--forest);
-  animation: boot-sweep 1.15s cubic-bezier(.45, 0, .55, 1) infinite;
+  transform: translateX(-110%);
+  animation: boot-sweep 1.4s cubic-bezier(.45, 0, .55, 1) infinite;
+  will-change: transform;
 }
 .boot-status {
   font-size: calc(8.5px * var(--fs));
@@ -3198,11 +3200,9 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 @keyframes boot-mark { from { opacity: 0; transform: translateY(8px) scale(.9); } to { opacity: 1; transform: none; } }
 @keyframes boot-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes boot-glow { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: scale(1); } }
-@keyframes boot-sweep { 0% { left: -45%; } 100% { left: 100%; } }
+@keyframes boot-sweep { from { transform: translateX(-110%); } to { transform: translateX(240%); } }
 @media (prefers-reduced-motion: reduce) {
   .boot-glow, .boot-mark, .boot-word, .boot-tag, .boot-progress { animation: none; }
-  /* Keep the sweep: without it the bar reads as a frozen, stuck loader. */
-  .boot-track i { animation-duration: 1.8s; }
 }
 
 /* Guided tour ------------------------------------------------------ */

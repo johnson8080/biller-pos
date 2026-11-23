@@ -2818,7 +2818,29 @@ function hideBootSplash(minMs = 0) {
   }, wait);
 }
 
+// The bar sweeps with a CSS animation. If the device has animations switched
+// off (reduced motion / animator scale 0) the computed transform never moves,
+// so fall back to driving it by hand.
+function animateBootBar() {
+  const bar = document.querySelector("#boot .boot-track i");
+  if (!bar) return;
+  const first = getComputedStyle(bar).transform;
+  setTimeout(() => {
+    if (!bar.isConnected) return;
+    if (getComputedStyle(bar).transform !== first) return;
+    const t0 = performance.now();
+    const tick = (now) => {
+      if (!bar.isConnected) return;
+      const p = ((now - t0) % 1400) / 1400;
+      bar.style.transform = `translateX(${(-110 + p * 350).toFixed(1)}%)`;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, 500);
+}
+
 function boot() {
+  animateBootBar();
   // Never leave the splash up if boot bails before the first paint.
   setTimeout(() => hideBootSplash(), 5500);
   // Paint the saved palette before the first render so the shell does not
