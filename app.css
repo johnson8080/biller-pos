@@ -3147,9 +3147,10 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 .boot-mark svg { width: 30px; height: 30px; }
 .boot-word {
   margin-top: 16px;
-  font-size: calc(21px * var(--fs));
+  font-size: calc(18.5px * var(--fs));
   font-weight: 750;
   letter-spacing: -.045em;
+  white-space: nowrap;
   animation: boot-rise .5s .08s ease-out both;
 }
 .boot-dot { color: var(--forest); }
@@ -3200,7 +3201,8 @@ input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
 @keyframes boot-sweep { 0% { left: -45%; } 100% { left: 100%; } }
 @media (prefers-reduced-motion: reduce) {
   .boot-glow, .boot-mark, .boot-word, .boot-tag, .boot-progress { animation: none; }
-  .boot-track i { animation: none; left: 29%; }
+  /* Keep the sweep: without it the bar reads as a frozen, stuck loader. */
+  .boot-track i { animation-duration: 1.8s; }
 }
 
 /* Guided tour ------------------------------------------------------ */
