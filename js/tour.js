@@ -49,7 +49,7 @@
     cart: {
       id: "cart",
       route: "#/sell",
-      target: [".cart-hero"],
+      target: ['#tabbar .tab[data-nav="#/orders"]', ".cart-hero"],
       icon: "i-bag",
       title: "Take payment",
       body: "The cart lives here. Review the sale, add a discount, then take cash, M-Pesa or card."
@@ -97,7 +97,7 @@
     reports: {
       id: "reports",
       route: "#/reports",
-      target: [".report-chart", "#reports-title"],
+      target: ['#tabbar .tab[data-nav="#/reports"]', ".report-chart", "#reports-title"],
       icon: "i-chart",
       title: "See the week at a glance",
       body: "The chart shows each day's sales. Scroll on for best sellers, profit and payment mix."
